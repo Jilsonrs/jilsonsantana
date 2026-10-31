@@ -2018,8 +2018,15 @@ conta, os preços — e para emergência; a **contestação** e os **códigos pr
 
 **As decisões dele no mesmo dia que mudam esta especificação** (cada uma vale quando o passo dela for construído; até
 lá, vale o texto de hoje):
-- **Devolver só uma parte** (P139): o operador digita o valor, no máximo o que ainda não foi devolvido. A parte **não
-  corta o acesso**; só a devolução inteira corta (a regra do "pago até", *Minha assinatura*). — 4.7b, passo 4a.
+- **Devolver só uma parte** (P139): o operador digita o valor, no máximo o que ainda não foi devolvido. — 4.7b, passo 4a,
+  no código desde 31/10/2026. **Só devolver não mexe no acesso nem na assinatura** `[MEDIDO — a prova pela rota do passo
+  4a, 31/10/2026]`: a regra das aulas libera a assinatura ativa sem olhar o pagamento, então a devolução inteira sozinha
+  não cortava o acesso, como a P139 supunha (e a Stripe cobraria de novo no mês seguinte). **Por isso o formulário tem "E
+  encerrar a assinatura agora"** *(decisão do operador, 31/10/2026, à pergunta do passo 4a — entre isso, devolver nunca
+  mexer no acesso, e a devolução inteira tirar o acesso com a assinatura seguindo)*: marcada, a assinatura dessa cobrança
+  acaba antes de devolver — o acesso acaba e nada mais é cobrado. É como se devolve só o último mês de quem está saindo:
+  o "Cancelar e devolver o dinheiro" devolve TUDO o que foi pago na assinatura. *Reabre se a regra das aulas passar a
+  olhar o pagamento da assinatura ativa.*
 - **A contestação se responde pelo admin** (P140): o painel monta as provas — a data da compra, o nome e o e-mail, as
   aulas assistidas e as horas, os e-mails enviados e a política de reembolso —, e ele confere e clica em "Enviar ao
   banco" ou em "Aceitar a perda". Esses dados vão ao banco do aluno: entram na Política de Privacidade. — passo 5b.

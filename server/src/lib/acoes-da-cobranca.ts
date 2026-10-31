@@ -25,17 +25,17 @@ import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 export type PorQuem = { quem: typeof QuemFez.OPERADOR | typeof QuemFez.JILSONAI; conta: string };
 
 /** O que não deu para fazer — cada um vira um status na rota. */
-export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer" | "stripe-nao-conhece" | "assinatura-viva";
+export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer" | "stripe-nao-conhece" | "assinatura-viva" | "valor-mudou" | "valor-acima" | "devolucao-falhou";
 export type Resultado<T> = { resultado: "ok"; feito: T } | { resultado: NaoFeita };
 
-/** Grava a ação no registro: quem fez, em quem e o que a Stripe respondeu (sem dado pessoal). */
-export async function registrar(por: PorQuem, acao: string, alvo: { userId?: string | null; assinatura?: string | null; cliente?: string | null }, detalhe: string): Promise<void> {
+/** Grava a ação no registro: quem fez, em quem, o valor (quando há dinheiro) e o que a Stripe respondeu (sem dado pessoal). */
+export async function registrar(por: PorQuem, acao: string, alvo: { userId?: string | null; assinatura?: string | null; cliente?: string | null }, detalhe: string, centavos: number | null = null): Promise<void> {
   const conta = alvo.userId ? await prisma.user.findUnique({ where: { id: alvo.userId }, select: { id: true } }) : null;
-  await prisma.billingLog.create({ data: { who: por.quem, actorUserId: por.conta, action: acao, userId: conta?.id ?? null, stripeSubscriptionId: alvo.assinatura ?? null, stripeCustomerId: alvo.cliente ?? null, detail: detalhe } });
+  await prisma.billingLog.create({ data: { who: por.quem, actorUserId: por.conta, action: acao, userId: conta?.id ?? null, stripeSubscriptionId: alvo.assinatura ?? null, stripeCustomerId: alvo.cliente ?? null, amount: centavos, detail: detalhe } });
 }
 
 /** A linha do espelho e os detalhes da assinatura na Stripe, agora. */
-async function naStripe(espelhoId: number) {
+export async function naStripe(espelhoId: number) {
   const linha = await prisma.subscription.findUnique({ where: { id: espelhoId }, select: { stripeSubscriptionId: true, ownerUserId: true, stripeCustomerId: true } });
   if (!linha) return { resultado: "nao-encontrada" as const };
   try {
@@ -142,9 +142,9 @@ export async function reenviarPeloOperador(casoId: number, por: PorQuem): Promis
 // ── OS CONSERTOS DO PASSO 3b: o que hoje só o painel da Stripe faz ───────────────────────────────────────────────────
 
 /** Fecha o caso pelo operador, com o que foi feito na nota, e grava a ação no registro. */
-async function concluirCaso(casoId: number, por: PorQuem, acao: string, alvo: { userId: string | null; assinatura: string | null }, detalhe: string): Promise<void> {
+export async function concluirCaso(casoId: number, por: PorQuem, acao: string, alvo: { userId: string | null; assinatura: string | null }, detalhe: string, centavos: number | null = null): Promise<void> {
   await prisma.billingCase.updateMany({ where: { id: casoId, open: true }, data: { open: false, closedAt: new Date(), closedBy: por.quem, closedByUserId: por.conta, note: detalhe } });
-  await registrar(por, acao, alvo, detalhe);
+  await registrar(por, acao, alvo, detalhe, centavos);
 }
 
 const ENCERRADA = new Set(["canceled", "incomplete_expired"]);
@@ -158,7 +158,7 @@ const ENCERRADA = new Set(["canceled", "incomplete_expired"]);
  *   - ENCERRAR NA HORA, SEM DEVOLVER (caso "ativa sem período pago"): `cancelarNaHora` (sem crédito nem fatura), pela
  *     operação na assinatura — a sincronia corta o acesso.
  */
-export async function resolverCasoPeloOperador(casoId: number, acao: ConsertoDoCaso, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+export async function resolverCasoPeloOperador(casoId: number, acao: Exclude<ConsertoDoCaso, "devolver-de-novo">, por: PorQuem): Promise<Resultado<AcaoFeita>> {
   const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeSubscriptionId: true, stripeObjectId: true } });
   // O conserto tem de ser O DO CASO (o tipo e a chave): o "soltar" de um caso de troca sem agendamento na chave soltaria o
   // que a Stripe tiver agora — talvez a troca que o próprio aluno marcou (revisão de segurança do bloco 3).
@@ -211,7 +211,7 @@ export async function resolverCasoPeloOperador(casoId: number, acao: ConsertoDoC
 }
 
 /** Os clientes da Stripe de uma conta, ou da ficha de um visitante. */
-async function clientesDe(quem: { conta: string } | { visitante: string }): Promise<{ clientes: string[]; conta: string | null } | null> {
+export async function clientesDe(quem: { conta: string } | { visitante: string }): Promise<{ clientes: string[]; conta: string | null } | null> {
   if ("visitante" in quem) {
     const ficha = await prisma.guestCheckout.findUnique({ where: { id: quem.visitante }, select: { stripeCustomerId: true, userId: true } });
     return ficha ? { clientes: [ficha.stripeCustomerId], conta: ficha.userId } : null;

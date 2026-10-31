@@ -265,7 +265,7 @@ export type AcaoFeita = { detalhe: string };
 export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };
 
 /** Os consertos que hoje só o painel da Stripe faz, a partir de um caso (passo 3b). */
-export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora"] as const;
+export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo"] as const;
 export type ConsertoDoCaso = (typeof CONSERTOS_DO_CASO)[number];
 export const resolverCasoSchema = z.object({ acao: z.enum(CONSERTOS_DO_CASO) });
 
@@ -279,6 +279,26 @@ export const corrigirDocumentoSchema = z.union([
 export const LINKS_PARA_O_ALUNO = ["trocarCartao", "reativar", "pagarComPix"] as const;
 export type LinkParaOAluno = (typeof LINKS_PARA_O_ALUNO)[number];
 export const enviarLinkSchema = z.object({ conta: z.string().min(1).max(100), link: z.enum(LINKS_PARA_O_ALUNO) });
+
+/**
+ * DEVOLVER (bloco 4, passo 4a — decisões do operador P114 e P139). "Cancelar e devolver o dinheiro": a prévia diz quanto
+ * volta (tudo o que falta voltar da assinatura, e de quantos pagamentos), e a ação leva o valor MOSTRADO — se o de agora
+ * for outro, nada é feito.
+ */
+export type PreviaDaDevolucao = { centavos: number; moeda: string | null; pagamentos: number };
+export const devolverTudoSchema = z.object({ assinatura: z.number().int().positive(), centavos: z.number().int().positive() }).strict();
+/**
+ * "Devolver um pagamento": uma cobrança da ficha, inteira ou em parte (P139: no máximo o que ainda não voltou). `encerrar`:
+ * encerra agora a assinatura dessa cobrança, antes de devolver (decisão do operador, 31/10/2026: sem ela, devolver não mexe
+ * no acesso — a regra das aulas libera a assinatura ativa sem olhar o pagamento).
+ */
+const cobrancaDaFichaSchema = z.string().regex(/^(ch|py)_[A-Za-z0-9_]+$/).max(100);
+const doPagamento = { cobranca: cobrancaDaFichaSchema, centavos: z.number().int().positive(), encerrar: z.boolean().optional() };
+export const devolverPagamentoSchema = z.union([
+  z.object({ conta: z.string().min(1).max(100), ...doPagamento }).strict(),
+  z.object({ visitante: z.string().min(1).max(100), ...doPagamento }).strict(),
+]);
+export type DevolverPagamentoInput = z.infer<typeof devolverPagamentoSchema>;
 
 /** CORRIGIR O E-MAIL (passo 3c — decisão do operador P121): o e-mail certo da conta, para onde o código vai. */
 export const pedirCodigoDoEmailSchema = z.object({ conta: z.string().min(1).max(100), email: enderecoDeEmailSchema }).strict();

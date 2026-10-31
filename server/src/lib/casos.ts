@@ -142,8 +142,12 @@ export function paraCasoDaLista(linha: LinhaDoCaso): CasoDaLista {
   };
 }
 
-/** O conserto que o painel faz para o caso (passo 3b): a cobrança em aberto, o agendamento pela metade, a ativa sem período pago. */
+/**
+ * O conserto que o painel faz para o caso: a cobrança em aberto, o agendamento pela metade, a ativa sem período pago (passo
+ * 3b) e a devolução que falhou — a do reembolso (`sub:`) ou a de um pagamento (`pagamento:pi_…`, passo 4a).
+ */
 export function consertoDoCaso(tipo: TipoDeCasoDaLista, chave: string): ConsertoDoCaso | null {
+  if (tipo === "DEVOLUCAO_FALHOU" && (chave.startsWith("sub:") || chave.startsWith("pagamento:pi_"))) return "devolver-de-novo";
   if (tipo === "COBRANCA_EM_ABERTO") return "anular-cobranca";
   if (tipo === "TROCA_DE_PLANO" && chave.startsWith("agendamento:")) return "soltar-agendamento";
   if (tipo === "ATIVA_SEM_PERIODO_PAGO") return "encerrar-na-hora";

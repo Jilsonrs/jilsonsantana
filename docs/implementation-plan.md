@@ -6200,8 +6200,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - **Cancelar e devolver o dinheiro** — UM clique, cartão e Pix (P114).
       - **Devolver um pagamento** — um só (a cobrança em dobro, a tentativa paga sem assinatura, a diferença da troca
         de plano), inteiro ou em parte *(decisão do operador, 31/10/2026, P139: ele digita o valor — no máximo o que
-        ainda não foi devolvido —; a parte não corta o acesso, só a devolução inteira corta)*; e **devolver de novo** a
-        devolução que falhou.
+        ainda não foi devolvido)*, com **"E encerrar a assinatura agora"** *(decisão dele no passo 4a: só devolver não
+        mexe no acesso — a regra das aulas libera a assinatura ativa —; marcada, a assinatura acaba antes de devolver)*;
+        e **devolver de novo** a devolução que falhou.
       - **Tentar cobrar de novo agora** — a atrasada, quando o aluno avisa que resolveu o cartão.
       - **Pix em conferência:** Aceitar este Pix · Devolver (P117).
       - **Liberar acesso pago por fora** (P120) e **liberar de novo depois da contestação ganha**.
@@ -6603,8 +6604,32 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               e-mails foram mandados de verdade (o resumo da manhã numa segunda tentativa: a chave do dia já tinha sido
               usada na prova do 2d — é o esperado, um resumo por dia).
       - [ ] **BLOCO 4 — AS AÇÕES COM DINHEIRO** (prova pela rota em cada passo)
-        - [ ] **4a — Devolver:** cancelar e devolver num clique (cartão e Pix), devolver um pagamento (inteiro ou em
-              parte, P139), devolver de novo a que falhou.
+        - [x] **4a — Devolver:** cancelar e devolver num clique (cartão e Pix), devolver um pagamento (inteiro ou em
+              parte, P139), devolver de novo a que falhou. **FEITO (31/10/2026).** `lib/devolucoes-do-painel.ts` (a regra foi
+              para o `CLAUDE.md` → *Membership Gating*), pelas MESMAS operações: **"Cancelar e devolver o dinheiro"** é a
+              operação do reembolso do aluno, separada em "achar a assinatura da conta" + `reembolsarAssinaturaDe` — pelo
+              DONO, no prazo dos 7 dias e com a sessão mantida, como sempre; pelo OPERADOR, sem prazo, a sessão cai como em
+              toda perda de acesso, e a tela manda o valor da PRÉVIA (`POST …/acoes/devolver-tudo/previa`): se o de agora for
+              outro, 409 `ValorMudou` e nada é feito (`POST …/acoes/devolver-tudo`). Encerra e devolve TUDO o que falta voltar
+              (o Pix, na pré-paga); a devolução que falha abre o caso urgente. **"Devolver um pagamento"** em cada cobrança da
+              ficha (`POST …/acoes/devolver-pagamento`): só cobrança de um cliente DA PESSOA da ficha (404), no máximo o que
+              falta voltar (409 `ValorAcimaDoQueFalta`), com a trava e a sincronia da assinatura dela (a pré-paga achada pelo
+              Pix). **A surpresa da prova pela rota, decidida pelo operador no mesmo dia:** devolver a cobrança INTEIRA do mês
+              não tirava o acesso (a regra das aulas libera a assinatura ativa) — o formulário ganhou **"E encerrar a
+              assinatura agora"**: marcada, encerra e só então devolve. **"Devolver de novo"** é o conserto do caso
+              "devolução que falhou" (`sub:` pela operação do reembolso; `pagamento:pi_` pelo que falta daquele pagamento),
+              e o caso fecha. Tudo no registro, com o valor e quem fez. **Na tela:** "Cancelar e devolver o dinheiro" em cada
+              assinatura (menos a que nunca foi paga), "Devolver" em cada cobrança paga (o valor começa no que falta, e o
+              campo lê "99,90"), "Devolver de novo" no caso. Testes: `admin-cobranca-devolucoes.test.ts` (novo, 20),
+              `DevolverTudo.test.tsx` (novo, 5), `DevolverPagamento.test.tsx` (novo, 5), `cobranca-devolucao.test.ts`
+              (novo), a ficha (+2) e "Precisa de você" (+1). **Mutação: 13 de 13 reprovaram.** **Prova pela rota** (servidor
+              local, banco de dev, quatro alunos descartáveis, pagamentos de verdade na área de teste — cartão e Pix): o valor
+              errado recusado e nada mudou; "Cancelar e devolver" encerrou na Stripe, devolveu 9990 de 9990, o espelho
+              cancelado e a sessão caída; a cobrança de outra pessoa, 404; acima do que falta, 409; a parte (1000) e o resto
+              devolvidos com o acesso mantido; "devolver e encerrar" encerrou, devolveu e cortou o acesso; o Pix da pré-paga
+              devolvido; o registro com os valores; o retrato do banco igual antes e depois. *Docs check (context7): Stripe →
+              `/websites/stripe` → a devolução de uma parte, várias vezes, até o total (31/10/2026, depois da compactação da
+              sessão).*
         - [ ] **4b — Tentar cobrar de novo agora** (a atrasada).
         - [ ] **4c — O Pix em conferência** (aceitar, devolver) e **o dinheiro sem assinatura** (devolver, liberar).
         - [ ] **4d — Liberar acesso pago por fora** e **liberar de novo depois da contestação ganha**.

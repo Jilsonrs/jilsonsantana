@@ -53,6 +53,7 @@ import type {
   LinkParaOAluno,
   CodigoDoEmailEnviado,
   EmailCorrigido,
+  PreviaDaDevolucao,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1259,6 +1260,20 @@ export async function adminCorrigirDocumento(quem: { conta: string } | { visitan
 }
 export async function adminEnviarLink(conta: string, link: LinkParaOAluno): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/enviar-link", { conta, link });
+  return data;
+}
+
+/** As devoluções (passo 4a — P114 e P139): a prévia e "Cancelar e devolver o dinheiro"; e devolver um pagamento. */
+export async function adminPreviaDeDevolverTudo(assinatura: number): Promise<PreviaDaDevolucao> {
+  const { data } = await client.post<PreviaDaDevolucao>("/admin/cobranca/acoes/devolver-tudo/previa", { assinatura });
+  return data;
+}
+export async function adminDevolverTudo(assinatura: number, centavos: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/devolver-tudo", { assinatura, centavos });
+  return data;
+}
+export async function adminDevolverPagamento(quem: { conta: string } | { visitante: string }, cobranca: string, centavos: number, encerrar: boolean): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/devolver-pagamento", { ...quem, cobranca, centavos, encerrar });
   return data;
 }
 

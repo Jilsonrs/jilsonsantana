@@ -9,6 +9,7 @@ const DO_CONSERTO: Record<Conserto, { rotulo: string; efeito: string }> = {
   "anular-cobranca": { rotulo: "Anular a cobrança em aberto", efeito: "A cobrança em aberto é anulada: ela não será mais tentada." },
   "soltar-agendamento": { rotulo: "Soltar o agendamento", efeito: "A troca de plano que ficou pela metade é desfeita; a assinatura segue como está." },
   "encerrar-na-hora": { rotulo: "Encerrar agora, sem devolver", efeito: "A assinatura termina agora e a pessoa perde o acesso. Nada é devolvido." },
+  "devolver-de-novo": { rotulo: "Devolver de novo", efeito: "Tenta devolver de novo o que falta voltar. Se falhar outra vez, o caso continua aberto." },
 };
 
 /** O conserto de um caso (etapa 4.7b, passo 3b): o botão, a confirmação dizendo o efeito, e o que a Stripe respondeu. */

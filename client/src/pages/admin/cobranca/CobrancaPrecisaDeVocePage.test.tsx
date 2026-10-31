@@ -154,6 +154,20 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     await waitFor(() => expect(adminListarCasos.mock.calls.length).toBeGreaterThan(pedidosAntes));
   });
 
+  it("a devolução que falhou (passo 4a): 'Devolver de novo', com o efeito — e a falha de novo diz que não saiu", async () => {
+    adminResolverCaso.mockReset().mockResolvedValueOnce({ detalhe: "R$ 99,90 devolvidos de novo" }).mockRejectedValueOnce({ response: { data: { error: "DevolucaoFalhou" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 12, tipo: "DEVOLUCAO_FALHOU", urgente: true, conserto: "devolver-de-novo" })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Devolver de novo" }));
+    expect(screen.getByText("Tenta devolver de novo o que falta voltar. Se falhar outra vez, o caso continua aberto.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect(await screen.findByText("Feito: R$ 99,90 devolvidos de novo.")).toBeTruthy();
+    expect(adminResolverCaso.mock.calls).toEqual([[12, "devolver-de-novo"]]);
+    fireEvent.click(screen.getByRole("button", { name: "Devolver de novo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("A devolução não saiu.");
+  });
+
   it("a assinatura ainda viva: diz por que não anula", async () => {
     adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "AssinaturaViva" } } });
     adminListarCasos.mockResolvedValue(lista([caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, conserto: "anular-cobranca" })]));

@@ -225,8 +225,10 @@ describe("a ficha — as ações (passo 3a)", () => {
     adminCancelar.mockRejectedValue({ response: { data: { error: "Ocupada" } } });
     adminFichaDaCobranca.mockResolvedValue(ficha({ assinaturas: [assinatura, { ...assinatura, id: 9, situacao: "cancelada" }, { ...assinatura, id: 10, situacao: "pre-paga", prePaga: true }] }));
     abrir();
-    // Só a ativa tem botão: a cancelada e a pré-paga, não.
-    expect(await screen.findAllByRole("button", { name: /Cancelar|Desfazer/ })).toHaveLength(1);
+    // Só a ativa tem o cancelar ou o desfazer: a cancelada e a pré-paga, não.
+    expect(await screen.findAllByRole("button", { name: /^(Cancelar no fim do período|Cancelar agora|Desfazer o cancelamento)$/ })).toHaveLength(1);
+    // O "Cancelar e devolver o dinheiro" (passo 4a) vale para as três: a cancelada e a pré-paga também podem ter o que devolver.
+    expect(screen.getAllByRole("button", { name: "Cancelar e devolver o dinheiro" })).toHaveLength(3);
     fireEvent.click(screen.getByRole("button", { name: "Cancelar no fim do período" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
     expect((await screen.findByRole("alert")).textContent).toBe("A assinatura está sendo atualizada agora. Tente de novo em instantes.");
@@ -269,6 +271,19 @@ describe("a ficha — o CPF e o link por e-mail (passo 3b)", () => {
     abrir("?assinatura=7");
     await screen.findByRole("heading", { name: "Assinatura sem conta" });
     expect(screen.queryByLabelText("Corrigir o CPF ou CNPJ")).toBeNull();
+  });
+
+  it("as cobranças pagas têm 'Devolver' (passo 4a), com a conta da ficha; a que falhou, não", async () => {
+    adminFichaDaCobranca.mockResolvedValue(ficha({ cobrancas: [cobranca({ id: "ch_paga" }), cobranca({ id: "ch_falhou", situacao: "falhou", motivoDaFalha: "saldo insuficiente" })] }));
+    abrir();
+    expect(await screen.findAllByRole("button", { name: "Devolver" })).toHaveLength(1);
+  });
+
+  it("a ficha da assinatura sem conta não tem 'Devolver' nas cobranças (o cliente não é de uma pessoa da ficha)", async () => {
+    adminFichaDaCobranca.mockResolvedValue(ficha({ conta: null, temAcesso: false, cobrancas: [cobranca({ id: "ch_paga" })] }));
+    abrir("?assinatura=7");
+    await screen.findByRole("heading", { name: "Assinatura sem conta" });
+    expect(screen.queryByRole("button", { name: "Devolver" })).toBeNull();
   });
 
   it("com a conta, a ficha tem 'Corrigir o e-mail' (passo 3c)", async () => {

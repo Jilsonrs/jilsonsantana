@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, corrigirEmailSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
+import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, corrigirEmailSchema, devolverPagamentoSchema, devolverTudoSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
 import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
@@ -10,6 +10,7 @@ import { limiteDoCodigoDoEmailNovo } from "../lib/limite-de-tentativas.js";
 import { QuemFez } from "../lib/prisma.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
 import { corrigirEmailComCodigo, pedirCodigoDoEmailNovo, type NaoCorrigido } from "../lib/correcao-de-email.js";
+import { devolverDeNovoPeloOperador, devolverPagamentoPeloOperador, devolverTudoPeloOperador, previaDeDevolverTudo } from "../lib/devolucoes-do-painel.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 
 // O PAINEL DA COBRANÇA — A FICHA DO ALUNO E O "ACHAR PELO CÓDIGO" (Fase 4, etapa 4.7b, passo 1c). Só admin, só
@@ -79,6 +80,9 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "nada-a-fazer": [409, "NadaAFazer"],
   "stripe-nao-conhece": [409, "StripeNaoConhece"],
   "assinatura-viva": [409, "AssinaturaViva"],
+  "valor-mudou": [409, "ValorMudou"],
+  "valor-acima": [409, "ValorAcimaDoQueFalta"],
+  "devolucao-falhou": [502, "DevolucaoFalhou"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {
@@ -149,7 +153,37 @@ router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res)
   if (id === null) return;
   const corpo = validate(resolverCasoSchema, req.body, res);
   if (corpo === null) return;
-  responder(res, await resolverCasoPeloOperador(id, corpo.acao, por));
+  // "Devolver de novo" mexe com dinheiro: mora com as devoluções (passo 4a).
+  responder(res, corpo.acao === "devolver-de-novo" ? await devolverDeNovoPeloOperador(id, por) : await resolverCasoPeloOperador(id, corpo.acao, por));
+});
+
+// AS DEVOLUÇÕES (bloco 4, passo 4a — P114 e P139).
+// POST /api/admin/cobranca/acoes/devolver-tudo/previa — { assinatura }: quanto "Cancelar e devolver o dinheiro" devolve.
+router.post("/admin/cobranca/acoes/devolver-tudo/previa", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await previaDeDevolverTudo(corpo.assinatura));
+});
+
+// POST /api/admin/cobranca/acoes/devolver-tudo — { assinatura, centavos }: encerra e devolve, se o valor ainda for o mostrado.
+router.post("/admin/cobranca/acoes/devolver-tudo", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(devolverTudoSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await devolverTudoPeloOperador(corpo.assinatura, corpo.centavos, por));
+});
+
+// POST /api/admin/cobranca/acoes/devolver-pagamento — { conta | visitante, cobranca, centavos, encerrar? }: uma cobrança, inteira ou em parte.
+router.post("/admin/cobranca/acoes/devolver-pagamento", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(devolverPagamentoSchema, req.body, res);
+  if (corpo === null) return;
+  const quem = "conta" in corpo ? { conta: corpo.conta } : { visitante: corpo.visitante };
+  responder(res, await devolverPagamentoPeloOperador(quem, corpo.cobranca, corpo.centavos, corpo.encerrar ?? false, por));
 });
 
 // POST /api/admin/cobranca/acoes/corrigir-documento — { conta | visitante, documento }: o CPF ou CNPJ (passo 3b).

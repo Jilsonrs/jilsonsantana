@@ -188,6 +188,48 @@ export async function devolver(pagamento: Pagamento, dono: DonoDaDevolucao): Pro
   }
 }
 
+/** Uma cobrança que o painel devolve (passo 4a): de quem é, quanto foi e quanto já voltou. */
+export type CobrancaParaDevolver = { id: string; cliente: string | null; pagamentoId: string | null; centavos: number; devolvido: number; moeda: string; paga: boolean };
+
+/** A COBRANÇA, lida na Stripe agora — ou nenhuma, se a Stripe não a conhece. */
+export async function lerCobranca(cobrancaId: string): Promise<CobrancaParaDevolver | null> {
+  try {
+    const c = await stripe().charges.retrieve(cobrancaId);
+    return {
+      id: c.id,
+      cliente: typeof c.customer === "string" ? c.customer : (c.customer?.id ?? null),
+      pagamentoId: typeof c.payment_intent === "string" ? c.payment_intent : (c.payment_intent?.id ?? null),
+      centavos: c.amount,
+      devolvido: c.amount_refunded,
+      moeda: c.currency,
+      paga: c.paid && c.status === "succeeded",
+    };
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") return null;
+    throw erroSemMensagem(erro, "a leitura da cobrança");
+  }
+}
+
+/**
+ * DEVOLVE UMA PARTE (ou tudo o que falta) de uma cobrança — o "Devolver um pagamento" do painel (passo 4a, P139). A
+ * chave de repetição leva a cobrança, o que já tinha voltado e o valor: o clique duplo não devolve duas vezes, e a
+ * segunda parte, depois da primeira, é outro pedido. A Stripe recusa devolver mais do que falta.
+ */
+export async function devolverParte(cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }, agora: Date = new Date()): Promise<void> {
+  const metadata: Record<string, string> = { para: "painel", operador: dono.operador };
+  if (dono.userId) metadata.userId = dono.userId;
+  if (dono.assinaturaId) metadata.assinatura = dono.assinaturaId;
+  try {
+    const devolucao = await stripe().refunds.create(
+      { charge: cobranca.id, amount: centavos, reason: "requested_by_customer", metadata },
+      { idempotencyKey: `painel-devolucao-${cobranca.id}-${cobranca.devolvido}-${centavos}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}` },
+    );
+    if (devolucao.status === "failed" || devolucao.status === "canceled") throw new Error(`[stripe] a devolução nasceu ${devolucao.status}`);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a devolução da cobrança");
+  }
+}
+
 /**
  * De que ASSINATURA é este pagamento — para o aviso de dinheiro devolvido, que só traz a cobrança.
  * O caminho é pagamento → fatura → assinatura. Nenhuma: o pagamento não é de fatura de assinatura.

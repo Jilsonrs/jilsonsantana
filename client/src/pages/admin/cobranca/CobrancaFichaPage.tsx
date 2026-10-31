@@ -12,6 +12,7 @@ import { ConferirDaFicha } from "@/components/admin/cobranca/ConferirDaFicha";
 import { LinksParaOAluno } from "@/components/admin/cobranca/LinksParaOAluno";
 import { CorrigirDocumento } from "@/components/admin/cobranca/CorrigirDocumento";
 import { CorrigirEmail } from "@/components/admin/cobranca/CorrigirEmail";
+import { DevolverTudo } from "@/components/admin/cobranca/DevolverTudo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
@@ -99,6 +100,7 @@ export function CobrancaFichaPage() {
               {assinaturas.map((assinatura) => (
                 <LinhaDaAssinatura key={assinatura.id} assinatura={assinatura}>
                   <AcoesDaAssinatura assinatura={assinatura} quem={titulo} />
+                  <DevolverTudo assinatura={assinatura} quem={titulo} />
                 </LinhaDaAssinatura>
               ))}
             </ul>
@@ -116,7 +118,7 @@ export function CobrancaFichaPage() {
           </PageSection>
         ) : null}
         <PageSection title="Cobranças">
-          <CobrancasDaFicha cobrancas={ficha.data.cobrancas} maisCobrancas={ficha.data.maisCobrancas} stripeIndisponivel={stripeIndisponivel} />
+          <CobrancasDaFicha cobrancas={ficha.data.cobrancas} maisCobrancas={ficha.data.maisCobrancas} stripeIndisponivel={stripeIndisponivel} quem={ficha.data.conta ? { conta: ficha.data.conta.id } : "visitante" in quem ? { visitante: quem.visitante } : null} />
         </PageSection>
         <PageSection title="Cartão, CPF e e-mails">
           <div className="space-y-6">

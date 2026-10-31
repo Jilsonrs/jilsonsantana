@@ -22,6 +22,12 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
       return "A assinatura ainda está viva: anular a cobrança dela a reativaria sem pagamento. Encerre a assinatura antes.";
     case "DocumentoInvalido":
       return "Este CPF ou CNPJ não é válido.";
+    case "ValorMudou":
+      return "O valor mudou desde que você abriu: confira de novo.";
+    case "ValorAcimaDoQueFalta":
+      return "O valor passa do que falta voltar desta cobrança.";
+    case "DevolucaoFalhou":
+      return "A devolução não saiu. Tente de novo; no \"Cancelar e devolver\", a assinatura já acabou e o caso está em Precisa de você.";
     case "ContaDeAdmin":
       return "A conta de um admin não se corrige por aqui.";
     case "MesmoEmail":
