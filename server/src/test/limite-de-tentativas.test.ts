@@ -176,9 +176,9 @@ describe("as outras ações e as leituras", () => {
     }
   });
 
-  it("as leituras que vão à Stripe (os planos, a minha assinatura, a troca de plano, as minhas cobranças): 60 a cada 15 minutos", async () => {
+  it("as leituras que vão à Stripe (os planos, a minha assinatura, a troca de plano, as minhas cobranças, o recibo): 60 a cada 15 minutos", async () => {
     expect(LIMITES.leitura.conta.porJanela).toBe(60);
-    for (const caminho of ["/billing/planos", "/billing/minha-assinatura", "/billing/minha-assinatura/plano", "/billing/minhas-cobrancas"]) {
+    for (const caminho of ["/billing/planos", "/billing/minha-assinatura", "/billing/minha-assinatura/plano", "/billing/minhas-cobrancas", "/billing/minhas-cobrancas/0123456789abcdef"]) {
       expect(await status(61, () => pedir("get", caminho, member)), caminho).toEqual([...Array(60).fill(503), 429]);
     }
   });

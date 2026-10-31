@@ -347,3 +347,22 @@ export type MinhaCobranca = {
 };
 /** Resposta de `GET /api/billing/minhas-cobrancas`: da mais nova à mais antiga. */
 export type MinhasCobrancas = { cobrancas: MinhaCobranca[] };
+
+/**
+ * O RECIBO DA ESCOLA (Fase 4, etapa 4.7b, passo 6a — decisões do operador, 31/10/2026: no lugar do recibo da Stripe, e com os
+ * itens que ele escolheu). Uma cobrança que passou, com o que a Stripe sabe dela: o plano, o período pago, o preço, o desconto
+ * (com o código) e o crédito da troca de plano. Nenhum código da Stripe e nenhum CPF. Resposta de
+ * `GET /api/billing/minhas-cobrancas/:chave`.
+ */
+export type ReciboDaEscola = Omit<MinhaCobranca, "chave"> & {
+  /** O número do recibo, para a pessoa e o suporte: o começo da chave, "81DD-3FD1". */
+  numero: string;
+  plano: Plano | null;
+  /** O período pago, quando se sabe. */
+  periodo: { de: string; ate: string } | null;
+  /**
+   * O preço cheio e o que saiu dele — só quando a conta fecha com o total pago (`centavos`). Quando não fecha, nada: o recibo
+   * mostra só o total, e nunca uma conta errada.
+   */
+  detalhe: { preco: number; descontos: { codigo: string | null; centavos: number }[]; credito: number } | null;
+};

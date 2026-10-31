@@ -35,16 +35,17 @@ export function paraMinhaCobranca(cobranca: Stripe.Charge): MinhaCobranca | null
   };
 }
 
-/** As cobranças que passaram, da conta, da mais nova à mais antiga. */
-export async function minhasCobrancas(contaId: string): Promise<MinhasCobrancas> {
+/** As cobranças dos clientes da conta, como a Stripe as dá — as que passaram e as que não. */
+export async function cobrancasDaConta(contaId: string): Promise<Stripe.Charge[]> {
   const assinaturas = await prisma.subscription.findMany({ where: { ownerUserId: contaId }, select: { stripeCustomerId: true } });
   const clientes = await clientesDaConta(contaId, assinaturas.map((a) => a.stripeCustomerId));
-  const cobrancas: MinhaCobranca[] = [];
-  for (const cliente of clientes) {
-    for (const cobranca of await cobrancasDoCliente(cliente)) {
-      const minha = paraMinhaCobranca(cobranca);
-      if (minha) cobrancas.push(minha);
-    }
-  }
+  const cobrancas: Stripe.Charge[] = [];
+  for (const cliente of clientes) cobrancas.push(...(await cobrancasDoCliente(cliente)));
+  return cobrancas;
+}
+
+/** As cobranças que passaram, da conta, da mais nova à mais antiga. */
+export async function minhasCobrancas(contaId: string): Promise<MinhasCobrancas> {
+  const cobrancas = (await cobrancasDaConta(contaId)).map(paraMinhaCobranca).filter((c): c is MinhaCobranca => c !== null);
   return { cobrancas: cobrancas.sort((a, b) => b.em.localeCompare(a.em)) };
 }

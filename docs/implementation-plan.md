@@ -6857,7 +6857,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               CNPJ da matriz que sai dele (a confirmar), o site e o e-mail; quem assina, o que foi pago, a data, o valor, a
               forma e a situação; "Imprimir ou salvar em PDF". Testes: `ReciboPage.test.tsx` (novo, 6), a lista (revista),
               as rotas (+3: sem o menu, com o menu na conta, sem login vai ao login) e `minhas-cobrancas.test.ts` (revisto).
-              **Mutação: 9 de 9 reprovaram.** Falta: as fotos, publicar.
+              **Mutação: 9 de 9 reprovaram.**
+              **Os ajustes do operador (31/10/2026), à vista das fotos, do recibo da Mosh e da Udemy e da pesquisa do agente
+              (o art. 320 do Código Civil; a nota fiscal do MEI só é obrigatória para aluno empresa, ou a pedido):** o recibo
+              COMPLETO, sem o endereço da escola — o número, a data, a escola (nome empresarial, CNPJ e site), quem assina
+              (o nome), o plano e o período pago, o preço, o desconto com o código, o total pago, a forma, a situação, as
+              dúvidas (com o e-mail de suporte) e "Imprimir ou salvar em PDF"; saíram, por escolha dele, o e-mail de
+              suporte no bloco da escola (já está nas dúvidas) e o e-mail de quem assina. E o **RECIBO POR E-MAIL em todo
+              pagamento, já no bloco 6** (entre isso e deixá-lo para depois da publicação, que o agente recomendou): na
+              renovação, na troca de plano e no Pix, "Recebemos seu pagamento" com o botão "Ver recibo"; ao assinar, o
+              botão entra na confirmação que já sai.
+          - [x] **O recibo completo, no servidor** — `GET /api/billing/minhas-cobrancas/:chave` (`lib/recibo.ts`,
+                `lib/stripe-recibo.ts`): a cobrança achada pela chave, só entre as da conta da sessão (a de outra conta, a
+                que não passou e a que não existe: 404, iguais); do cartão, a fatura — o plano e o período da linha do
+                preço, o preço cheio, o desconto com o código e o crédito da troca de plano; do Pix, o plano da marca e o
+                período da assinatura que ele virou. O preço e o que saiu dele só quando a conta fecha com o total pago.
+                Nenhum código da Stripe e nenhum CPF na resposta. Docs check (context7): Stripe → `/websites/stripe` → o
+                `discounts` da fatura se expande (com o `promotion_code`), o `total_discount_amounts` traz o valor por
+                desconto, e a linha traz `period` e `pricing.price_details.price` (1 consulta). Testes: `recibo.test.ts`
+                (novo, 6) e o limite das leituras (+1 rota). **Mutação: 9 de 9 reprovaram.**
+          - [ ] **A tela do recibo completo**, com os itens escolhidos (fotos para ele aprovar).
+          - [ ] **O recibo por e-mail** em todo pagamento (o e-mail de verdade, no Yahoo, para ele aprovar).
+          - [ ] **Publicar o bloco 6** (com a ordem dele).
       - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA
             CONTINUAR*. **FEITO (31/10/2026):** o roteiro, passo a passo pelo painel (os casos de *Precisa de você* e o
