@@ -348,3 +348,17 @@ export type CorrigirEmailInput = z.infer<typeof corrigirEmailSchema>;
 export type CodigoDoEmailEnviado = { minutos: number };
 /** A troca valeu: o e-mail da conta agora. */
 export type EmailCorrigido = { email: string };
+
+/**
+ * OS NÚMEROS DO MÊS (bloco 6, passo 6c — decisão do operador, 31/10/2026, P143): a faixa no topo da Cobrança. O mês é o de
+ * Brasília (`desde`, o começo dele). `entrou` e `devolvido` em centavos, da Stripe — vazios quando ela não respondeu.
+ */
+export type NumerosDoMes = {
+  desde: string;
+  ativos: { mensal: number; anual: number; prePagas: number; total: number };
+  novos: number;
+  encerradas: number;
+  atrasados: number;
+  entrou: number | null;
+  devolvido: number | null;
+};

@@ -14,6 +14,8 @@ vi.mock("@/lib/api", () => ({
   adminFecharCaso: (id: number, nota: string) => adminFecharCaso(id, nota),
   adminReenviarEmail: (id: number) => adminReenviarEmail(id),
   adminResolverCaso: (id: number, acao: string) => adminResolverCaso(id, acao),
+  // A faixa dos números do mês (passo 6c) tem teste próprio: aqui ela fica carregando.
+  adminNumerosDoMes: () => new Promise(() => {}),
 }));
 
 import { CobrancaPrecisaDeVocePage } from "./CobrancaPrecisaDeVocePage";

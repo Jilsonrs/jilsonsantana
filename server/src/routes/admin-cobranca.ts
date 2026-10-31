@@ -13,6 +13,7 @@ import { corrigirEmailComCodigo, pedirCodigoDoEmailNovo, type NaoCorrigido } fro
 import { devolverDeNovoPeloOperador, devolverEstePagamentoPeloOperador, devolverPagamentoPeloOperador, devolverPixPeloOperador, devolverTudoPeloOperador, previaDeDevolverTudo } from "../lib/devolucoes-do-painel.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 import { enviarProvasPeloOperador, previaDasProvas } from "../lib/provas-da-contestacao.js";
+import { numerosDoMes } from "../lib/numeros-do-mes.js";
 import type { ConsertoDoCaso } from "@jilson/core";
 import type { AcaoFeita } from "@jilson/core";
 import type { PorQuem } from "../lib/acoes-da-cobranca.js";
@@ -221,6 +222,11 @@ router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res)
   const corpo = validate(resolverCasoSchema, req.body, res);
   if (corpo === null) return;
   responder(res, await resolverConserto(id, corpo.acao, por));
+});
+
+// GET /api/admin/cobranca/numeros — os números do mês, para a faixa no topo da Cobrança (passo 6c, P143).
+router.get("/admin/cobranca/numeros", requireAdmin, async (_req, res) => {
+  res.json(await numerosDoMes());
 });
 
 // GET /api/admin/cobranca/casos/:id/provas — a prévia das provas da contestação: o texto exato que vai ao banco (passo 5b).

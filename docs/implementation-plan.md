@@ -6796,7 +6796,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         - [ ] **6a — Minhas cobranças e os recibos**, na tela do aluno (P144).
         - **6b — SAIU** *(P138, 31/10/2026: sem botão de pedir reembolso na tela do aluno; o pedido vem pelo suporte e,
               depois, pelo JilsonAI)*. O número não se reaproveita.
-        - [ ] **6c — Os números do mês** (P143).
+        - [x] **6c — Os números do mês** (P143). **FEITO (31/10/2026):** a faixa no topo da Cobrança (a tela "Precisa de você",
+              que é onde a Cobrança abre — `NumerosDoMes`), de `GET /api/admin/cobranca/numeros` (`lib/numeros-do-mes.ts`): os
+              assinantes agora, pela regra do gate, divididos em mensal, anual e "Pix e pagas por fora" (e "outros", se uma
+              assinatura não tem plano conhecido); os novos e os encerrados desde o começo do mês de Brasília; os atrasados
+              agora — só assinaturas com conta e do modo da chave da Stripe; o que entrou (as cobranças pagas) e o que foi
+              devolvido, lidos na Stripe (`lib/stripe-numeros.ts`) — sem ela, "—" e o resto aparece. Testes:
+              `admin-cobranca-numeros.test.ts` (novo, 4) e `NumerosDoMes.test.tsx` (novo, 5). **Mutação: 7 de 7 reprovaram.**
+              Conferido na Stripe de teste, só lendo: as duas somas respondem. *Docs check (context7): Stripe → já consultado
+              nesta sessão (a lista de cobranças e de devoluções com `created` e a paginação da biblioteca) — sem consulta nova.*
         - [ ] **6d — Os códigos promocionais no admin** (P142).
         - [x] **6e — "Encerrar agora" na assinatura paga por fora** (P149 — decisão do operador, 31/10/2026: "Sim, com
               confirmação"). **FEITO (31/10/2026):** `encerrarPagaPorForaPeloOperador` (`POST

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import { CartaoDoCaso } from "@/components/admin/cobranca/CartaoDoCaso";
+import { NumerosDoMes } from "@/components/admin/cobranca/NumerosDoMes";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 
@@ -56,6 +57,9 @@ export function CobrancaPrecisaDeVocePage() {
   return (
     <PageContainer>
       <PageHeader title="Precisa de você" description="O que precisa de você na cobrança. O que a escola resolve sozinha não aparece aqui." />
+      <div className="mb-8">
+        <NumerosDoMes />
+      </div>
       <PageSection title={abertos === undefined ? "Casos" : `${abertos} ${abertos === 1 ? "caso aberto" : "casos abertos"}${urgentes ? ` · ${urgentes} ${urgentes === 1 ? "urgente" : "urgentes"}` : ""}`}>
         <div className="space-y-6">
           <div role="group" aria-label="Abertos ou fechados" className="flex gap-2">
