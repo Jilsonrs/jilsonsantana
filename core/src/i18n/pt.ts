@@ -368,6 +368,15 @@ export const pt = {
       // O LINK QUE O OPERADOR MANDA DO PAINEL DA COBRANÇA (etapa 4.7b, passo 3b): trocar o cartão, reativar ou pagar a
       // atrasada com Pix — o botão leva a entrar e seguir para a tela certa. RASCUNHO do agente: o operador aprova vendo
       // o e-mail de prova, no fechamento do bloco 3.
+      // O CÓDIGO PARA CORRIGIR O E-MAIL da conta (etapa 4.7b, passo 3c — decisão do operador P121: o admin corrige, com o
+      // código no e-mail novo). Vai ao e-mail NOVO, que ninguém provou ainda: só texto fixo. Depois do código, sai a
+      // validade de `codigo.validade`. RASCUNHO DO AGENTE: vai ao operador no fechamento do bloco 3.
+      codigoDoEmailNovo: {
+        assunto: "Seu código para confirmar o e-mail: {codigo}",
+        titulo: "Confirme o seu e-mail",
+        texto: "Recebemos um pedido para corrigir o e-mail da sua conta na escola para este endereço. Passe este código para quem está atendendo você:",
+        naoFoiVoce: "Se não foi você que pediu, ignore este e-mail: nada muda."
+      },
       linkDoPainel: {
         trocarCartao: { assunto: "Troque o cartão da sua assinatura", titulo: "Troque o cartão", texto: "Use o botão abaixo para trocar o cartão da sua assinatura. Se houver uma cobrança atrasada, ela é paga com o cartão novo.", botao: "Trocar o cartão" },
         reativar: { assunto: "Reative a sua assinatura", titulo: "Volte a estudar", texto: "Use o botão abaixo para reativar a sua assinatura. Você continua de onde parou.", botao: "Reativar assinatura" },

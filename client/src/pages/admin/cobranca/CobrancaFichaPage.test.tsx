@@ -271,6 +271,18 @@ describe("a ficha — o CPF e o link por e-mail (passo 3b)", () => {
     expect(screen.queryByLabelText("Corrigir o CPF ou CNPJ")).toBeNull();
   });
 
+  it("com a conta, a ficha tem 'Corrigir o e-mail' (passo 3c)", async () => {
+    abrir();
+    expect(await screen.findByRole("button", { name: "Corrigir o e-mail" })).toBeTruthy();
+  });
+
+  it("a ficha da assinatura sem conta não tem 'Corrigir o e-mail'", async () => {
+    adminFichaDaCobranca.mockResolvedValue(ficha({ conta: null, temAcesso: false }));
+    abrir("?assinatura=7");
+    await screen.findByRole("heading", { name: "Assinatura sem conta" });
+    expect(screen.queryByRole("button", { name: "Corrigir o e-mail" })).toBeNull();
+  });
+
   it("enviar o link por e-mail (só com conta): manda a conta e o link, e diz o que foi feito", async () => {
     adminEnviarLink.mockReset().mockResolvedValue({ detalhe: "o link (trocarCartao) foi enviado" });
     abrir();

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { MotivoDoCancelamento } from "../constants/billing.js";
+import { enderecoDeEmailSchema } from "./billing.js";
 
 // O PAINEL DA COBRANÇA DO ADMIN (Fase 4, etapa 4.7b — decisões do operador, 31/10/2026). Só ADMIN lê e usa estes
 // formatos; o aluno nunca os vê. A ASSINATURA vai ao navegador pelo id do ESPELHO (o nosso banco), nunca pelo da
@@ -278,3 +279,14 @@ export const corrigirDocumentoSchema = z.union([
 export const LINKS_PARA_O_ALUNO = ["trocarCartao", "reativar", "pagarComPix"] as const;
 export type LinkParaOAluno = (typeof LINKS_PARA_O_ALUNO)[number];
 export const enviarLinkSchema = z.object({ conta: z.string().min(1).max(100), link: z.enum(LINKS_PARA_O_ALUNO) });
+
+/** CORRIGIR O E-MAIL (passo 3c — decisão do operador P121): o e-mail certo da conta, para onde o código vai. */
+export const pedirCodigoDoEmailSchema = z.object({ conta: z.string().min(1).max(100), email: enderecoDeEmailSchema }).strict();
+export type PedirCodigoDoEmailInput = z.infer<typeof pedirCodigoDoEmailSchema>;
+/** E o código de 6 números que a pessoa recebeu nele: só com ele a troca vale. */
+export const corrigirEmailSchema = z.object({ conta: z.string().min(1).max(100), email: enderecoDeEmailSchema, codigo: z.string().trim().regex(/^\d{6}$/) }).strict();
+export type CorrigirEmailInput = z.infer<typeof corrigirEmailSchema>;
+/** O código saiu: vale por tantos minutos. */
+export type CodigoDoEmailEnviado = { minutos: number };
+/** A troca valeu: o e-mail da conta agora. */
+export type EmailCorrigido = { email: string };

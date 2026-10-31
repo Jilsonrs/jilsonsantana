@@ -22,6 +22,18 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
       return "A assinatura ainda está viva: anular a cobrança dela a reativaria sem pagamento. Encerre a assinatura antes.";
     case "DocumentoInvalido":
       return "Este CPF ou CNPJ não é válido.";
+    case "MesmoEmail":
+      return "Este já é o e-mail da conta.";
+    case "EmailDeOutraConta":
+      return "Este e-mail já é de outra conta.";
+    case "EmailNaoSaiu":
+      return "O e-mail com o código não saiu. Tente de novo.";
+    case "CodigoErrado":
+      return "Código errado. Confira com a pessoa e tente de novo.";
+    case "CodigoVencido":
+      return "O código venceu ou foi tentado demais. Envie outro.";
+    case "PagamentoNoEmailNovo":
+      return "Este e-mail tem uma tentativa de assinatura com pagamento. Confira em Tentativas antes de trocar.";
     default:
       return "Não foi possível. Tente de novo.";
   }

@@ -6547,7 +6547,30 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               (o novo entra, o antigo sai). *Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026, 3ª
               consulta da sessão: os números fiscais do cliente — criar, listar, apagar ("to update a tax ID, delete the
               old ID and create another one").*
-        - [ ] **3c — Corrigir o e-mail** (P121) — sozinho no passo: é a porta de tomar conta.
+        - [x] **3c — Corrigir o e-mail** (P121) — sozinho no passo: é a porta de tomar conta. **FEITO (31/10/2026).** Na
+              ficha da conta, **"Corrigir o e-mail"**: o admin digita o e-mail certo → um código de 6 números vai PARA ELE
+              (`POST /api/admin/cobranca/acoes/corrigir-email/codigo`; os mesmos 10 minutos e 3 tentativas do código de
+              entrar; o pedido fica em `email_correction` — migration `20261031220000_correcao_de_email`, com RLS — só com o
+              resumo do código) → o código que a pessoa recebeu → a troca (`POST …/acoes/corrigir-email`). **Quem confirma é
+              o admin, com o código que a pessoa passa a ele** (o atendimento já é com ela — leitura do agente para "com o
+              código no e-mail novo"). As travas: o e-mail novo não pode ser de outra conta (no pedido, e de novo com as
+              travas da conta e dos dois e-mails); a troca encerra todas as sessões **e apaga a senha** (trava de
+              engenharia do agente, da mesma família das sessões: quem leu o e-mail errado pode ter entrado por ele e criado
+              uma — a pessoa entra pelo código no e-mail novo, que fica confirmado); a ficha do visitante e os clientes da
+              Stripe passam ao e-mail novo (a Stripe antes do banco: se ela falha, nada muda); o registro diz quem pediu e
+              quem trocou, sem os e-mails. **A tentativa sem pagamento que o e-mail novo tenha deixado** (a pessoa tentou de
+              novo com o e-mail certo) sai antes, pela regra da limpeza dos 7 dias (`apagarTentativaDoEmail`, que divide com
+              a limpeza o trecho que apaga o cliente na Stripe); com pagamento, 409 `PagamentoNoEmailNovo`, e nada muda. O
+              código vai a um e-mail sem conta: a segunda exceção da regra do `para` (`CLAUDE.md`), decidida pelo operador
+              (P121), pedida só pelo admin e só com texto fixo — **o texto (`app.email.codigoDoEmailNovo`) é rascunho do
+              agente: vai ao operador no fechamento do bloco 3.** Testes: `admin-cobranca-email.test.ts` (novo, 10 —
+              inclusive a pessoa entrando pelo código no e-mail novo, e a senha antiga recusada), `CorrigirEmail.test.tsx`
+              (novo, 5) e a ficha (+2). **Mutação: 13 de 13 reprovaram.** **Provado na área de teste da Stripe:** a troca do
+              e-mail do cliente (e repetir dá no mesmo). **Banco de dev:** `migrate deploy`, *No difference detected*,
+              nenhuma tabela sem RLS. *Docs check (context7): Better Auth → `/better-auth/better-auth` → a conta de senha
+              guarda o id da pessoa, não o e-mail; a troca de e-mail do recurso de código exige a sessão da própria pessoa (não
+              serve ao admin) — e, no código instalado (1.7.13), as rotinas de código só valem para e-mail que já tem conta.
+              Stripe → `/websites/stripe` → a fatura finalizada guarda o e-mail de quando foi finalizada.*
         - [ ] **Fechamento do bloco 3.**
       - [ ] **BLOCO 4 — AS AÇÕES COM DINHEIRO** (prova pela rota em cada passo)
         - [ ] **4a — Devolver:** cancelar e devolver num clique (cartão e Pix), devolver um pagamento (inteiro ou em

@@ -11,6 +11,7 @@ import { AcoesDaAssinatura } from "@/components/admin/cobranca/AcoesDaAssinatura
 import { ConferirDaFicha } from "@/components/admin/cobranca/ConferirDaFicha";
 import { LinksParaOAluno } from "@/components/admin/cobranca/LinksParaOAluno";
 import { CorrigirDocumento } from "@/components/admin/cobranca/CorrigirDocumento";
+import { CorrigirEmail } from "@/components/admin/cobranca/CorrigirEmail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
@@ -121,6 +122,7 @@ export function CobrancaFichaPage() {
           <div className="space-y-6">
             <ResumoDaFicha ficha={ficha.data} />
             {"conta" in quem || "visitante" in quem ? <CorrigirDocumento quem={"conta" in quem ? { conta: quem.conta } : { visitante: quem.visitante }} /> : null}
+            {ficha.data.conta ? <CorrigirEmail conta={ficha.data.conta.id} /> : null}
           </div>
         </PageSection>
         <PageSection title="Links para o aluno" description="Copie e mande ao aluno: ele entra e cai na tela certa.">

@@ -432,6 +432,19 @@ export async function trocarNumeroFiscal(clienteId: string, documento: Documento
   }
 }
 
+/**
+ * TROCA o e-mail do cliente na Stripe (a correção do e-mail pelo admin, etapa 4.7b, passo 3c). `[FATO — context7
+ * /websites/stripe, 31/10/2026]` a fatura já finalizada guarda o e-mail de quando foi finalizada; as próximas levam o
+ * novo. Repetir dá no mesmo. O e-mail nunca vai para o registro.
+ */
+export async function trocarEmailDoCliente(clienteId: string, email: string): Promise<void> {
+  try {
+    await stripe().customers.update(clienteId, { email });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a troca do e-mail do cliente");
+  }
+}
+
 /** Um cliente novo na Stripe para a ficha do visitante, com o e-mail e o número fiscal. */
 export async function criarClienteDoVisitante(cliente: ClienteDoVisitante): Promise<{ id: string; livemode: boolean }> {
   try {

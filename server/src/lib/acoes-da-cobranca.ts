@@ -28,7 +28,7 @@ export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer
 export type Resultado<T> = { resultado: "ok"; feito: T } | { resultado: NaoFeita };
 
 /** Grava a ação no registro: quem fez, em quem e o que a Stripe respondeu (sem dado pessoal). */
-async function registrar(por: PorQuem, acao: string, alvo: { userId?: string | null; assinatura?: string | null; cliente?: string | null }, detalhe: string): Promise<void> {
+export async function registrar(por: PorQuem, acao: string, alvo: { userId?: string | null; assinatura?: string | null; cliente?: string | null }, detalhe: string): Promise<void> {
   const conta = alvo.userId ? await prisma.user.findUnique({ where: { id: alvo.userId }, select: { id: true } }) : null;
   await prisma.billingLog.create({ data: { who: por.quem, actorUserId: por.conta, action: acao, userId: conta?.id ?? null, stripeSubscriptionId: alvo.assinatura ?? null, stripeCustomerId: alvo.cliente ?? null, detail: detalhe } });
 }

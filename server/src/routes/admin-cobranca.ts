@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema, resolverCasoSchema } from "@jilson/core";
+import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, corrigirEmailSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
 import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
@@ -8,6 +8,7 @@ import { cancelarPeloOperador, conferirPeloOperador, corrigirDocumentoPeloOperad
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { QuemFez } from "../lib/prisma.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
+import { corrigirEmailComCodigo, pedirCodigoDoEmailNovo, type NaoCorrigido } from "../lib/correcao-de-email.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 
 // O PAINEL DA COBRANÇA — A FICHA DO ALUNO E O "ACHAR PELO CÓDIGO" (Fase 4, etapa 4.7b, passo 1c). Só admin, só
@@ -165,6 +166,44 @@ router.post("/admin/cobranca/acoes/enviar-link", requireAdmin, async (req, res) 
   const corpo = validate(enviarLinkSchema, req.body, res);
   if (corpo === null) return;
   responder(res, await enviarLinkPeloOperador(corpo.conta, corpo.link, por));
+});
+
+// CORRIGIR O E-MAIL (passo 3c — P121): o que não deu, com nome.
+const STATUS_DA_CORRECAO: Record<NaoCorrigido, [number, string]> = {
+  "nao-encontrada": [404, "NaoEncontrada"],
+  "mesmo-email": [409, "MesmoEmail"],
+  "email-de-outra-conta": [409, "EmailDeOutraConta"],
+  "email-nao-saiu": [502, "EmailNaoSaiu"],
+  "sem-pedido": [409, "CodigoVencido"],
+  "codigo-errado": [409, "CodigoErrado"],
+  "pagamento-no-email-novo": [409, "PagamentoNoEmailNovo"],
+  ocupada: [409, "Ocupada"],
+};
+function responderACorrecao<T>(res: Response, resultado: { resultado: "ok"; feito: T } | { resultado: NaoCorrigido }): void {
+  if (resultado.resultado === "ok") {
+    res.json(resultado.feito);
+    return;
+  }
+  const [status, error] = STATUS_DA_CORRECAO[resultado.resultado];
+  res.status(status).json({ error });
+}
+
+// POST /api/admin/cobranca/acoes/corrigir-email/codigo — { conta, email }: o código vai ao e-mail certo (passo 3c).
+router.post("/admin/cobranca/acoes/corrigir-email/codigo", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(pedirCodigoDoEmailSchema, req.body, res);
+  if (corpo === null) return;
+  responderACorrecao(res, await pedirCodigoDoEmailNovo(corpo.conta, corpo.email, por));
+});
+
+// POST /api/admin/cobranca/acoes/corrigir-email — { conta, email, codigo }: a troca, só com o código (passo 3c).
+router.post("/admin/cobranca/acoes/corrigir-email", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(corrigirEmailSchema, req.body, res);
+  if (corpo === null) return;
+  responderACorrecao(res, await corrigirEmailComCodigo(corpo.conta, corpo.email, corpo.codigo, por));
 });
 
 // GET /api/admin/cobranca/achar?codigo=<sub_|cus_|pi_|ch_|in_|du_…> — de quem é o código que veio num alerta.

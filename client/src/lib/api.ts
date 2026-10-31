@@ -51,6 +51,8 @@ import type {
   ConferenciaPelaFicha,
   ConsertoDoCaso,
   LinkParaOAluno,
+  CodigoDoEmailEnviado,
+  EmailCorrigido,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1257,6 +1259,16 @@ export async function adminCorrigirDocumento(quem: { conta: string } | { visitan
 }
 export async function adminEnviarLink(conta: string, link: LinkParaOAluno): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/enviar-link", { conta, link });
+  return data;
+}
+
+/** Corrigir o e-mail (passo 3c — P121): o código vai ao e-mail certo, e a troca só vale com ele. */
+export async function adminPedirCodigoDoEmail(conta: string, email: string): Promise<CodigoDoEmailEnviado> {
+  const { data } = await client.post<CodigoDoEmailEnviado>("/admin/cobranca/acoes/corrigir-email/codigo", { conta, email });
+  return data;
+}
+export async function adminCorrigirEmail(conta: string, email: string, codigo: string): Promise<EmailCorrigido> {
+  const { data } = await client.post<EmailCorrigido>("/admin/cobranca/acoes/corrigir-email", { conta, email, codigo });
   return data;
 }
 
