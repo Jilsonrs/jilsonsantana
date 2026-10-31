@@ -6415,7 +6415,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               aborta), e o caso conferido em `pix-pre-pago.test.ts` e `cancelar-assinatura.test.ts`. **Mutação: 6 de 6
               reprovaram.** **Banco de dev:** `migrate deploy`, *No difference detected*, nenhuma tabela sem RLS.
               *Docs check (context7): não disparado — nenhuma ida nova à Stripe.*
-        - [ ] **2b — Os outros tipos de *B*.** O alerta do Sentry continua saindo: é ele que avisa até o 2d existir.
+        - [x] **2b — Os outros tipos de *B*.** O alerta do Sentry continua saindo: é ele que avisa até o 2d existir.
+              **FEITO (31/10/2026).** Cada alerta abre o caso no mesmo lugar (na transação da cobrança quando há uma —
+              `operarNaAssinatura` entrega o `tx` também ao reembolso e à troca de plano): **o site e a Stripe
+              discordam** (`DIVERGENCIA` — a sincronia que falhou na tela do aluno, urgente quando a pessoa pagou e está
+              sem acesso; o reembolso que não acertou o site; a Stripe que não conhece a assinatura ativa; e o "dono
+              diferente", com a chave `dono:`, que não fecha sozinho: é para investigar); **ativa sem período pago**
+              (a rodada diária); **cobrança em aberto** que não foi anulada (cancelar, contestação, Pix da atrasada, troca
+              recusada); **devolução que falhou** (o reembolso do aluno e o aviso `refund.failed` — urgentes); **troca de
+              plano com defeito** (cobrado diferente do mostrado, com a diferença; o agendamento pela metade);
+              **contestação** (uma por contestação, urgente — tem prazo; a fase seguinte atualiza a mesma, com o valor);
+              **aviso de fraude** (não urgente — o passo 5c o resolve sozinho); e **e-mail que não saiu** (o da cobrança e
+              as boas-vindas). **Fecham sozinhos:** a divergência quando uma sincronia da assinatura vale; a ativa sem
+              período pago quando ela é cancelada ou volta a ter período pago; o e-mail quando a vez seguinte o manda. O
+              *pedido de reembolso* não abre por aqui (P138: vem do JilsonAI). Testes: o caso conferido nos testes que já
+              passavam por cada alerta (`ativas-vencidas`, `contestacao`, `stripe-webhook`, `avisos-da-assinatura`,
+              `boas-vindas`, `minha-assinatura`, `cancelar-assinatura`, `reembolso`, `stripe-plano`). **Mutação: 12 de
+              12 reprovaram.** *Docs check (context7): não disparado — nenhuma ida nova à Stripe.*
         - [ ] **2c — A tela "Precisa de você"** (a primeira que abre): os casos, fechar com nota e o link para a ficha.
         - [ ] **2d — O aviso ao operador** (P137: o urgente na hora; o resto num resumo de manhã).
         - [ ] **Fechamento do bloco 2.**

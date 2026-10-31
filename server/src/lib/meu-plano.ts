@@ -1,5 +1,6 @@
 import type { Plano, PlanoMudado, TrocaDePlano, TrocaDesfeita } from "@jilson/core";
 import { operarNaAssinatura } from "./assinaturas.js";
+import { abrirCaso, TipoDeCaso } from "./casos.js";
 import { assinaturaDaConta, outroPlano } from "./minha-assinatura.js";
 import { buscarPrecos } from "./stripe.js";
 import { buscarDetalhes } from "./stripe-assinatura.js";
@@ -116,7 +117,7 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valo
   // JilsonAI vão usar (um `NaN` passaria por toda comparação de folga).
   const { valorMostrado } = pedido;
   if (typeof valorMostrado !== "number" || !Number.isInteger(valorMostrado) || valorMostrado < 0) return { resultado: "previa-vencida" };
-  const operacao = await operarNaAssinatura(id, async (): Promise<DesfechoDaTroca | "mudou-o-valor" | null> => {
+  const operacao = await operarNaAssinatura(id, async (tx): Promise<DesfechoDaTroca | "mudou-o-valor" | null> => {
     const agora = await buscarDetalhes(id);
     if (outroPlano(agora) !== "anual" || !agora.itemId) return null;
     // O agendamento de uma troca que JÁ aconteceu (a virada para o mensal) sai antes: quem manda
@@ -148,6 +149,7 @@ export async function mudarMeuPlano(userId: string, pedido: { plano: Plano; valo
         await anularFatura(desfecho.faturaId);
       } catch (erro) {
         console.error(`[stripe] mudar de plano: o cartão da assinatura ${id} (conta ${userId}) foi recusado e a fatura da troca continuou em aberto — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+        await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${desfecho.faturaId}`, urgente: false, conta: userId, assinatura: id, objeto: desfecho.faturaId, detalhe: "a troca de plano foi recusada e a fatura dela ficou em aberto" }, tx);
       }
     }
     return desfecho;

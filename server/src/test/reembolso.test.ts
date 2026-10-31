@@ -458,6 +458,9 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
       expect([res.status, res.body]).toEqual([502, { error: "DevolucaoFalhou" }]);
       const registro = erro.mock.calls.flat().join(" ");
       expect(registro).toContain(`[stripe] reembolso: a assinatura ${SUB} (conta ${memberId}) foi ENCERRADA e a devolução falhou`);
+      // O caso (4.7b, bloco 2): a devolução que falhou, URGENTE, com o valor.
+      expect(await prisma.billingCase.findUnique({ where: { kind_key: { kind: "DEVOLUCAO_FALHOU", key: `sub:${SUB}` } } })).toMatchObject({ open: true, urgent: true, userId: memberId, amount: 9990 });
+      await prisma.billingCase.deleteMany({ where: { key: `sub:${SUB}` } });
     } finally {
       erro.mockRestore();
     }

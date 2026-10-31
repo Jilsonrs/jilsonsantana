@@ -192,6 +192,7 @@ export async function assinaturaDaConta(userId: string): Promise<{ resultado: "o
     // revisão de segurança, 11/10/2026). Precisa de gente: é erro, com etiqueta.
     if (detalhes.userId !== null && detalhes.userId !== userId) {
       console.error(`[stripe] minha assinatura: o espelho diz que a assinatura ${detalhes.id} é da conta ${userId}, e a Stripe diz que é da conta ${detalhes.userId}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `dono:${detalhes.id}`, urgente: false, conta: userId, assinatura: detalhes.id, detalhe: "o site e a Stripe dizem donos diferentes — investigar" });
       continue;
     }
     return { resultado: "ok", detalhes };
@@ -239,6 +240,7 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
       console.info(`[stripe] minha assinatura: o espelho da assinatura ${detalhes.id} (conta ${userId}) dava acesso e a Stripe diz que acabou; sincronizada`);
     } catch (erro) {
       console.error(`[stripe] minha assinatura: a conta ${userId} segue com acesso pelo espelho da assinatura ${detalhes.id}, que a Stripe diz que acabou, e a sincronia falhou: ${erro instanceof Error ? erro.message : String(erro)}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${detalhes.id}`, urgente: false, conta: userId, assinatura: detalhes.id, detalhe: "com acesso no site e acabada na Stripe; a sincronia falhou" });
     }
   } else if (assinatura.situacao === SituacaoDoFaturamento.ATRASADA) {
     // Quem diz se as aulas estão trancadas é o GATE (o espelho), não a data que a Stripe diz
@@ -256,6 +258,7 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
       console.info(`[stripe] minha assinatura: o espelho da assinatura ${detalhes.id} (conta ${userId}) não dava acesso e a Stripe diz que dá; sincronizada`);
     } catch (erro) {
       console.error(`[stripe] minha assinatura: a conta ${userId} está sem acesso pelo espelho da assinatura ${detalhes.id}, que a Stripe diz que dá acesso, e a sincronia falhou — o assinante está trancado fora: ${erro instanceof Error ? erro.message : String(erro)}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${detalhes.id}`, urgente: true, conta: userId, assinatura: detalhes.id, detalhe: "pagou e está sem acesso no site; a sincronia falhou" });
     }
   }
   return { resultado: "ok", assinatura };
@@ -367,6 +370,7 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
     // (Trava ocupada não entra aqui: quem a tem — o aviso do próprio pagamento — está acertando.)
     if (pagou && semSincronia && !(await temAcessoAtivo(userId))) {
       console.error(`[stripe] trocar cartão: a conta ${userId} pagou a fatura em aberto da assinatura ${detalhes.id}, a sincronia falhou e ela segue sem acesso — o assinante está trancado fora até o aviso da Stripe chegar`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${detalhes.id}`, urgente: true, conta: userId, assinatura: detalhes.id, detalhe: "trocou o cartão e pagou a atrasada; a sincronia falhou e está sem acesso" });
     }
   }
   console.info(`[stripe] trocar cartão: conta ${userId}, assinatura ${detalhes.id}${detalhes.faturaEmAbertoId && cobrancaAtrasada(detalhes) ? (pagou ? ", a fatura em aberto foi paga" : ", a fatura em aberto continua em aberto") : ""}`);
@@ -436,6 +440,7 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
             }
           } catch (erro) {
             console.error(`[stripe] cancelar: a assinatura ${id} (conta ${userId}) foi encerrada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+            await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: false, conta: userId, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a assinatura foi encerrada e a cobrança em aberto não foi anulada" }, tx);
           }
         }
         return { resultado: "ok", terminou: true };
@@ -541,6 +546,7 @@ async function assinaturaParaReembolso(userId: string): Promise<{ resultado: "ok
     }
     if (detalhes.userId !== null && detalhes.userId !== userId) {
       console.error(`[stripe] reembolso: o espelho diz que a assinatura ${detalhes.id} é da conta ${userId}, e a Stripe diz que é da conta ${detalhes.userId}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `dono:${detalhes.id}`, urgente: false, conta: userId, assinatura: detalhes.id, detalhe: "o site e a Stripe dizem donos diferentes — investigar" });
       continue;
     }
     if (noPrazoDoReembolso(detalhes)) return { resultado: "ok", detalhes };
@@ -560,7 +566,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
   }
   const operacao = await operarNaAssinatura(
     id,
-    async (): Promise<Devolvido> => {
+    async (tx): Promise<Devolvido> => {
       // COM A TRAVA, relido: o prazo, a situação e o que foi pago valem os de AGORA.
       const agora = await buscarDetalhes(id);
       if (!noPrazoDoReembolso(agora)) return { resultado: "fora-do-prazo" };
@@ -580,6 +586,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
         for (const pagamento of pago.pagamentos) await devolver(pagamento, { userId, assinaturaId: id });
       } catch (erro) {
         console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — conferir e devolver pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+        await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `sub:${id}`, urgente: true, conta: userId, assinatura: id, centavos, detalhe: "o reembolso encerrou a assinatura e a devolução falhou" }, tx);
         return { resultado: "devolucao-falhou" };
       }
       return { resultado: "ok", centavos, moeda: pago.moeda };
@@ -603,6 +610,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
       await sincronizarSeLivre(id, { manterSessao: true });
     } catch (erro) {
       console.error(`[stripe] reembolso: a conta ${userId} recebeu o dinheiro de volta e o espelho da assinatura ${id} NÃO foi acertado — ela pode seguir com acesso; conferir em Admin → Assinaturas: ${erro instanceof Error ? erro.message : String(erro)}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${id}`, urgente: false, conta: userId, assinatura: id, detalhe: "recebeu o reembolso e o site não foi acertado" });
     }
   }
   return feito;

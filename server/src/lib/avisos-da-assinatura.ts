@@ -8,6 +8,7 @@ import { AssinaturaNaoEncontrada, buscarAssinatura, type AssinaturaNaStripe } fr
 import { montarAvisoDaCobranca, type EmailDevido } from "../views/email-da-cobranca.js";
 import { enderecoDoSite } from "./endereco-do-site.js";
 import { pixConfigurado } from "./stripe-pix.js";
+import { abrirCaso, resolvidoSozinho, TipoDeCaso } from "./casos.js";
 
 // OS E-MAILS DA COBRANÇA (Fase 4, etapa 4.7, passo 7 — decisões do operador, 28/10/2026;
 // billing.md → *Régua de inadimplência*). UMA regra decide qual e-mail é devido AGORA, pelo espelho
@@ -184,8 +185,15 @@ export async function avisarSobreAAssinatura(naStripe: AssinaturaNaStripe, agora
     // Enviado: a marca fica confirmada. Falhou: a marca sai, e a vez seguinte (outro aviso, ou a
     // rodada do agendador) tenta de novo. "Duplicado" é o outro envio, com a mesma chave, saindo
     // agora — a marca fica pendente, e é o outro que a confirma (ou a rodada a retoma).
-    if (envio.enviado) await prisma.subscriptionEmail.updateMany({ where: { id: marca }, data: { sentAt: new Date() } });
-    else if (envio.motivo === "falhou") await prisma.subscriptionEmail.deleteMany({ where: { id: marca } });
+    // O caso "e-mail que não saiu" (4.7b, bloco 2): abre na falha, e fecha sozinho quando a vez seguinte o manda.
+    const doEmail = { tipo: TipoDeCaso.EMAIL_NAO_SAIU, chave: `email:${devido.tipo}:${naStripe.id}` };
+    if (envio.enviado) {
+      await prisma.subscriptionEmail.updateMany({ where: { id: marca }, data: { sentAt: new Date() } });
+      await resolvidoSozinho(doEmail);
+    } else if (envio.motivo === "falhou") {
+      await prisma.subscriptionEmail.deleteMany({ where: { id: marca } });
+      await abrirCaso({ ...doEmail, urgente: false, conta: conta.id, assinatura: naStripe.id, detalhe: `${devido.tipo}: o envio falhou; a rodada tenta de novo` });
+    }
   } catch (erro) {
     console.error(`[email] o e-mail da cobrança da assinatura ${naStripe.id} não saiu: ${erro instanceof Error ? erro.name : "falha sem tipo"}`);
   }

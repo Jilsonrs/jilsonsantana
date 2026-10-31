@@ -19,7 +19,10 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // Precisa de gente: a devolução que falhou é dinheiro que NÃO voltou. Uma vez por aviso — o
   // repetido (a reentrega) não alerta de novo; e se o processamento falhar, a Stripe entrega de
   // novo e o alerta sai então.
-  if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
+  if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") {
+    console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
+    await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `pagamento:${aviso.pagamento ?? aviso.id}`, urgente: true, assinatura: aviso.assinatura, objeto: aviso.pagamento ?? null, detalhe: "uma devolução falhou: o dinheiro não voltou ao aluno" });
+  }
   // O PIX PAGO cuja assinatura terminou SEM ACESSO (achado 5 do passo 6 da etapa 4.9, 29/10/2026): o
   // dinheiro entrou e a assinatura não abre — pagante trancado, que hoje só o aluno descobriria. Uma vez
   // por aviso. O Pix que nem virou assinatura já alertou na rotina (em conferência, uma vez só) ou foi
@@ -32,6 +35,8 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // DINHEIRO SAI, o alerta diz como ficou a assinatura e se a conta perdeu o acesso (pode ter outra assinatura).
   if (aviso.contestacao && desfecho.resultado !== "repetido") {
     const { id, motivo, centavos, prazo, pagamento, fase } = aviso.contestacao;
+    // O caso (4.7b, bloco 2): um por contestação, urgente (tem prazo); a fase seguinte atualiza o mesmo.
+    await abrirCaso({ tipo: TipoDeCaso.CONTESTACAO, chave: `du:${id}`, urgente: true, assinatura: "assinatura" in desfecho ? desfecho.assinatura.id : aviso.assinatura, objeto: id, centavos, detalhe: `${fase} · ${motivo}${prazo ? ` · prazo ${prazo.toISOString().slice(0, 10)}` : ""}` });
     const valor = `R$ ${(centavos / 100).toFixed(2).replace(".", ",")}`;
     const responder = `responder no painel da Stripe${prazo ? ` até ${prazo.toISOString().slice(0, 10)}` : ""}`;
     if (fase === "inquerito") {
@@ -49,6 +54,7 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // O AVISO DE FRAUDE (E7 — P122: só alerta, o acesso fica). Devolver o dinheiro agora evita a contestação, e a taxa dela.
   if (aviso.avisoDeFraude && desfecho.resultado !== "repetido") {
     const { id, cobranca, pagamento, tipo } = aviso.avisoDeFraude;
+    await abrirCaso({ tipo: TipoDeCaso.AVISO_DE_FRAUDE, chave: `fraude:${id}`, urgente: false, assinatura: aviso.assinatura, objeto: cobranca, detalhe: `${tipo} · cobrança ${cobranca}` });
     console.error(`[stripe] aviso de fraude ${id}: a cobrança ${cobranca} (pagamento ${pagamento ?? "?"}) recebeu um aviso de fraude do banco (${tipo}) — conferir no painel da Stripe; devolver o dinheiro agora evita a contestação`);
   }
   if (desfecho.resultado === "sem-conta") {

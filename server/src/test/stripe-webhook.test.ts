@@ -465,6 +465,9 @@ describe("o aviso da Stripe — o dinheiro devolvido", () => {
       expect((await enviar(aviso)).status).toBe(200);
       expect((await enviar(aviso)).status).toBe(200);
       expect(erro.mock.calls.flat().filter((linha) => String(linha).includes("FALHOU"))).toHaveLength(1);
+      // O caso (4.7b, bloco 2): um só, urgente — o dinheiro não voltou ao aluno.
+      expect(await prisma.billingCase.findMany({ where: { kind: "DEVOLUCAO_FALHOU", key: "pagamento:pi_da_devolucao" }, select: { open: true, urgent: true } })).toEqual([{ open: true, urgent: true }]);
+      await prisma.billingCase.deleteMany({ where: { key: "pagamento:pi_da_devolucao" } });
     } finally {
       erro.mockRestore();
       registro.mockRestore();

@@ -294,8 +294,11 @@ describe("GET /api/billing/minha-assinatura — o espelho NÃO dá acesso (atras
       const linhas = erro.mock.calls.flat().join(" ");
       expect(linhas).toContain(`[stripe] minha assinatura: a conta ${memberId} está sem acesso pelo espelho da assinatura ${ASSINATURA_DE_TESTE}`);
       expect(linhas).toContain("trancado fora");
+      // O caso (4.7b, bloco 2): o site e a Stripe discordam, URGENTE — alguém pagando e trancado fora.
+      expect(await prisma.billingCase.findUnique({ where: { kind_key: { kind: "DIVERGENCIA", key: `sub:${ASSINATURA_DE_TESTE}` } } })).toMatchObject({ open: true, urgent: true, userId: memberId });
     } finally {
       erro.mockRestore();
+      await prisma.billingCase.deleteMany({ where: { key: `sub:${ASSINATURA_DE_TESTE}` } });
     }
   });
 

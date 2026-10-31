@@ -123,6 +123,10 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, {
 
   if (espelho) await tx.subscription.update({ where: { id: espelho.id }, data: dados });
   else await tx.subscription.create({ data: { ...dados, stripeSubscriptionId: agora.id, ownerUserId: dono } });
+  // A sincronia valeu: o "site e Stripe discordam" desta assinatura se resolveu; e a ativa sem período pago, quando ela
+  // acabou ou voltou a ter período pago (4.7b, bloco 2).
+  await resolvidoSozinho({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${agora.id}` }, tx);
+  if (agora.status === "canceled" || (agora.pagoAte !== null && agora.pagoAte > new Date())) await resolvidoSozinho({ tipo: TipoDeCaso.ATIVA_SEM_PERIODO_PAGO, chave: `sub:${agora.id}` }, tx);
   // A conta nasceu do pagamento: o "pagou e está sem conta" desta assinatura e da ficha dela se resolveu sozinho (4.7b, bloco 2).
   if (contaNova) {
     await resolvidoSozinho({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `sub:${agora.id}` }, tx);

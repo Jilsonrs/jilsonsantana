@@ -398,9 +398,14 @@ describe("uma vez cada", () => {
     enviarEmail.mockResolvedValueOnce({ enviado: false, motivo: "falhou" });
     await enviar(avisoDaAssinatura(sub, "invoice.payment_failed"));
     expect(await marcas(sub)).toEqual([]);
+    // O caso "e-mail que não saiu" (4.7b, bloco 2): abre na falha…
+    const casoDoEmail = () => prisma.billingCase.findUnique({ where: { kind_key: { kind: "EMAIL_NAO_SAIU", key: `email:COBRANCA_FALHOU:${sub}` } } });
+    expect(await casoDoEmail()).toMatchObject({ open: true, urgent: false, userId: conta.id });
     await enviar(avisoDaAssinatura(sub));
     expect(doTipo("cobranca-falhou")).toHaveLength(2);
     expect(await marcas(sub)).toHaveLength(1);
+    // …e fecha sozinho quando a vez seguinte o manda.
+    expect(await casoDoEmail()).toMatchObject({ open: false, closedBy: "STRIPE" });
 
     const outra = novoId("sub");
     buscarAssinatura.mockResolvedValue(atrasada(outra, conta.id, new Date(Date.now() - 60_000)));

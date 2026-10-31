@@ -385,6 +385,9 @@ describe("POST /api/billing/minha-assinatura/cancelar — com a cobrança atrasa
       const res = await cancelar(member, {});
       expect([res.status, res.body]).toEqual([200, { acessoAte: null, terminou: true }]);
       expect(erro.mock.calls.flat().join(" ")).toContain(`[stripe] cancelar: a assinatura ${SUB} (conta ${memberId}) foi encerrada e a cobrança em aberto NÃO foi anulada`);
+      // O caso (4.7b, bloco 2): a cobrança em aberto, na transação da operação.
+      expect(await prisma.billingCase.findMany({ where: { kind: "COBRANCA_EM_ABERTO", userId: memberId, stripeSubscriptionId: SUB }, select: { open: true, urgent: true } })).toEqual([{ open: true, urgent: false }]);
+      await prisma.billingCase.deleteMany({ where: { userId: memberId, stripeSubscriptionId: SUB } });
     } finally {
       erro.mockRestore();
     }
