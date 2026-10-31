@@ -181,8 +181,9 @@ export function consertosDoCaso(tipo: TipoDeCasoDaLista, chave: string): Consert
   if (tipo === "DEVOLUCAO_FALHOU" && (chave.startsWith("sub:") || chave.startsWith("devolucao:re_") || chave.startsWith("cobranca:"))) return ["devolver-de-novo"];
   if (tipo === "PIX_EM_CONFERENCIA" && chave.startsWith("pix:pi_")) return ["aceitar-pix", "devolver-pix"];
   if (tipo === "PAGO_SEM_ASSINATURA" && (chave.startsWith("sub:") || chave.startsWith("fatura:in_"))) return ["devolver-este-pagamento"];
-  // A contestação (bloco 5, passo 5a): aceitar a perda (só a aberta) — ou, se a escola ganhou, liberar de novo (passo 4d).
-  if (tipo === "CONTESTACAO" && chave.startsWith("du:")) return ["aceitar-contestacao", "liberar-de-novo"];
+  // A contestação (bloco 5): responder com provas (passo 5b) ou aceitar a perda (passo 5a) — só a aberta; e, se a escola
+  // ganhou, liberar de novo (passo 4d).
+  if (tipo === "CONTESTACAO" && chave.startsWith("du:")) return ["enviar-provas", "aceitar-contestacao", "liberar-de-novo"];
   if (tipo === "COBRANCA_EM_ABERTO") return ["anular-cobranca"];
   if (tipo === "TROCA_DE_PLANO" && chave.startsWith("agendamento:")) return ["soltar-agendamento"];
   if (tipo === "ATIVA_SEM_PERIODO_PAGO") return ["encerrar-na-hora"];

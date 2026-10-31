@@ -2037,7 +2037,10 @@ lá, vale o texto de hoje):
   olhar o pagamento da assinatura ativa.*
 - **A contestação se responde pelo admin** (P140): o painel monta as provas — a data da compra, o nome e o e-mail, as
   aulas assistidas e as horas, os e-mails enviados e a política de reembolso —, e ele confere e clica em "Enviar ao
-  banco" ou em "Aceitar a perda". Esses dados vão ao banco do aluno: entram na Política de Privacidade. — passo 5b.
+  banco" ou em "Aceitar a perda". Esses dados vão ao banco do aluno: entram na Política de Privacidade. — passo 5b, no
+  código desde 31/10/2026: a prévia mostra o texto EXATO de cada campo, só a contestação aberta recebe provas, e o envio não
+  tem volta; o caso fica aberto até o banco decidir (ganha → "Liberar de novo"; perdida → fechar). Os dois textos fixos (o que
+  a pessoa comprou e a política de reembolso) são rascunho do agente, a aprovar (P150).
 - **O aviso de fraude devolve sozinho** (P141): o sistema devolve, cancela a assinatura e corta o acesso, e o caso chega
   ao operador já resolvido. Substitui o "só alerta" de 29/10/2026 (*Reembolso*). — passo 5c, no código desde 31/10/2026; a
   devolução vai marcada como fraude (decisão do operador no mesmo dia).

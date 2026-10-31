@@ -12,6 +12,10 @@ import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-
 import { corrigirEmailComCodigo, pedirCodigoDoEmailNovo, type NaoCorrigido } from "../lib/correcao-de-email.js";
 import { devolverDeNovoPeloOperador, devolverEstePagamentoPeloOperador, devolverPagamentoPeloOperador, devolverPixPeloOperador, devolverTudoPeloOperador, previaDeDevolverTudo } from "../lib/devolucoes-do-painel.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
+import { enviarProvasPeloOperador, previaDasProvas } from "../lib/provas-da-contestacao.js";
+import type { ConsertoDoCaso } from "@jilson/core";
+import type { AcaoFeita } from "@jilson/core";
+import type { PorQuem } from "../lib/acoes-da-cobranca.js";
 
 // O PAINEL DA COBRANÇA — A FICHA DO ALUNO E O "ACHAR PELO CÓDIGO" (Fase 4, etapa 4.7b, passo 1c). Só admin, só
 // leitura: nenhuma destas rotas muda nada na Stripe nem no banco. As operações moram em `lib/ficha-da-cobranca.ts`.
@@ -174,6 +178,31 @@ router.post("/admin/cobranca/casos/:id/reenviar", requireAdmin, async (req, res)
   responder(res, await reenviarPeloOperador(id, por));
 });
 
+/**
+ * O conserto que o caso pede, pela rotina de cada um: os que mexem com dinheiro moram com as devoluções (passos 4a e 4c); as
+ * provas da contestação, com elas (passo 5b); o resto, com as ações.
+ */
+function resolverConserto(id: number, acao: ConsertoDoCaso, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  switch (acao) {
+    case "devolver-de-novo":
+      return devolverDeNovoPeloOperador(id, por);
+    case "devolver-pix":
+      return devolverPixPeloOperador(id, por);
+    case "devolver-este-pagamento":
+      return devolverEstePagamentoPeloOperador(id, por);
+    case "aceitar-pix":
+      return aceitarPixPeloOperador(id, por);
+    case "liberar-de-novo":
+      return liberarDeNovoPeloOperador(id, por);
+    case "aceitar-contestacao":
+      return aceitarContestacaoPeloOperador(id, por);
+    case "enviar-provas":
+      return enviarProvasPeloOperador(id, por);
+    default:
+      return resolverCasoPeloOperador(id, acao, por);
+  }
+}
+
 // POST /api/admin/cobranca/casos/:id/resolver — { acao }: o conserto que o caso pede (passo 3b).
 router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res) => {
   const por = operador(req, res);
@@ -182,24 +211,16 @@ router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res)
   if (id === null) return;
   const corpo = validate(resolverCasoSchema, req.body, res);
   if (corpo === null) return;
-  // Os consertos que mexem com dinheiro moram com as devoluções (passos 4a e 4c); o "Aceitar este Pix", com as ações.
-  const acao = corpo.acao;
-  responder(
-    res,
-    acao === "devolver-de-novo"
-      ? await devolverDeNovoPeloOperador(id, por)
-      : acao === "devolver-pix"
-        ? await devolverPixPeloOperador(id, por)
-        : acao === "devolver-este-pagamento"
-          ? await devolverEstePagamentoPeloOperador(id, por)
-          : acao === "aceitar-pix"
-            ? await aceitarPixPeloOperador(id, por)
-            : acao === "liberar-de-novo"
-              ? await liberarDeNovoPeloOperador(id, por)
-              : acao === "aceitar-contestacao"
-                ? await aceitarContestacaoPeloOperador(id, por)
-                : await resolverCasoPeloOperador(id, acao, por),
-  );
+  responder(res, await resolverConserto(id, corpo.acao, por));
+});
+
+// GET /api/admin/cobranca/casos/:id/provas — a prévia das provas da contestação: o texto exato que vai ao banco (passo 5b).
+router.get("/admin/cobranca/casos/:id/provas", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  responder(res, await previaDasProvas(id));
 });
 
 // AS DEVOLUÇÕES (bloco 4, passo 4a — P114 e P139).

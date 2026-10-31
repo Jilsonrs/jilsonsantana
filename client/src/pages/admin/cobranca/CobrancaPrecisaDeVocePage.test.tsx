@@ -199,7 +199,7 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Aceitar a perda" }));
     expect(screen.getByText("A escola não manda provas: o banco encerra a contestação como perdida, e o dinheiro fica com a pessoa. Não tem volta.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
-    expect((await screen.findByRole("alert")).textContent).toBe("Só a contestação aberta se aceita: o inquérito se resolve devolvendo o dinheiro, e a já decidida não muda.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Só a contestação aberta se responde ou se aceita: o inquérito se resolve devolvendo o dinheiro, e a já decidida não muda.");
     expect(adminResolverCaso.mock.calls).toEqual([[19, "aceitar-contestacao"]]);
   });
 

@@ -35,7 +35,7 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
     case "ContestacaoNaoGanha":
       return "A escola ainda não ganhou esta contestação (o banco não decidiu, ou decidiu contra): nada foi liberado.";
     case "ContestacaoNaoAberta":
-      return "Só a contestação aberta se aceita: o inquérito se resolve devolvendo o dinheiro, e a já decidida não muda.";
+      return "Só a contestação aberta se responde ou se aceita: o inquérito se resolve devolvendo o dinheiro, e a já decidida não muda.";
     case "JaTemOutraAssinatura":
       return "A pessoa já tem acesso ou outra assinatura viva: aceitar criaria uma segunda pelo mesmo período. Devolva o Pix.";
     case "OutraAssinaturaViva":

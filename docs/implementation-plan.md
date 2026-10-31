@@ -6743,7 +6743,24 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               pela rota** (servidor local, banco de dev, o cartão de teste que abre contestação): a contestação `needs_response`
               aceita pelo painel — na Stripe, `lost`; o caso fechado; aceitar de novo, 404; o retrato do banco igual antes e
               depois. *Docs check (context7): Stripe → `/websites/stripe` → fechar (aceitar) uma contestação (31/10/2026).*
-        - [ ] **5b — Responder com provas** (P140: o painel monta, ele envia ou aceita a perda).
+        - [x] **5b — Responder com provas** (P140: o painel monta, ele envia ou aceita a perda). **FEITO (31/10/2026).** No caso
+              da contestação, "Responder com provas" (o primeiro dos três consertos): a PRÉVIA (`GET
+              /api/admin/cobranca/casos/:id/provas`, `previaDasProvas`) mostra o texto EXATO de cada campo que vai ao banco — o
+              nome, o e-mail, desde quando a pessoa tem acesso, o que ela comprou, o registro de acesso (as aulas abertas, as
+              concluídas e o tempo assistido, pela regra dos números do curso — do "tocou" ao evento seguinte, no máximo a
+              duração do vídeo), a política de reembolso, e o valor, a data e os e-mails que a escola mandou; "Enviar ao
+              banco", com confirmação (não tem volta), monta de novo com a Stripe lida agora e envia de uma vez
+              (`enviarProvasDaContestacao`, `submit: true`) — `lib/provas-da-contestacao.ts`. Só a contestação ABERTA
+              (`needs_response`); o clique duplo é 409. O caso fica aberto, sem urgência, até o banco decidir (ganha → "Liberar
+              de novo"; perdida → fechar, com a nota); o registro guarda o envio e o valor — o texto, nunca (é dado pessoal, e
+              está na Stripe). Os dois textos fixos (o produto e a política de reembolso) são **rascunho do agente: vão ao
+              operador (P150)**. Testes: `admin-cobranca-contestacao.test.ts` (+6) e `ResponderComProvas.test.tsx` (novo, 4).
+              **Mutação: 10 de 10 reprovaram.** **Prova pela rota** (servidor local, banco de dev, o cartão de teste que abre
+              contestação, uma aula de verdade assistida pela conta descartável): a prévia com os 7 campos e a aula; o envio
+              deixou a contestação `under_review` na Stripe, com as provas IGUAIS às da prévia; o caso aberto, sem urgência;
+              enviar e pedir a prévia de novo, 409; o retrato do banco igual antes e depois. *Docs check (context7): Stripe →
+              `/websites/stripe` → as provas de uma contestação (`disputes.update`, `submit`, os campos de texto e o limite de
+              150.000 caracteres) (31/10/2026) — a 4ª consulta do bloco.*
         - [x] **5c — O aviso de fraude:** devolver, cancelar e cortar sozinho, avisando (P141). **FEITO (31/10/2026).** No aviso
               `radar.early_fraud_warning.created` (`processarAviso`), com a trava da assinatura: a marca `aviso_de_fraude` e o
               encerramento na hora (`cancelarPorAvisoDeFraude` — a mesma rotina da contestada, `marcarEEncerrar`, que junta os

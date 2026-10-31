@@ -241,6 +241,36 @@ export async function statusDaContestacao(contestacaoId: string): Promise<string
   }
 }
 
+/** A CONTESTAÇÃO lida AGORA, para as provas (4.7b, passo 5b): o status, o motivo, o valor, o prazo e quando a cobrança foi feita. */
+export type ContestacaoLida = { status: string; motivo: string; centavos: number; prazo: Date | null; cobradaEm: Date | null };
+
+/** Lê a contestação, com a cobrança dela — ou nenhuma, se a Stripe não a conhece. A recusa sobe sem a mensagem crua. */
+export async function lerContestacao(contestacaoId: string): Promise<ContestacaoLida | null> {
+  try {
+    const d = await stripe().disputes.retrieve(contestacaoId, { expand: ["charge"] });
+    const cobranca = typeof d.charge === "object" && d.charge !== null ? d.charge : null;
+    const prazo = d.evidence_details?.due_by;
+    return { status: d.status, motivo: d.reason, centavos: d.amount, prazo: prazo ? new Date(prazo * 1000) : null, cobradaEm: cobranca ? new Date(cobranca.created * 1000) : null };
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") return null;
+    throw erroSemMensagem(erro, "a leitura da contestação");
+  }
+}
+
+/**
+ * ENVIA AS PROVAS AO BANCO (o "Responder com provas" do painel, 4.7b, passo 5b — decisão do operador, P140): todos os campos de
+ * texto de uma vez, e já enviados (`submit: true`) — depois disso, não dá para mudar `[FATO — context7 /websites/stripe,
+ * 31/10/2026: com submit, as provas vão ao banco; os textos somam no máximo 150.000 caracteres]`. A chave de repetição leva a
+ * contestação e a janela de 5 minutos: o clique duplo recebe a mesma resposta. Devolve o status de depois.
+ */
+export async function enviarProvasDaContestacao(contestacaoId: string, provas: Stripe.DisputeUpdateParams.Evidence, agora: Date = new Date()): Promise<string> {
+  try {
+    return (await stripe().disputes.update(contestacaoId, { evidence: provas, submit: true }, { idempotencyKey: `provas-${contestacaoId}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}` })).status;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o envio das provas da contestação");
+  }
+}
+
 /**
  * ACEITA A CONTESTAÇÃO (o "Aceitar a perda" do painel, 4.7b, passo 5a): a escola não manda provas, e o banco a encerra como
  * perdida — o dinheiro fica com a pessoa. `[FATO — context7 /websites/stripe, 31/10/2026]` só a contestação aberta
