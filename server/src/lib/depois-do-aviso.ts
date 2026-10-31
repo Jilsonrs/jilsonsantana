@@ -3,6 +3,7 @@ import type { Desfecho } from "./assinaturas.js";
 import { assinaturaDaAcesso } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
+import { registrarAviso } from "./registro-da-cobranca.js";
 
 // O QUE VEM DEPOIS DE PROCESSAR UM AVISO DA STRIPE — os alertas, o registro, as boas-vindas e os e-mails da cobrança.
 // Mora aqui, e não na rota (estava em `routes/stripe-webhook.ts` até a 4.9b), porque são DOIS os caminhos de um aviso:
@@ -11,6 +12,9 @@ import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 // causa do e-mail (`enviarEmail` não lança); o registro leva ids e status, nunca o corpo do aviso.
 
 export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): Promise<void> {
+  // O REGISTRO DA COBRANÇA (etapa 4.7b, passo 1f): o aviso processado vira uma linha — o painel mostra o que aconteceu.
+  // Nunca lança (o aviso já está gravado).
+  await registrarAviso(aviso, desfecho);
   // Precisa de gente: a devolução que falhou é dinheiro que NÃO voltou. Uma vez por aviso — o
   // repetido (a reentrega) não alerta de novo; e se o processamento falhar, a Stripe entrega de
   // novo e o alerta sai então.

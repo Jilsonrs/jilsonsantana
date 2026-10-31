@@ -614,6 +614,17 @@ seams v2 — construir quando houver aluno usando, não antes.
    tools de escopo fixo, e cada uma grava o que fez. **Em aberto, e é dele:** o que o JilsonAI
    faz sozinho, o que faz avisando e o que só faz com o OK dele (a proposta do agente está na
    4.7b). Não é do lançamento: entra depois que o painel existir.
+   **O painel foi remapeado em 31/10/2026** (plano → etapa 4.7b): além das ações, ganha a caixa
+   *Precisa de você* — os casos que precisam do operador, cada um com o que aconteceu e as ações
+   que o resolvem —, e toda ação grava quem fez. **É isso que o JilsonAI vai atender.** Direção do
+   operador, no mesmo dia: *"no futuro vou querer automatizar o máximo que puder esse trabalho
+   administrativo seja com o JilsonAI ou outra forma […] é como ter uma equipe de suporte 24 horas
+   não só para as dúvidas dos alunos durante as aulas mas também relacionado à parte
+   administrativa, certificados e outras informações"*. Outra ferramenta (o N8N, que ele citou)
+   precisa de uma porta própria na API — decide-se quando ele escolher automatizar fora do JilsonAI.
+   **O pedido de reembolso depois dos 7 dias é do JilsonAI** *(decisão do operador, 31/10/2026, P138)*: a tela do
+   aluno não tem botão para isso; o pedido chega pelo suporte e, quando o JilsonAI existir, é ele quem abre o caso
+   na caixa *Precisa de você*.
 
 ---
 

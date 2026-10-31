@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P137** · Atualizada em 30/10/2026
+> **Próximo número livre: P147** · Atualizada em 31/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -28,7 +28,7 @@
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
 *Item novo que precise de resposta rápida entra aqui, com o próximo número livre.*
-*Vazia desde 30/10/2026: a P93, a P102 e a P126 foram resolvidas (o registro está no plano).*
+*Vazia desde 31/10/2026: a P146 (o que do painel da cobrança entra antes da abertura) e as P137 a P145 (as decisões dele) foram resolvidas no mesmo dia — o registro está no plano, etapa 4.7b, e no `billing.md` → *O painel da cobrança*; antes, a P93, a P102 e a P126 (30/10/2026).*
 
 | # | O que falta | Onde registrar |
 |---|---|---|

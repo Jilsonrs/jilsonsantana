@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { sincronizarContaSchema, type SincroniaDaConta } from "@jilson/core";
+import { listaDeAssinaturasQuerySchema, sincronizarContaSchema, type SincroniaDaConta } from "@jilson/core";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
 import { prisma } from "../lib/prisma.js";
@@ -7,6 +7,7 @@ import { cobrancaConfigurada } from "../lib/stripe.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
 import { sincronizarConta, sincronizarPedido, type Conferida } from "../lib/assinaturas.js";
 import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
+import { listarAssinaturas } from "../lib/painel-da-cobranca.js";
 
 // FORÇAR A SINCRONIA COM A STRIPE (Fase 4, etapa 4.4 — billing.md; CLAUDE.md → Membership Gating,
 // "Force-sync"). É a RECUPERAÇÃO de quando um aviso da Stripe se perde: o assinante pagando e
@@ -17,6 +18,17 @@ import { mandarBoasVindasDaAssinatura } from "../lib/boas-vindas.js";
 // O registro leva ids e status; o e-mail digitado não vai para ele.
 
 const router = Router();
+
+// POST /api/admin/assinaturas/lista — A LISTA DO PAINEL DA COBRANÇA (etapa 4.7b, passo 1b). Só admin, só leitura, só
+// do espelho: abrir a lista não vai à Stripe. O filtro, a busca e a página vêm no CORPO, conferidos — nunca no endereço:
+// o Cloud Run guarda o endereço inteiro de cada pedido no registro, e a busca é o e-mail ou o nome de um aluno (achado
+// da revisão de segurança do bloco 1). Não muda nada: o POST é só para a busca não ir parar no registro.
+router.post("/admin/assinaturas/lista", requireAdmin, async (req, res) => {
+  res.set("Cache-Control", "private, no-store");
+  const pedido = validate(listaDeAssinaturasQuerySchema, req.body, res);
+  if (pedido === null) return;
+  res.json(await listarAssinaturas(pedido));
+});
 
 // POST /api/admin/assinaturas/sincronizar
 router.post("/admin/assinaturas/sincronizar", requireAdmin, async (req, res) => {

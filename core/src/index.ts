@@ -12,6 +12,7 @@ export * from "./schemas/me.js";
 export * from "./schemas/announcement.js";
 export * from "./schemas/progress.js";
 export * from "./schemas/billing.js";
+export * from "./schemas/cobranca-admin.js";
 export * from "./schemas/documento-fiscal.js";
 export { pt, type Dict } from "./i18n/pt.js";
 export { flattenDict, DICT_KEYS, setByPath } from "./i18n/keys.js";

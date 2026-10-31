@@ -237,7 +237,9 @@ assinatura é cancelada na Stripe** *(decisão do operador, 30/10/2026: o cartã
 pessoa recebe o e-mail de sempre de assinatura encerrada, e o operador, um alerta com o valor, o motivo e o prazo para
 responder à contestação no painel da Stripe. Se a contestação for resolvida a favor da escola, o operador libera de
 novo pelo admin (4.7b — "Liberar acesso pago por fora": a cancelada não volta). O **aviso de fraude** da Stripe
-(`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *Cortar o acesso
+(`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *(Decisão do
+operador, 31/10/2026, P141: o aviso de fraude passa a devolver, cancelar e cortar o acesso sozinho, avisando o operador
+— 4.7b, passo 5c; até lá, só alerta. E a contestação passa a ser respondida pelo admin, P140 — passo 5b.)* *Cortar o acesso
 não apaga nada* (CLAUDE.md → *Churn não apaga nada*).
 
 **Um prazo só: os 7 dias da lei** *(12/10/2026 — etapa 4.6c)*. Com a escola só para o Brasil,
@@ -507,6 +509,16 @@ O espelho se recalcula **buscando a assinatura na Stripe a cada aviso** (nunca o
 liga a assinatura à conta pelo `userId` que o NOSSO checkout grava na Stripe — ou, na do visitante
 que assinou sem conta, pela ficha de espera dele, e a conta nasce ali (etapa 4.7, passo 4: *Assinar
 sem conta*, abaixo).
+**Para o painel da cobrança, o espelho guarda também** *(etapa 4.7b, passo 1a — 31/10/2026; convenção de
+engenharia)*: o **plano do preço de agora** (muda quando o aluno troca de plano), **a data marcada para acabar**
+(vazia = renova; a pré-paga do Pix sempre tem) e o **código promocional em vigor**. Gravados pela mesma rotina, com o
+que a Stripe diz agora; **o gate não lê nenhum deles**. Uma linha de antes de 31/10 fica vazia até a próxima
+sincronia. `[FATO — medido na área de teste da Stripe, 31/10/2026]` a busca com `discounts.promotion_code` expandido
+devolve o código como o aluno o digitou; desfazer o cancelamento limpa a data. **E o motivo do cancelamento** (passo
+1f): o que o aluno escolheu (`metadata.motivo`), para o painel contar; some quando ele volta atrás.
+**O REGISTRO DA COBRANÇA** *(etapa 4.7b, passo 1f — convenção de engenharia)*: cada aviso da Stripe processado vira
+uma linha da tabela `billing_log` (quem fez, o quê, em quem, um resumo sem dado pessoal) — é a linha do tempo do painel
+e o que a automação vai consultar. Falhar ao gravar nunca derruba o aviso.
 
 **As chaves:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PUBLISHABLE_KEY` (esta não é
 segredo, mas mora junto: o servidor a entrega ao site, e trocar de ambiente é trocar as variáveis
@@ -1277,7 +1289,8 @@ apaga o nome e o UTM (LGPD — o plano → passo 9, 9e).
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 
 **Decisões do operador (10/10/2026):**
-- **Forçar a sincronia mora em Admin → "Assinaturas"**, um item novo no menu (entre um item novo,
+- **Forçar a sincronia mora em Admin → "Assinaturas"** *(desde 31/10/2026: Admin → Cobrança → Assinaturas — o
+  item virou "Cobrança", P145)*, um item novo no menu (entre um item novo,
   um bloco no Dashboard e nenhuma tela): o e-mail do aluno e o botão "Conferir na Stripe". A tela
   diz se a conta ficou com acesso e o que a Stripe respondeu de cada assinatura. *Reabre quando a
   tela "Alunos" (planejada) existir, se fizer sentido conferir a assinatura a partir do aluno.*
@@ -1309,6 +1322,8 @@ apaga o nome e o UTM (LGPD — o plano → passo 9, 9e).
   filtros e busca, e as ações que cabem em cada situação. **Mapa aprovado por ele em
   10/10/2026**, e fica para depois da etapa 4.7 (*"que é mais importante"*): plano → etapa 4.7b.
   *Reabre se um problema de aluno não se resolver com a tela de hoje antes de o painel existir.*
+  **Remapeado em 31/10/2026** (decisão do operador: todo problema de pagamento de aluno se resolve
+  no admin — *O painel da cobrança*, abaixo).
 - **Assinatura cancelada: o SISTEMA manda sozinho o e-mail com o link para reativar, e é o
   aluno quem paga**; no painel, o admin só copia o link (entre isso, dar acesso de cortesia
   pela tela, e os dois). *Reabre se ele quiser presentear acesso por ali.*
@@ -1787,6 +1802,9 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 
 ## Códigos promocionais — como criar na Stripe *(decisão do operador, 19/10/2026)*
 
+*(Decisão do operador, 31/10/2026, P142: os códigos passam a ser criados, pausados e acompanhados pelo admin, com as
+regras abaixo no formulário — 4.7b, passo 6d. Até lá, na Stripe, como está aqui.)*
+
 **A regra:** **limite de usos, só em código de 100%** (cortesia, presente): ele ativa a assinatura
 no próprio clique, então o uso é gasto em acesso de verdade. **Código de desconto parcial**
 (campanha, como "50% na Black Friday") **vai sem limite de usos, só com data de validade** —
@@ -1979,7 +1997,43 @@ IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:d
   nunca no limite. Se ele for recusado, a troca pendente vence sozinha em ~23 h, e a troca seguinte
   a anula.
 
+## O painel da cobrança: o problema do aluno se resolve no admin *(decisão do operador, 31/10/2026)*
+
+*"O que quero é poder resolver todos os problemas que os alunos tenham relacionados a pagamento dentro do painel
+administrativo, sem precisar ir na Stripe para nada, a Stripe só quando realmente for necessário e para outras
+questões"* — e acompanhar tudo, ser chamado só quando precisar e poder automatizar depois (*"se ficar dependendo de
+fazer coisas na Stripe eu não tenho como automatizar"*). Amplia o pedido de 10/10/2026 (*Sincronizar e perder o
+acesso*, acima) e a decisão da P114 (29/10/2026: o reembolso é um clique no admin).
+
+**O que muda nesta especificação:** cada "pelo painel da Stripe" deste documento vira uma ação no admin, conforme a
+etapa 4.7b for construída — o mapa (o que ver, os casos que chamam o operador, as ações) e os passos estão no plano →
+etapa 4.7b. **Até cada ação existir, vale o roteiro de hoje** (*Quando um aluno não conseguir pagar*, abaixo), reescrito
+no fim da 4.7b. *No mapa aprovado pelo operador (31/10/2026, os 6 blocos de uma vez, antes da abertura):* o painel da
+Stripe fica só para o que não é problema de aluno — os repasses e o saldo, as taxas, os impostos, a configuração da
+conta, os preços — e para emergência; a **contestação** e os **códigos promocionais** deixam de ficar lá.
+
+**As decisões dele no mesmo dia que mudam esta especificação** (cada uma vale quando o passo dela for construído; até
+lá, vale o texto de hoje):
+- **Devolver só uma parte** (P139): o operador digita o valor, no máximo o que ainda não foi devolvido. A parte **não
+  corta o acesso**; só a devolução inteira corta (a regra do "pago até", *Minha assinatura*). — 4.7b, passo 4a.
+- **A contestação se responde pelo admin** (P140): o painel monta as provas — a data da compra, o nome e o e-mail, as
+  aulas assistidas e as horas, os e-mails enviados e a política de reembolso —, e ele confere e clica em "Enviar ao
+  banco" ou em "Aceitar a perda". Esses dados vão ao banco do aluno: entram na Política de Privacidade. — passo 5b.
+- **O aviso de fraude devolve sozinho** (P141): o sistema devolve, cancela a assinatura e corta o acesso, e o caso chega
+  ao operador já resolvido. Substitui o "só alerta" de 29/10/2026 (*Reembolso*). — passo 5c.
+- **Sem botão de pedir reembolso depois dos 7 dias** (P138): a política é não devolver depois dos 7 dias, e um botão
+  convida o pedido. O pedido chega pelo suporte e, quando o JilsonAI existir, por ele, que abre o caso.
+- **O aluno vê as próprias cobranças e baixa o recibo** em Faturamento (P144). — passo 6a.
+- **Os códigos promocionais pelo admin** (P142), com as regras de *Códigos promocionais* no formulário. — passo 6d.
+- **O aviso ao operador** (P137): na hora, só o urgente (quem pagou e está sem acesso; a contestação); o resto num
+  resumo por dia, de manhã. — passo 2d.
+*Reabre se uma ação no admin custar mais que o problema que resolve (um caso raro que pede uma integração grande): aí
+ela fica no painel da Stripe, com o passo a passo escrito aqui.*
+
 ## Quando um aluno não conseguir pagar *(roteiro de hoje — rascunho do agente, 29/10/2026, a revisar pelo operador)*
+
+**Vale até a etapa 4.7b trocar cada passo por uma ação no admin** (*O painel da cobrança*, acima); é reescrito no fim
+dela.
 
 Saiu da revisão ampla da cobrança (o plano → etapa 4.9b), e descreve **o que existe hoje**. As decisões em
 aberto estão marcadas com o número da pendência; a proposta de engenharia que fecha os buracos é a 4.9b (E1 a E13).
@@ -1995,7 +2049,8 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
 
 **O que fazer, passo a passo:**
 1. **Ache a pessoa.** Cole o id do alerta na busca do painel da Stripe → abra o cliente → pegue o e-mail.
-2. **Confira.** Admin → Assinaturas → o e-mail → **"Conferir na Stripe"**. Se ela tem acesso, responda que está
+2. **Confira.** Admin → Cobrança → Assinaturas → o e-mail → **"Conferir na Stripe"** (na mesma tela, a busca acha
+   a pessoa pelo e-mail, pelo nome ou pelo `sub_`, `cus_` ou `pi_` do alerta). Se ela tem acesso, responda que está
    liberado — sem senha, ela entra por **"Receber código de acesso"**, na tela de entrar.
 3. **Pagou e continua sem acesso:**
    - **Pix "em conferência":** devolva o Pix no painel e peça que pague de novo pela tela. **Não** crie a

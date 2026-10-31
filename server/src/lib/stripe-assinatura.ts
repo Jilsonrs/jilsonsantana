@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import type { CartaoDaAssinatura, MotivoDoCancelamento, Plano } from "@jilson/core";
-import { AssinaturaNaoEncontrada, erroSemMensagem, FORMAS_DE_PAGAMENTO, paraAssinaturaNaStripe, planoDoPreco, stripe, METADADO_DO_PIX } from "./stripe.js";
+import { AssinaturaNaoEncontrada, erroSemMensagem, FORMAS_DE_PAGAMENTO, paraAssinaturaNaStripe, planoDoPreco, quandoAcaba, stripe, METADADO_DO_PIX } from "./stripe.js";
 import { periodoDevolvido } from "./stripe-devolucao.js";
 import { MARCA_DA_TROCA } from "./stripe-plano.js";
 
@@ -71,7 +71,8 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolv
   const preco = itens[0]?.price;
   const plano = preco ? planoDoPreco(preco) : null;
   const fimDoPeriodo = itens.length > 0 ? new Date(Math.max(...itens.map((i) => i.current_period_end)) * 1000) : null;
-  const acabaEm = assinatura.cancel_at !== null ? new Date(assinatura.cancel_at * 1000) : assinatura.cancel_at_period_end ? fimDoPeriodo : null;
+  // A mesma conta do espelho (`quandoAcaba`): o painel e a tela do aluno nunca discordam de quando ela acaba.
+  const acabaEm = quandoAcaba(assinatura);
   const doCliente = assinatura.customer;
   const padraoDoCliente = typeof doCliente === "object" && !doCliente.deleted ? doCliente.invoice_settings.default_payment_method : null;
   // O agendamento é NOSSO quando leva a marca que `agendarTroca` grava (achado da revisão de

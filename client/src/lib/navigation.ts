@@ -269,14 +269,20 @@ export function navegacao(t: AppTexts): Secao[] {
       estado: "planejado", // Fase 4
     },
     {
-      // ASSINATURAS (decisão do operador, 10/10/2026 — Fase 4, etapa 4.4): conferir na
-      // Stripe a assinatura de um aluno e acertar o acesso dele. Depois de "Alunos":
-      // "Comunicação" fica logo antes de "Alunos" por decisão dele (06/10/2026).
-      label: "Assinaturas",
-      to: "/admin/assinaturas",
+      // COBRANÇA (decisão do operador, 31/10/2026, P145 — etapa 4.7b): o painel em que se resolve todo problema de
+      // pagamento de aluno. No lugar de "Assinaturas" (etapa 4.4), depois de "Alunos". O que ainda não existe é EM
+      // BREVE: "Precisa de você" (bloco 2).
+      label: "Cobrança",
+      to: "/admin/cobranca",
       icon: CreditCard,
       papel: Role.ADMIN,
       estado: "ativo",
+      filhos: [
+        { label: "Precisa de você", to: "/admin/cobranca/precisa-de-voce", estado: "planejado" }, // 4.7b, bloco 2
+        { label: "Assinaturas", to: "/admin/cobranca/assinaturas" },
+        { label: "Tentativas", to: "/admin/cobranca/tentativas" },
+        { label: "O que aconteceu", to: "/admin/cobranca/o-que-aconteceu" },
+      ],
     },
     {
       // Mesmo caso de "Cursos Admin": o aluno também tem um "JilsonAI".
