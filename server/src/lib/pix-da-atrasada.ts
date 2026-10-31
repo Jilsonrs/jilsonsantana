@@ -1,5 +1,6 @@
 import type { PixInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
+import { abrirCaso, TipoDeCaso } from "./casos.js";
 import { cobrancaAtrasada } from "./acesso.js";
 import { operarNaAssinatura, sincronizarSeLivre } from "./assinaturas.js";
 import { travarSeLivre, type Conta } from "./checkout.js";
@@ -57,7 +58,7 @@ export async function pagarAAtrasadaComPix(conta: Conta, documento: PixInput["do
   }
   const operacao = await operarNaAssinatura(
     id,
-    async (): Promise<Encerramento> => {
+    async (tx): Promise<Encerramento> => {
       const agora = await buscarDetalhes(id);
       if (!cobrancaAtrasada(agora)) return "nao-atrasada";
       await encerrarParaOPix(id);
@@ -65,6 +66,7 @@ export async function pagarAAtrasadaComPix(conta: Conta, documento: PixInput["do
       try {
         if ((await anularFatura(agora.faturaEmAbertoId)) === "paga") {
           console.error(`[stripe] pix da atrasada: a cobrança em aberto da assinatura ${id} (conta ${conta.id}) foi PAGA no instante do encerramento — a pessoa tem acesso até o fim do período pago, sem renovação; conferir no painel da Stripe`);
+          await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: false, conta: conta.id, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a cobrança em aberto foi paga no instante do encerramento para o Pix" }, tx);
           return "paga-no-meio";
         }
       } catch (erro) {

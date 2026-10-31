@@ -1,5 +1,6 @@
 import { Prisma } from "./prisma.js";
 import { prisma } from "./prisma.js";
+import { abrirCaso, resolvidoSozinho, TipoDeCaso } from "./casos.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, cancelarIncompleta, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
 import { assinaturaDoPagamento, cancelarPorContestacao } from "./stripe-reembolso.js";
@@ -122,6 +123,11 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, {
 
   if (espelho) await tx.subscription.update({ where: { id: espelho.id }, data: dados });
   else await tx.subscription.create({ data: { ...dados, stripeSubscriptionId: agora.id, ownerUserId: dono } });
+  // A conta nasceu do pagamento: o "pagou e está sem conta" desta assinatura e da ficha dela se resolveu sozinho (4.7b, bloco 2).
+  if (contaNova) {
+    await resolvidoSozinho({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `sub:${agora.id}` }, tx);
+    if (agora.pedido) await resolvidoSozinho({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `ficha:${agora.pedido}` }, tx);
+  }
 
   // O acesso de depois se lê pela TRANSAÇÃO (a gravação acima ainda não está no banco para mais
   // ninguém), e pela conta inteira: outra assinatura dela que ainda dê acesso segura a sessão.
@@ -295,6 +301,8 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
         if (await marcarEmConferencia(pagamento.id, motivo)) {
           console.error(`[stripe] ${quem}: o Pix ${pagamento.id} foi PAGO e não virou assinatura (${motivo}) — EM CONFERÊNCIA: a pessoa vê o aviso e não paga de novo; liberar o acesso ou devolver o Pix pelo painel da Stripe`);
         }
+        // O caso (4.7b, bloco 2): na mesma transação, num comando que não falha.
+        await abrirCaso({ tipo: TipoDeCaso.PIX_EM_CONFERENCIA, chave: `pix:${pagamento.id}`, urgente: true, conta: pagamento.userId, cliente: pagamento.clienteId, objeto: pagamento.id, centavos: pagamento.centavos, detalhe: motivo }, tx);
         await marcarAviso();
         return { resultado: "em-conferencia" };
       };
@@ -309,6 +317,7 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
         } else if (await pixDevolvido(pagamento.id)) {
           if (escolhida && "aPagar" in escolhida) await cancelarIncompleta(escolhida.aPagar);
           console.warn(`[stripe] ${quem}: o Pix ${pagamento.id} foi devolvido antes de virar assinatura — nada criado`);
+          await resolvidoSozinho({ tipo: TipoDeCaso.PIX_EM_CONFERENCIA, chave: `pix:${pagamento.id}` }, tx);
           await marcarAviso();
           return { resultado: "sem-assinatura" };
         } else if (escolhida && "aPagar" in escolhida) {
@@ -332,6 +341,10 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
       }
       if (!(await travarChave(tx, assinaturaId, marcar !== null))) return { resultado: "ocupada" };
       const sincronia = await sincronizar(tx, assinaturaId);
+      // O Pix virou assinatura com acesso: o caso de conferência dele (se houver) se resolveu sozinho.
+      if (sincronia.resultado === "atualizada" && assinaturaDaAcesso({ status: sincronia.assinatura.status, currentPeriodEnd: sincronia.assinatura.pagoAte })) {
+        await resolvidoSozinho({ tipo: TipoDeCaso.PIX_EM_CONFERENCIA, chave: `pix:${pagamento.id}` }, tx);
+      }
       await marcarAviso();
       return sincronia;
     }, TEMPO_DO_PIX);
@@ -458,13 +471,14 @@ export type Operacao<T> = { feito: T; sincronia: Sincronia | null };
  * Se a Stripe mudou e a sincronia falhou, a operação VALEU: devolve-a sem a sincronia (é aviso no
  * registro; o aviso da Stripe acerta o espelho). Se a própria mudança falhou, sobe.
  */
-export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: () => Promise<T>, opcoes: { manterSessao?: (feito: T) => boolean } = {}): Promise<Operacao<T> | null> {
+export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: (tx: Prisma.TransactionClient) => Promise<T>, opcoes: { manterSessao?: (feito: T) => boolean } = {}): Promise<Operacao<T> | null> {
   const feita: { valor?: T; foi: boolean } = { foi: false };
   try {
     return await prisma.$transaction(async (tx): Promise<Operacao<T> | null> => {
       const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${assinaturaId})) AS livre`;
       if (!trava?.livre) return null;
-      const feito = await naStripe();
+      // A transação vai junto: o que a operação registrar (um caso, 4.7b) fica nela, sem ligação a mais.
+      const feito = await naStripe(tx);
       feita.valor = feito;
       feita.foi = true;
       return { feito, sincronia: await sincronizar(tx, assinaturaId, { manterSessao: opcoes.manterSessao?.(feito) ?? false }) };

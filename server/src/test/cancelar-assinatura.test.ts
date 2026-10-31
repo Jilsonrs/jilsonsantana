@@ -396,6 +396,10 @@ describe("POST /api/billing/minha-assinatura/cancelar — com a cobrança atrasa
     try {
       expect((await cancelar(member, {})).status).toBe(200);
       expect(erro.mock.calls.flat().join(" ")).toContain(`[stripe] cancelar: a cobrança em aberto da assinatura ${SUB} (conta ${memberId}) foi PAGA no instante do cancelamento`);
+      // O caso "dinheiro recebido sem assinatura" (4.7b, passo 2a), na transação da operação.
+      const casos = await prisma.billingCase.findMany({ where: { kind: "PAGO_SEM_ASSINATURA", userId: memberId, stripeSubscriptionId: SUB }, select: { open: true, urgent: true, key: true } });
+      expect(casos.map((c) => [c.open, c.urgent, c.key.startsWith("fatura:")])).toEqual([[true, true, true]]);
+      await prisma.billingCase.deleteMany({ where: { userId: memberId, stripeSubscriptionId: SUB } });
     } finally {
       erro.mockRestore();
     }

@@ -1,5 +1,6 @@
 import { PRAZO_DO_REEMBOLSO_EM_DIAS, SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura, type ReembolsoFeito, type RenovacaoParada } from "@jilson/core";
 import { prisma } from "./prisma.js";
+import { abrirCaso, TipoDeCaso } from "./casos.js";
 import { assinaturaDaAcesso, aulasAbertasAte, cobrancaAtrasada, encerradaDeVez, passouDoPrimeiroPagamento, temAcessoAtivo } from "./acesso.js";
 import { operarNaAssinatura, sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
@@ -411,7 +412,7 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
   if (oQueCancelarFaz(achada.detalhes) === "nada") return { resultado: "sem-assinatura" };
   const operacao = await operarNaAssinatura(
     id,
-    async (): Promise<Cancelada> => {
+    async (tx): Promise<Cancelada> => {
       const agora = await buscarDetalhes(id);
       const acao = oQueCancelarFaz(agora);
       if (acao === "nada") return { resultado: "sem-assinatura" };
@@ -429,7 +430,10 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
         // diz o que o servidor ler (com o período pago, o acesso vai até o fim dele).
         if (agora.faturaEmAbertoId) {
           try {
-            if ((await anularFatura(agora.faturaEmAbertoId)) === "paga") console.error(`[stripe] cancelar: a cobrança em aberto da assinatura ${id} (conta ${userId}) foi PAGA no instante do cancelamento — a pessoa pagou um período que quis cancelar; conferir e devolver pelo painel da Stripe`);
+            if ((await anularFatura(agora.faturaEmAbertoId)) === "paga") {
+              console.error(`[stripe] cancelar: a cobrança em aberto da assinatura ${id} (conta ${userId}) foi PAGA no instante do cancelamento — a pessoa pagou um período que quis cancelar; conferir e devolver pelo painel da Stripe`);
+              await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: true, conta: userId, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a cobrança em aberto foi paga no instante do cancelamento" }, tx);
+            }
           } catch (erro) {
             console.error(`[stripe] cancelar: a assinatura ${id} (conta ${userId}) foi encerrada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
           }

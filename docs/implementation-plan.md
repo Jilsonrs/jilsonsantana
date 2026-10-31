@@ -6396,8 +6396,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               disparado — nenhuma ida nova à Stripe (o motivo já estava nos metadados).*
         - [ ] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele).
       - [ ] **BLOCO 2 — PRECISA DE VOCÊ** (os casos e o aviso ao operador)
-        - [ ] **2a — Os casos, a base:** a tabela (com RLS), abrir sem repetir e fechar sozinho; os três primeiros
-              tipos de *B* (o Pix em conferência, o dinheiro sem assinatura, o pagou e está sem conta).
+        - [x] **2a — Os casos, a base:** a tabela (com RLS), abrir sem repetir e fechar sozinho; os três primeiros
+              tipos de *B* (o Pix em conferência, o dinheiro sem assinatura, o pagou e está sem conta). **FEITO
+              (31/10/2026).** Migration `20261031200000_casos_da_cobranca`: `billing_case` (`BillingCase`, com RLS; o
+              enum `TipoDeCaso` já com os 12 tipos de *B*; um caso por situação — `kind` + `key`, único). **Abrir NUNCA
+              pode quebrar a cobrança** (`lib/casos.ts`): o caso é aberto no MESMO lugar do alerta (que continua), dentro
+              da transação da cobrança quando há uma (o `tx`), num comando só — `INSERT … ON CONFLICT DO UPDATE` — e a
+              tabela não tem chave estrangeira: um erro ali deixaria a transação abortada. Abrir de novo atualiza o
+              resumo e guarda quando abriu; a situação que volta depois de fechada REABRE, limpa. `operarNaAssinatura`
+              passou a entregar a transação à operação (para o caso ficar nela). **Os três tipos:** *Pix em conferência*
+              (`assinaturas.ts`, `checkout.ts`, `checkout-do-visitante.ts`; fecha sozinho quando o Pix vira assinatura
+              com acesso, ou foi devolvido antes); *dinheiro recebido sem assinatura* (a tentativa cancelada já paga —
+              `checkout.ts`, `checkout-do-visitante.ts`, `pix-pre-pago.ts` — e a cobrança paga no instante de cancelar ou
+              do Pix da atrasada — `minha-assinatura.ts`, `pix-da-atrasada.ts`); *pagou e está sem conta* (o aviso com a
+              assinatura sem conta que dá acesso, a assinatura viva sem conta do visitante, e a limpeza dos 7 dias que
+              achou pagamento — fecha sozinho quando a conta nasce do pagamento). Urgentes, menos o da cobrança paga no
+              Pix da atrasada (a pessoa tem acesso). Testes: `casos.test.ts` (novo — inclusive a transação que não
+              aborta), e o caso conferido em `pix-pre-pago.test.ts` e `cancelar-assinatura.test.ts`. **Mutação: 6 de 6
+              reprovaram.** **Banco de dev:** `migrate deploy`, *No difference detected*, nenhuma tabela sem RLS.
+              *Docs check (context7): não disparado — nenhuma ida nova à Stripe.*
         - [ ] **2b — Os outros tipos de *B*.** O alerta do Sentry continua saindo: é ele que avisa até o 2d existir.
         - [ ] **2c — A tela "Precisa de você"** (a primeira que abre): os casos, fechar com nota e o link para a ficha.
         - [ ] **2d — O aviso ao operador** (P137: o urgente na hora; o resto num resumo de manhã).

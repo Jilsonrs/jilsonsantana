@@ -4,6 +4,7 @@ import { assinaturaDaAcesso } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 import { registrarAviso } from "./registro-da-cobranca.js";
+import { abrirCaso, TipoDeCaso } from "./casos.js";
 
 // O QUE VEM DEPOIS DE PROCESSAR UM AVISO DA STRIPE — os alertas, o registro, as boas-vindas e os e-mails da cobrança.
 // Mora aqui, e não na rota (estava em `routes/stripe-webhook.ts` até a 4.9b), porque são DOIS os caminhos de um aviso:
@@ -55,7 +56,10 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
     // fora (achado P1 da revisão) — o force-sync (etapa 4.4) conserta depois que a conta existir.
     const { id, clienteId, status, pagoAte } = desfecho.assinatura;
     const linha = `[stripe] aviso ${aviso.id} (${aviso.tipo}): assinatura ${id} do cliente ${clienteId} (${status}) SEM CONTA — ${desfecho.motivo}`;
-    if (assinaturaDaAcesso({ status, currentPeriodEnd: pagoAte })) console.error(`${linha}; ela dá acesso: o assinante está trancado fora`);
+    if (assinaturaDaAcesso({ status, currentPeriodEnd: pagoAte })) {
+      console.error(`${linha}; ela dá acesso: o assinante está trancado fora`);
+      await abrirCaso({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `sub:${id}`, urgente: true, assinatura: id, cliente: clienteId, detalhe: `sem conta (${desfecho.motivo}) e dá acesso` });
+    }
     // A tentativa do visitante que ainda não foi paga (etapa 4.7, passo 4): o normal de toda
     // assinatura dele até o pagamento passar — a conta nasce no aviso seguinte. Não é aviso.
     else if (desfecho.motivo === "aguardando o pagamento") console.info(linha);
