@@ -217,7 +217,8 @@
 > (`cf14dc3`, no `dev`, ainda não publicado: só código de teste). **A abertura ao público é no mês que vem** (operador,
 > 30/10/2026).
 > **O QUE FALTA PARA ABRIR AO PÚBLICO** — o roteiro é a tabela *A ordem* (neste plano: "A ordem — aprovada pelo operador em
-> 28/10/2026"); o Pix (o bloco 1) está feito. Faltam: (2) o JilsonAI (Fase 6 — a P84: o cartão de preço promete o JilsonAI);
+> 28/10/2026"); o Pix (o bloco 1) está feito. Faltam: (2) o JilsonAI (Fase 6 — a P84: o cartão de preço promete o JilsonAI; o plano espera o limite do Fable — o
+> item 5, abaixo);
 > (3) a tela de montar trilhas no admin (6b); (4) os certificados (6.5); (5) a home lendo os cursos do banco (C4, depois da
 > P16); (6) as páginas — Termos (com a cláusula da P61), Privacidade (com a resposta da P135), Contato e Quem somos (P30) e
 > o caminho de excluir a conta; (7) a cópia do banco fora do Neon, com teste de restauração; (8) o aviso de erro nas telas
@@ -271,6 +272,27 @@
 > 4. **O passo 8 da 4.7 FICA PARA O FIM** *(decisão do operador, 30/10/2026)*: o teste dele com cartão e Pix reais (R$ 99,90
 >    — cartão: mensal → troca para o anual → reembolso; Pix: pagar → reembolso, olhando a taxa da Stripe), como um aluno de
 >    verdade, depois da 6g do Antigravity. A P102 fechou (o registro no passo 8).
+> 5. **O PLANO DO JILSONAI — ESPERA O LIMITE DO FABLE RENOVAR** *(decisões do operador, 30/10/2026)*: ele quer o plano feito
+>    pelo **Fable 5.1 no esforço máximo**, como planejador, e a construção pelo Claude, uma fatia por sessão. A tentativa de
+>    30/10 (disparada pelo Claude, como agente só de leitura) parou antes de começar: a conta atingiu o **limite mensal de
+>    gasto** com o Fable. Ofereci planejar com o Opus no máximo; **ele escolheu esperar o limite renovar.** *Risco: o tempo até
+>    a abertura (o ponto de checagem proposto de 11/11).* **O pedido, pronto para disparar de novo** (agente planejador, modelo
+>    `fable`, esforço `max`, SÓ LEITURA — proibido editar arquivo, rodar a suíte do servidor, chamar produção ou ler `.env`):
+>    **ler** o `CLAUDE.md` inteiro (JilsonAI, *Working Method*, *Block Execution Protocol*, *Definição de pronto*, *DE QUEM É A
+>    DECISÃO*, *Rendering Boundary* com as regras de versão do app, *Access Architecture*, *Testing*, *Quality Gates*, *Costs*,
+>    as 3 cópias do servidor), o `docs/jilsonai.md` inteiro, deste plano o *Estado atual*, o *PARA CONTINUAR*, *O PLANO DE
+>    LANÇAMENTO*, a *Phase 6* e a *6.5*, o `tech-stack.md` e o `decisions-archive.md` sobre a AI SDK e a fila, o `design.md` e
+>    o `content.md` sobre o chat, e o código que ele vai tocar ou imitar (`app.ts`, `lib/acesso.ts`, `middleware/auth.ts`,
+>    `lib/monitor.ts`, `lib/limite-de-tentativas.ts`, `lib/email.ts`, `schema.prisma`, `test/servidor.ts`; no site, `App.tsx`,
+>    `PageLayout`, `language.tsx` + `pt.ts`, `MarkdownText`, `lib/versao.ts`, `lib/pedacos.test.ts`, `test-utils`,
+>    `lib/compat.ts`); **devolver** o resumo para o operador (o que o aluno verá na abertura), as decisões DELE (cada uma com
+>    opções e a recomendada; dizendo que fatia cada uma trava), as tarefas dele fora do código (as chaves da Claude e do
+>    Gemini no cofre do Google, o texto da persona, o limite de gasto nas APIs, o custo), as fatias em ordem (objetivo,
+>    arquivos, migration com RLS, dependências novas para o OK dele, testes e alvos de mutação, revisão de segurança, "pronto
+>    quando", tamanho, dependências — com uma fatia zero de conferência da documentação da AI SDK), os riscos com a proteção
+>    de cada um (inclusive custo e abuso), o que fica fora (Fases 4 em diante) e a recomendação para 11/11. O plano volta ao
+>    Claude, que o confere contra o código, grava aqui e no `jilsonai.md` (sem documento novo) e leva as perguntas ao
+>    operador, uma por vez.
 > **O que o próximo chat precisa saber:** a suíte do servidor apaga o banco de teste local — perguntar
 > UMA vez e usar a resposta exata em `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`; rodar como o CI
 > (`STRIPE_SECRET_KEY= STRIPE_PUBLISHABLE_KEY= STRIPE_WEBHOOK_SECRET= RESEND_API_KEY= STRIPE_PIX_CONFIGURATION=` — a chave do
