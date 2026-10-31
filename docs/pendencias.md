@@ -16,7 +16,7 @@
 > 5. **Item novo ganha o próximo número livre.** Número nunca se reutiliza, para que "P7" queira
 >    dizer sempre a mesma coisa em qualquer conversa.
 >
-> **Próximo número livre: P136** · Atualizada em 30/10/2026
+> **Próximo número livre: P137** · Atualizada em 30/10/2026
 >
 > **DESDE 12/10/2026 A ESCOLA É SÓ EM PORTUGUÊS E SÓ PARA O BRASIL** (decisão do operador; etapa
 > 4.6c do plano). A parte em inglês de qualquer item abaixo deixou de existir: revise só o
@@ -28,11 +28,10 @@
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
 *Item novo que precise de resposta rápida entra aqui, com o próximo número livre.*
+*Vazia desde 30/10/2026: a P93, a P102 e a P126 foram resolvidas (o registro está no plano).*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
-| P126 | **O que só se confere nos painéis** (4.9b), para fazermos juntos, por prints. **Stripe:** a configuração do Pix só com o Pix; o Portal do Cliente desligado; 2FA em todo acesso; para qual caixa vão os e-mails da Stripe de "endereço de avisos falhando", contestação e cobrança que falhou; as entregas recentes do endereço de avisos em 200, e um reenvio que prove o segredo. **Sentry:** as regras de alerta ativas — que avisem as QUATRO origens da reserva da cota, `stripe`, `email`, `avisos` e `monitor` (o aviso de que o limite de alertas começou a descartar — E9; a revisão do grupo 2) —, o aviso de cota, nada de cobrança marcado como "ignorado". **Google Cloud:** o agendador ativo e a última rodada sem falha; só as contas do site e dos jobs leem as chaves da Stripe; as duas chaves de verdade; um alerta de "a rodada não rodou" (recurso novo do Google: antes, o mapa do `tech-stack.md`). **Resend:** o domínio verificado e os e-mails que voltaram. **GoDaddy:** nenhum subdomínio apontando para serviço de terceiros | o plano → 4.9b |
-| P102 | **A sua assinatura de teste no site no ar continua cobrando o seu cartão** todo mês, com o site fora. Manter (para o teste do passo 8 da etapa 4.7) ou cancelar pelo painel da Stripe? *28/10/2026, à pergunta do agente: "Eu não cheguei a testar com o cartão real, estou esperando terminar tudo antes de testar" — fica até o passo 8; na hora, conferir no painel da Stripe (modo de verdade) se existe alguma assinatura cobrando o seu cartão, antes do teste.* | o plano → etapa 4.7, passo 8 |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
@@ -62,6 +61,7 @@
 
 | # | O que falta | Quando | Onde registrar |
 |---|---|---|---|
+| P136 | **A proteção contra e-mail falso com o domínio principal** (achado da P126, 30/10/2026): o `_dmarc` de `jilsonsantana.com` está em `p=none` — só observa, e alguém de fora consegue mandar e-mail se passando por `@jilsonsantana.com` sem ser barrado (o domínio de envio da escola, `alunos`, já barra: `p=quarantine`). Endurecer para `quarantine` exige antes conferir, no Microsoft 365, que o seu e-mail sai assinado (o DKIM ligado) — senão os seus próprios e-mails passam a cair no spam. | antes de abrir ao público | GoDaddy (o registro `_dmarc`) e o plano → *A ordem*, bloco 10 |
 | P135 | **Por quanto tempo guardar o lead que nunca provou o e-mail, e se o descadastro apaga o nome e o UTM** (etapa 4.7, passo 9 — a revisão de segurança, 30/10/2026). Hoje o lead da caixa marcada ao assinar (sem a prova do e-mail) fica para sempre, e quem se descadastra continua com o nome e o UTM guardados — o e-mail e a data já bastam para respeitar o descadastro. Sugestão do agente: apagar o lead sem prova depois de 90 dias, e apagar o nome e o UTM ao descadastrar | quando a Política de Privacidade for escrita (antes de abrir ao público) | o plano → etapa 4.7, passo 9; `billing.md` → *Quem não terminou de assinar* |
 | P125 | **Antes de criar dois tipos de código promocional** (4.9b; hoje não existe nenhum dos dois): (1) um código de 100% que NÃO seja "para sempre" faz a tela sem login só guardar o cartão — e aí o site pode servir para testar cartão roubado: o gatilho que você deixou para ligar o "Radar para cartões guardados" se cumpriu; (2) um código "por N meses" pode levar o desconto ao ano inteiro na troca para o anual (a medir na área restrita). | quando for criar o primeiro código de 100% que não seja "para sempre", ou o primeiro "por N meses" | `billing.md` → *Códigos promocionais* e *Limite de tentativas* |
 | P96 | **Como confirmar o e-mail de quem marcou "quero novidades"** antes de a escola mandar novidades e ofertas. Você decidiu (passo 5) que elas só vão para e-mail confirmado; desde a P94 (21/10/2026), o "e-mail confirmado" do login liga também quando a senha é criada logo depois de pagar, sem código — e quem pagou pode não ser o dono do e-mail. Um jeito comum: um e-mail "confirme que quer receber novidades", com um botão | quando o envio de novidades for construído | `billing.md` → *Depois de pagar* |
