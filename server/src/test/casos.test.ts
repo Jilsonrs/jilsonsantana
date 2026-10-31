@@ -25,7 +25,7 @@ vi.mock("../lib/email.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma, TipoDeCaso, QuemFez } from "../lib/prisma.js";
-import { abrirCaso, fecharCaso } from "../lib/casos.js";
+import { abrirCaso, fecharCaso, transacaoDaCobranca } from "../lib/casos.js";
 import { depoisDoAviso } from "../lib/depois-do-aviso.js";
 
 const S = `${Date.now()}`;
@@ -87,24 +87,38 @@ describe("abrir e fechar um caso", () => {
     expect(await caso(chave)).toMatchObject({ open: true, urgent: true, closedAt: null, closedBy: null, note: null, notifiedAt: null });
   });
 
-  it("dentro da transação: o caso vive e morre com ela, e abrir um que já existe não a aborta", async () => {
+  // A revisão de segurança do bloco 2 (31/10/2026): dentro da transação, o caso morria com ela — e a transação desfeita
+  // (a sincronia que falha DEPOIS de a Stripe mudar) levava junto o caso de uma situação que continuava de pé.
+  it("dentro da transação da cobrança: o caso é gravado quando ela TERMINA — também quando ela falha —, e nunca antes", async () => {
     const desfeito = `sub:${novoId("sub")}`;
     await expect(
-      prisma.$transaction(async (tx) => {
-        await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: desfeito, urgente: true }, tx);
+      transacaoDaCobranca(async () => {
+        await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: desfeito, urgente: true });
+        // Guardado: ainda não está no banco.
+        expect(await caso(desfeito)).toBeNull();
         throw new Error("a cobrança falhou depois");
       }),
     ).rejects.toThrow("a cobrança falhou depois");
-    expect(await caso(desfeito)).toBeNull();
+    expect(await caso(desfeito)).toMatchObject({ open: true, urgent: true });
 
-    const existente = `sub:${novoId("sub")}`;
-    await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: existente, urgente: true });
-    const contas = await prisma.$transaction(async (tx) => {
-      await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: existente, urgente: true, detalhe: "de novo, na transação" }, tx);
+    const certo = `sub:${novoId("sub")}`;
+    const contas = await transacaoDaCobranca(async (tx) => {
+      await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: certo, urgente: false, detalhe: "na transação" });
       return tx.user.count();
     });
     expect(contas).toBeGreaterThan(0);
-    expect((await caso(existente))?.detail).toBe("de novo, na transação");
+    expect((await caso(certo))?.detail).toBe("na transação");
+  });
+
+  it("uma transação da cobrança dentro da outra: a de FORA grava", async () => {
+    const chave = `sub:${novoId("sub")}`;
+    await transacaoDaCobranca(async () => {
+      await transacaoDaCobranca(async () => {
+        await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave, urgente: false });
+      });
+      expect(await caso(chave)).toBeNull();
+    });
+    expect(await caso(chave)).toMatchObject({ open: true });
   });
 });
 

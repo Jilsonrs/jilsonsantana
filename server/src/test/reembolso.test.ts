@@ -469,6 +469,23 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
     expect((await situacao()).body).toMatchObject({ temAcesso: true });
   });
 
+  // A REVISÃO DE SEGURANÇA DO BLOCO 2 DA 4.7b (31/10/2026): o caso era aberto DENTRO da transação da operação — e,
+  // com a sincronia falhando depois, a transação desfeita o levava junto. A devolução continuava sem sair, e ninguém via.
+  it("encerrou, a devolução falhou E a sincronia falhou: o caso URGENTE fica de pé", async () => {
+    devolver.mockRejectedValue(new Error("[stripe] a devolução do pagamento falhou: StripeAPIError"));
+    buscarAssinatura.mockRejectedValue(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
+    const [erro, aviso] = [vi.spyOn(console, "error").mockImplementation(() => {}), vi.spyOn(console, "warn").mockImplementation(() => {})];
+    try {
+      expect((await reembolsar(member, {})).body).toEqual({ error: "DevolucaoFalhou" });
+      expect(aviso.mock.calls.flat().join(" ")).toContain(`a operação na assinatura ${SUB} valeu na Stripe, e a sincronia ficou para o aviso`);
+      expect(await prisma.billingCase.findUnique({ where: { kind_key: { kind: "DEVOLUCAO_FALHOU", key: `sub:${SUB}` } } })).toMatchObject({ open: true, urgent: true, userId: memberId, amount: 9990 });
+      await prisma.billingCase.deleteMany({ where: { key: `sub:${SUB}` } });
+    } finally {
+      erro.mockRestore();
+      aviso.mockRestore();
+    }
+  });
+
   // Achado da revisão de segurança (segunda passada, 11/10/2026): se, encerrada, a assinatura
   // já não dá acesso (a última fatura era a de uma troca de plano que não se completou), a
   // pessoa perdia a sessão junto — e nunca lia que o dinheiro não tinha voltado.

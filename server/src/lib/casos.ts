@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { CASOS_POR_PAGINA, type CasoDaLista, type ConsertoDoCaso, type ListaDeCasos, type QuemFezNoRegistro, type TipoDeCasoDaLista } from "@jilson/core";
 import { Prisma, prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 
@@ -5,12 +6,37 @@ import { Prisma, prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 // da cobrança que precisa do operador vira UM caso (o tipo + a chave da situação), aberto no MESMO lugar em que o alerta
 // sai — o alerta continua (é ele que avisa até o aviso por e-mail, passo 2d). O caso fecha sozinho quando a situação se
 // resolve, ou pelo operador, com uma nota.
-// **Abrir um caso NUNCA pode quebrar a cobrança:** ele é aberto dentro das transações dela (com o `tx`), e num comando
-// só, que não falha se o caso já existe (`ON CONFLICT`) nem por chave estrangeira (a tabela não tem nenhuma). Um erro
-// num comando dentro de uma transação a deixaria abortada — por isso não há leitura antes nem segundo passo.
+// **O CASO É GRAVADO FORA DAS TRANSAÇÕES DA COBRANÇA** (revisão de segurança do bloco 2, 31/10/2026): o que é aberto
+// dentro de uma (`transacaoDaCobranca`) fica guardado e só é gravado quando ela termina — tenha dado certo ou não. Dentro
+// dela, três coisas davam errado: a transação desfeita (a sincronia que falha DEPOIS de a Stripe mudar) levava junto o
+// caso de uma situação que continua de pé na Stripe; um erro do comando do caso abortava a transação da cobrança; e o
+// caso aberto com o banco de sempre pedia uma SEGUNDA ligação enquanto a transação segurava a dela. Gravar nunca lança.
+// O caso FECHADO continua dentro da transação (`resolvidoSozinho`, com o `tx`): ele só vale se o espelho que o resolveu
+// valer.
 
-/** O banco: o de sempre, ou a transação em que a cobrança está. */
+/** O banco: o de sempre, ou a transação em que a cobrança está (só para FECHAR). */
 type Banco = Prisma.TransactionClient | typeof prisma;
+
+/** Os casos abertos dentro da transação da cobrança em andamento — gravados quando ela termina. */
+const guardados = new AsyncLocalStorage<NovoCaso[]>();
+
+/** O tempo da transação, como o do Prisma. */
+type TempoDaTransacao = { maxWait?: number; timeout?: number };
+
+/**
+ * A TRANSAÇÃO DA COBRANÇA: a do Prisma, com os casos abertos dentro dela — mesmo por funções que ela chama, sem passar
+ * nada — gravados DEPOIS, deu certo ou não. Uma dentro da outra: a de fora grava. Nunca abrir e fechar o mesmo caso na
+ * mesma transação: o fechamento vem antes da gravação, e o caso ficaria aberto (nenhum caminho faz isso).
+ */
+export async function transacaoDaCobranca<T>(fazer: (tx: Prisma.TransactionClient) => Promise<T>, tempo?: TempoDaTransacao): Promise<T> {
+  if (guardados.getStore()) return prisma.$transaction(fazer, tempo);
+  const lista: NovoCaso[] = [];
+  try {
+    return await guardados.run(lista, () => prisma.$transaction(fazer, tempo));
+  } finally {
+    for (const caso of lista) await gravarCaso(caso);
+  }
+}
 
 export type NovoCaso = {
   tipo: TipoDeCaso;
@@ -28,11 +54,18 @@ export type NovoCaso = {
 
 /**
  * Abre o caso — ou, se a mesma situação já tem caso, atualiza o resumo; se ele estava fechado, REABRE (a situação
- * voltou). Nunca lança fora de uma transação; dentro dela, o comando único não tem como falhar por conflito.
+ * voltou). Dentro de uma transação da cobrança, só guarda: ele é gravado quando ela termina. Nunca lança.
  */
-export async function abrirCaso(caso: NovoCaso, banco: Banco = prisma): Promise<void> {
+export async function abrirCaso(caso: NovoCaso): Promise<void> {
+  const lista = guardados.getStore();
+  if (lista) lista.push(caso);
+  else await gravarCaso(caso);
+}
+
+/** Grava o caso, num comando só, que não falha se ele já existe (`ON CONFLICT`). Nunca lança. */
+async function gravarCaso(caso: NovoCaso): Promise<void> {
   try {
-    await banco.$executeRaw`
+    await prisma.$executeRaw`
       INSERT INTO "billing_case" ("kind", "key", "open", "urgent", "userId", "stripeSubscriptionId", "stripeCustomerId", "stripeObjectId", "amount", "detail", "openedAt", "updatedAt")
       VALUES (${caso.tipo}::"TipoDeCaso", ${caso.chave}, true, ${caso.urgente}, ${caso.conta ?? null}, ${caso.assinatura ?? null}, ${caso.cliente ?? null}, ${caso.objeto ?? null}, ${caso.centavos ?? null}::integer, ${caso.detalhe ?? null}, now(), now())
       ON CONFLICT ("kind", "key") DO UPDATE SET

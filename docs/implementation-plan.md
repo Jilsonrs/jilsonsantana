@@ -6482,7 +6482,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               arquivo de teste (`setup.ts`, como o limite de tentativas: um caso urgente de outro arquivo faria o aviso
               sair num teste que conta e-mails). **Mutação: 6 de 6 reprovaram.** *Docs check (context7): não
               disparado.*
-        - [ ] **Fechamento do bloco 2.**
+        - [ ] **Fechamento do bloco 2.** **A revisão de segurança (31/10/2026, só o que mudou — os passos 2a a 2d):
+              nenhum P0 nem P1.** Os cinco menores, fechados com teste e mutação (6 de 6 reprovaram), sem nova rodada.
+              Três se fecharam com UMA mudança — **o caso aberto dentro de uma transação da cobrança é guardado e
+              gravado quando ela termina, tenha dado certo ou não** (`transacaoDaCobranca`, em `casos.ts`; a regra foi
+              para o `CLAUDE.md` → *Membership Gating*): (P2) aberto DENTRO da transação de uma operação, o caso morria
+              com ela — a sincronia que falha depois de a Stripe mudar desfazia a transação e levava junto o caso de uma
+              situação que continuava de pé (a devolução que falhou, a cobrança em aberto que não se anulou); (P2) aberto
+              pelo banco de sempre no meio de uma transação (a contestação dentro do aviso, a troca de plano dentro da
+              operação), ele pedia uma segunda ligação enquanto a transação segurava a dela; (P3) um erro no comando do
+              caso, dentro da transação, a abortava. E os dois do aviso ao operador: (P2) o e-mail dos urgentes de um
+              caso REABERTO repetia a chave do primeiro aviso, e o Resend o descartava — a chave agora sai do lote (cada
+              caso com a hora em que abriu) e do texto (`chaveDosUrgentes`); (P3) os casos eram marcados como avisados
+              antes de ler as contas de admin — agora elas são lidas antes, e qualquer falha depois de marcar devolve a
+              marca (só um processo que morre no meio deixa caso marcado sem e-mail, e o resumo da manhã o lista).
+              Testes: `casos-uma-ligacao.test.ts` (novo — o banco aceitando UMA ligação: a contestação com a cobrança
+              que não se anula, e o agendamento pela metade dentro de uma operação que falha), `casos.test.ts`,
+              `avisos-ao-operador.test.ts` (+3) e `reembolso.test.ts` (+1: a devolução e a sincronia falhando juntas).
+              **Falta:** os dois e-mails ao operador (no e-mail de verdade) e publicar — **junto com o bloco 3**: as
+              correções desta revisão mexem em código que o bloco 3 também mudou, e publicar o 2 sozinho pediria
+              refazê-las numa cópia à parte. Depois do deploy, conferir em produção (só leitura) o RLS da `billing_case`.
       - [ ] **BLOCO 3 — AS AÇÕES SEM DINHEIRO**
         - [x] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
               Stripe (a sincronia, agora na ficha), Cancelar no fim do período, Desfazer, Copiar ou enviar o link,

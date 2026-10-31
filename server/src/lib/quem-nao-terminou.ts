@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { OrigemDoLead, prisma, type Prisma } from "./prisma.js";
-import { abrirCaso, TipoDeCaso } from "./casos.js";
+import { abrirCaso, TipoDeCaso, transacaoDaCobranca } from "./casos.js";
 import { travarSeLivre, temConta } from "./checkout-do-visitante.js";
 import { modoDaChave } from "./conferencia-da-cobranca.js";
 import { getDict } from "./dict.js";
@@ -247,7 +247,7 @@ async function apagar(ficha: FichaDaRodada, agora: Date): Promise<"apagada" | "c
     console.warn(`[stripe] limpeza: a ficha ${ficha.id} é do ${ficha.livemode ? "modo de verdade" : "modo de teste"} e a chave não — não apagada`);
     return "outro-modo";
   }
-  return prisma.$transaction(async (tx) => {
+  return transacaoDaCobranca(async (tx) => {
     if (!(await travarSeLivre(tx, ficha.email))) return "ocupada";
     // Relida COM a trava — é ELA que decide, e o lead é gravado com ela: o visitante pode ter voltado (a última tentativa
     // mudou), mudado a caixa ou o nome, ou ter pago (a conta nasceu).
@@ -263,7 +263,7 @@ async function apagar(ficha: FichaDaRodada, agora: Date): Promise<"apagada" | "c
         if (atual.naoApagadaEm === null) {
           console.error(`[stripe] limpeza: a ficha ${atual.id} (cliente ${atual.stripeCustomerId}) NÃO foi apagada — ${decisao.motivo}: alguém pagou e ficou sem conta? Conferir no painel da Stripe`);
         }
-        await abrirCaso({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `ficha:${atual.id}`, urgente: true, cliente: atual.stripeCustomerId, detalhe: `a limpeza dos 7 dias achou pagamento: ${decisao.motivo}` }, tx);
+        await abrirCaso({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `ficha:${atual.id}`, urgente: true, cliente: atual.stripeCustomerId, detalhe: `a limpeza dos 7 dias achou pagamento: ${decisao.motivo}` });
         return "com-pagamento";
       }
       for (const pagamento of decisao.aCancelar) await cancelarPagamentoAberto(pagamento);

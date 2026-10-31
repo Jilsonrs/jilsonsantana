@@ -1,7 +1,7 @@
 import type { Prisma } from "./prisma.js";
 import { DuracaoDoDesconto, type AssinarInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
-import { abrirCaso, TipoDeCaso } from "./casos.js";
+import { abrirCaso, TipoDeCaso, transacaoDaCobranca } from "./casos.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { cancelarOutrosPix, pixDaPrePagaIncompleta, pixPagoSemEspelho, processarPixPago, sincronizarSeLivre } from "./assinaturas.js";
 import { listarPixDoCliente, marcarEmConferencia } from "./stripe-pix.js";
@@ -189,7 +189,7 @@ export async function pixPagoDaConta(conta: Conta, pagamento: PagamentoPrePago):
 
 /** A decisão, COM a trava da conta: o que a Stripe diz do cliente, o número fiscal, e a assinatura. */
 async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, precoId: string, codigoId: string | null, codigo: CodigoPromocional | null): Promise<NaTrava> {
-  return prisma.$transaction(async (tx): Promise<NaTrava> => {
+  return transacaoDaCobranca(async (tx): Promise<NaTrava> => {
     if (!(await travarSeLivre(tx, conta.id))) return { resultado: "ocupada" };
     // De novo, com a trava, e pela MESMA ligação: o aviso da Stripe pode ter chegado no meio.
     if (await temAcessoAtivo(conta.id, tx)) return { resultado: "ja-assinante" };
@@ -239,7 +239,7 @@ async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, pr
         // Ela foi PAGA entre a lista e o cancelamento (outra aba, no mesmo instante): o
         // cancelamento encerrou uma assinatura paga. Precisa de gente: reembolso ou reativação.
         console.error(`[stripe] checkout: a assinatura ${incompleta.id} da conta ${conta.id} foi cancelada já PAGA (ficou ${ficou}) — conferir no painel`);
-        await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `sub:${incompleta.id}`, urgente: true, conta: conta.id, assinatura: incompleta.id, detalhe: `a tentativa foi cancelada já paga (ficou ${ficou})` }, tx);
+        await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `sub:${incompleta.id}`, urgente: true, conta: conta.id, assinatura: incompleta.id, detalhe: `a tentativa foi cancelada já paga (ficou ${ficou})` });
         return { resultado: "ja-assinante" };
       }
     }

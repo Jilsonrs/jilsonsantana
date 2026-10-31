@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NOME_DO_TIPO_DE_CASO, Role, type TipoDeCasoDaLista } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { enviarEmail } from "./email.js";
@@ -7,8 +8,9 @@ import type { MensagemDeEmail } from "../views/email.js";
 // O AVISO AO OPERADOR (Fase 4, etapa 4.7b, passo 2d — decisão do operador, 31/10/2026, P137): o URGENTE por e-mail na
 // hora (quem pagou e está sem acesso, e a contestação, que tem prazo); o resto num RESUMO por dia, de manhã, e só se
 // houver caso aberto. Para o e-mail de cada conta de admin, lido do nosso banco.
-// **O e-mail nunca sai de dentro de uma transação** (CLAUDE.md → Membership Gating): o caso é aberto dentro delas; o
-// aviso sai depois — ao fim do processamento de cada aviso da Stripe (`depois-do-aviso.ts`) e na rodada de hora em hora.
+// **O e-mail nunca sai de dentro de uma transação** (CLAUDE.md → Membership Gating): o caso aberto dentro de uma é
+// gravado quando ela termina (`transacaoDaCobranca`), e o aviso sai depois — ao fim do processamento de cada aviso da
+// Stripe (`depois-do-aviso.ts`) e na rodada de hora em hora.
 // O caso urgente aberto numa tela do aluno (o checkout, o cancelamento) sai, assim, em até uma hora; o alerta do
 // Sentry continua saindo na hora.
 // Nunca lança: o aviso é para o operador saber, e não pode derrubar nada.
@@ -59,30 +61,55 @@ function admins() {
 }
 
 /**
+ * A CHAVE DO E-MAIL DOS URGENTES (revisão de segurança do bloco 2, 31/10/2026): o MESMO lote, com o mesmo texto, para o
+ * mesmo admin dá a mesma chave (o envio repetido em 24 h não sai duas vezes); um caso REABERTO (outro `openedAt`) ou um
+ * texto diferente dá outra. Antes, a chave era feita só dos ids — o caso reaberto repetia a do primeiro aviso, e o Resend
+ * descartava o e-mail novo (ou o recusava, com o texto diferente). Função pura.
+ */
+export function chaveDosUrgentes(adminId: string, casos: { id: number; openedAt: Date }[], mensagem: MensagemDeEmail): string {
+  const lote = casos.map((c) => `${c.id}:${c.openedAt.toISOString()}`).sort().join(",");
+  return `casos-urgentes/${adminId}/${createHash("sha256").update(lote).update("\n").update(JSON.stringify(mensagem)).digest("hex").slice(0, 32)}`;
+}
+
+/** Devolve a marca dos casos tomados: a próxima vez tenta de novo. Nunca lança — se não voltar, eles saem no resumo da manhã. */
+async function devolverAMarca(ids: number[]): Promise<void> {
+  try {
+    await prisma.billingCase.updateMany({ where: { id: { in: ids } }, data: { notifiedAt: null } });
+  } catch (erro) {
+    console.warn(`[api] a marca dos casos urgentes ${ids.join(",")} não voltou — eles saem no resumo da manhã: ${erro instanceof Error ? erro.message : String(erro)}`);
+  }
+}
+
+/**
  * Avisa os casos URGENTES abertos que ainda não foram avisados: toma-os num comando só (`notifiedAt`, para duas cópias do
  * servidor nunca mandarem o mesmo aviso), manda UM e-mail a cada admin e, se nenhum saiu, devolve a marca — a próxima
  * vez tenta de novo. Devolve quantos casos foram avisados.
+ * As contas de admin são lidas ANTES de tomar os casos, e qualquer falha depois de tomá-los devolve a marca (revisão de
+ * segurança do bloco 2). Só um processo que MORRE entre tomar e enviar deixa casos marcados sem e-mail: o resumo da manhã
+ * lista todos os abertos, os urgentes primeiro.
  */
 export async function avisarUrgentes(): Promise<number> {
+  let ids: number[] = [];
   try {
-    const tomados = await prisma.$queryRaw<{ id: number; kind: TipoDeCasoDaLista; detail: string | null }[]>`
+    const contas = await admins();
+    if (contas.length === 0) return 0;
+    const tomados = await prisma.$queryRaw<{ id: number; kind: TipoDeCasoDaLista; detail: string | null; openedAt: Date }[]>`
       UPDATE "billing_case" SET "notifiedAt" = now() WHERE "open" AND "urgent" AND "notifiedAt" IS NULL
-      RETURNING "id", "kind"::text AS "kind", "detail"`;
-    if (tomados.length === 0) return 0;
-    const ids = tomados.map((c) => c.id).sort((a, b) => a - b);
+      RETURNING "id", "kind"::text AS "kind", "detail", "openedAt"`;
+    ids = tomados.map((c) => c.id);
+    if (ids.length === 0) return 0;
     const mensagem = mensagemDosUrgentes(tomados);
     let saiu = false;
-    for (const admin of await admins()) {
-      const envio = await enviarEmail({ para: admin.email, tipo: "casos-urgentes", referencia: `conta:${admin.id} casos:${ids.length}`, chave: `casos-urgentes/${admin.id}/${ids[0]}-${ids[ids.length - 1]}-${ids.length}`, mensagem });
+    for (const admin of contas) {
+      const envio = await enviarEmail({ para: admin.email, tipo: "casos-urgentes", referencia: `conta:${admin.id} casos:${ids.length}`, chave: chaveDosUrgentes(admin.id, tomados, mensagem), mensagem });
       if (envio.enviado || envio.motivo === "duplicado") saiu = true;
     }
-    if (!saiu) {
-      await prisma.billingCase.updateMany({ where: { id: { in: ids } }, data: { notifiedAt: null } });
-      return 0;
-    }
-    return ids.length;
+    if (saiu) return ids.length;
+    await devolverAMarca(ids);
+    return 0;
   } catch (erro) {
     console.warn(`[api] o aviso dos casos urgentes ao operador falhou: ${erro instanceof Error ? erro.message : String(erro)}`);
+    if (ids.length > 0) await devolverAMarca(ids);
     return 0;
   }
 }

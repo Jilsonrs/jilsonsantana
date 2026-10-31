@@ -425,7 +425,7 @@ export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: s
   if (oQueCancelarFaz(detalhes) === "nada") return { resultado: "sem-assinatura" };
   const operacao = await operarNaAssinatura(
     id,
-    async (tx): Promise<Cancelada> => {
+    async (): Promise<Cancelada> => {
       const agora = await buscarDetalhes(id);
       const acao = oQueCancelarFaz(agora);
       if (acao === "nada") return { resultado: "sem-assinatura" };
@@ -445,11 +445,11 @@ export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: s
           try {
             if ((await anularFatura(agora.faturaEmAbertoId)) === "paga") {
               console.error(`[stripe] cancelar: a cobrança em aberto da assinatura ${id} (conta ${userId}) foi PAGA no instante do cancelamento — a pessoa pagou um período que quis cancelar; conferir e devolver pelo painel da Stripe`);
-              await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: true, conta: userId, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a cobrança em aberto foi paga no instante do cancelamento" }, tx);
+              await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: true, conta: userId, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a cobrança em aberto foi paga no instante do cancelamento" });
             }
           } catch (erro) {
             console.error(`[stripe] cancelar: a assinatura ${id} (conta ${userId}) foi encerrada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
-            await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: false, conta: userId, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a assinatura foi encerrada e a cobrança em aberto não foi anulada" }, tx);
+            await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: false, conta: userId, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a assinatura foi encerrada e a cobrança em aberto não foi anulada" });
           }
         }
         return { resultado: "ok", terminou: true };
@@ -579,7 +579,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
   }
   const operacao = await operarNaAssinatura(
     id,
-    async (tx): Promise<Devolvido> => {
+    async (): Promise<Devolvido> => {
       // COM A TRAVA, relido: o prazo, a situação e o que foi pago valem os de AGORA.
       const agora = await buscarDetalhes(id);
       if (!noPrazoDoReembolso(agora)) return { resultado: "fora-do-prazo" };
@@ -599,7 +599,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
         for (const pagamento of pago.pagamentos) await devolver(pagamento, { userId, assinaturaId: id });
       } catch (erro) {
         console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — conferir e devolver pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
-        await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `sub:${id}`, urgente: true, conta: userId, assinatura: id, centavos, detalhe: "o reembolso encerrou a assinatura e a devolução falhou" }, tx);
+        await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `sub:${id}`, urgente: true, conta: userId, assinatura: id, centavos, detalhe: "o reembolso encerrou a assinatura e a devolução falhou" });
         return { resultado: "devolucao-falhou" };
       }
       return { resultado: "ok", centavos, moeda: pago.moeda };
