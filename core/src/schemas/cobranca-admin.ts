@@ -35,6 +35,8 @@ export type AssinaturaDaLista = {
   plano: "mensal" | "anual" | null;
   /** O Pix pré-pago: não renova; o acesso vai até `acabaEm`. */
   prePaga: boolean;
+  /** A PAGA POR FORA pelo operador (4.7b, passo 4d) — a única pré-paga que o painel encerra (passo 6e, P149). */
+  pagoPorFora?: boolean;
   situacao: SituacaoNaLista;
   /** O status como a Stripe diz (para a situação "outra"). */
   status: string;

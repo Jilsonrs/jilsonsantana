@@ -6798,8 +6798,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               depois, pelo JilsonAI)*. O número não se reaproveita.
         - [ ] **6c — Os números do mês** (P143).
         - [ ] **6d — Os códigos promocionais no admin** (P142).
-        - [ ] **6e — "Encerrar agora" na assinatura paga por fora** (P149 — decisão do operador, 31/10/2026: "Sim, com
-              confirmação"). Só na paga por fora (a liberação do 4d), na ficha: o acesso acaba na hora (`cancelarNaHora` pela
+        - [x] **6e — "Encerrar agora" na assinatura paga por fora** (P149 — decisão do operador, 31/10/2026: "Sim, com
+              confirmação"). **FEITO (31/10/2026):** `encerrarPagaPorForaPeloOperador` (`POST
+              /api/admin/cobranca/acoes/encerrar-paga-por-fora`), só para a marca `pago_por_fora` (a lista passa a dizer
+              `pagoPorFora`); a pré-paga do Pix não tem o botão. Testes: `admin-cobranca-liberar.test.ts` (+3) e a ficha (+1).
+              **Mutação: 3 de 3 reprovaram.** Sem prova pela rota: nada de dinheiro se move, e o encerramento é o mesmo
+              `cancelarNaHora` já provado na área de teste no passo 4a. Só na paga por fora (a liberação do 4d), na ficha: o acesso acaba na hora (`cancelarNaHora` pela
               operação na assinatura), sem devolver nada pela Stripe — o dinheiro recebido por fora o operador devolve por fora
               —, com a confirmação dizendo isso e a linha no registro. É o jeito de desfazer uma liberação feita na conta ou no
               plano errado sem ir ao painel da Stripe.

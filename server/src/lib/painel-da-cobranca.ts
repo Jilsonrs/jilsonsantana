@@ -78,6 +78,7 @@ export function paraAssinaturaDaLista(linha: LinhaDoEspelho): AssinaturaDaLista 
     aluno: linha.ownerUserId && linha.email !== null ? { id: linha.ownerUserId, nome: linha.name, email: linha.email } : null,
     plano: linha.plan === "mensal" || linha.plan === "anual" ? linha.plan : null,
     prePaga: linha.pixPaymentIntentId !== null || linha.paidOutOfBand,
+    pagoPorFora: linha.paidOutOfBand,
     situacao: situacaoNaLista(linha),
     status: linha.status,
     pagoAte: linha.currentPeriodEnd?.toISOString() ?? null,

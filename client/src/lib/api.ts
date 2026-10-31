@@ -1171,6 +1171,10 @@ export async function adminConferir(quem: { conta: string } | { assinatura: numb
   const { data } = await client.post<ConferenciaPelaFicha>("/admin/cobranca/acoes/conferir", quem);
   return data;
 }
+export async function adminEncerrarPagaPorFora(assinatura: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/encerrar-paga-por-fora", { assinatura });
+  return data;
+}
 export async function adminCancelar(assinatura: number): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cancelar", { assinatura });
   return data;

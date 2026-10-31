@@ -10,6 +10,7 @@ const adminConferir = vi.fn<(quem: Quem) => Promise<{ temAcesso: boolean; detalh
 const adminCancelar = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
 const adminDesfazerCancelamento = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
 const adminCobrarDeNovo = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
+const adminEncerrarPagaPorFora = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
 const adminCorrigirDocumento = vi.fn<(quem: Quem, documento: string) => Promise<{ detalhe: string }>>();
 const adminEnviarLink = vi.fn<(conta: string, link: string) => Promise<{ detalhe: string }>>();
 vi.mock("@/lib/api", () => ({
@@ -20,6 +21,7 @@ vi.mock("@/lib/api", () => ({
   adminCancelar: (assinatura: number) => adminCancelar(assinatura),
   adminDesfazerCancelamento: (assinatura: number) => adminDesfazerCancelamento(assinatura),
   adminCobrarDeNovo: (assinatura: number) => adminCobrarDeNovo(assinatura),
+  adminEncerrarPagaPorFora: (assinatura: number) => adminEncerrarPagaPorFora(assinatura),
 }));
 
 import { CobrancaFichaPage } from "./CobrancaFichaPage";
@@ -247,6 +249,20 @@ describe("a ficha — as ações (passo 3a)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancelar no fim do período" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
     expect((await screen.findByRole("alert")).textContent).toBe("A assinatura está sendo atualizada agora. Tente de novo em instantes.");
+  });
+
+  // O passo 6e (P149): a liberação paga por fora feita por engano se desfaz pela ficha — e só ela; a pré-paga do Pix, não.
+  it("a paga por fora: 'Encerrar agora' pede confirmação dizendo que nada volta pela Stripe, e encerra; a pré-paga do Pix não tem o botão", async () => {
+    adminEncerrarPagaPorFora.mockReset().mockResolvedValue({ detalhe: "a assinatura paga por fora acabou agora; o dinheiro recebido por fora se devolve por fora" });
+    adminFichaDaCobranca.mockResolvedValue(ficha({ assinaturas: [{ ...assinatura, id: 11, situacao: "pre-paga", prePaga: true, pagoPorFora: true }, { ...assinatura, id: 12, situacao: "pre-paga", prePaga: true, pagoPorFora: false }] }));
+    abrir();
+    expect(await screen.findAllByRole("button", { name: "Encerrar agora" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Encerrar agora" }));
+    expect(screen.getByText(/^A assinatura paga por fora termina agora, e .+ perde o acesso às aulas\. Nada volta pela Stripe: o dinheiro que você recebeu por fora, você devolve por fora\.$/)).toBeTruthy();
+    expect(adminEncerrarPagaPorFora).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect(await screen.findByText(/a assinatura paga por fora acabou agora/)).toBeTruthy();
+    expect(adminEncerrarPagaPorFora.mock.calls).toEqual([[11]]);
   });
 
   it("'Conferir na Stripe' confere quem a ficha mostra, e diz como ficou", async () => {

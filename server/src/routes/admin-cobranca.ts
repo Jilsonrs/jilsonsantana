@@ -4,7 +4,7 @@ import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
-import { aceitarContestacaoPeloOperador, aceitarPixPeloOperador, cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, liberarDeNovoPeloOperador, liberarPagoPorForaPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
+import { aceitarContestacaoPeloOperador, aceitarPixPeloOperador, cancelarPeloOperador, encerrarPagaPorForaPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, liberarDeNovoPeloOperador, liberarPagoPorForaPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { limiteDoCodigoDoEmailNovo } from "../lib/limite-de-tentativas.js";
 import { QuemFez } from "../lib/prisma.js";
@@ -140,6 +140,15 @@ router.post("/admin/cobranca/acoes/cancelar", requireAdmin, async (req, res) => 
   const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
   if (corpo === null) return;
   responder(res, await cancelarPeloOperador(corpo.assinatura, por));
+});
+
+// POST /api/admin/cobranca/acoes/encerrar-paga-por-fora — { assinatura }: desfaz a liberação paga por fora (passo 6e, P149).
+router.post("/admin/cobranca/acoes/encerrar-paga-por-fora", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await encerrarPagaPorForaPeloOperador(corpo.assinatura, por));
 });
 
 // POST /api/admin/cobranca/acoes/cobrar-de-novo — { assinatura }: a cobrança em aberto da atrasada, agora (passo 4b).

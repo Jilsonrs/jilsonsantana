@@ -14,7 +14,7 @@ import { aceitarPixEmConferencia, cancelarOutrosPix, operarNaAssinatura, pixPago
 import { assinaturasAbertas } from "./pix-pre-pago.js";
 import { clienteDaConta, travarSeLivre } from "./checkout.js";
 import { transacaoDaCobranca } from "./casos.js";
-import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
+import { cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 
@@ -125,6 +125,32 @@ export async function cancelarPeloOperador(espelhoId: number, por: PorQuem): Pro
   if (feita.resultado !== "ok") return { resultado: "nada-a-fazer" };
   const detalhe = feita.terminou ? "terminou agora (a cobrança estava atrasada)" : `não renova; acesso até ${feita.acessoAte?.slice(0, 10) ?? "o fim do período"}`;
   await registrar(por, "cancelar", { userId: linha.ownerUserId, assinatura: linha.stripeSubscriptionId, cliente: linha.stripeCustomerId }, detalhe);
+  return { resultado: "ok", feito: { detalhe } };
+}
+
+/**
+ * ENCERRAR AGORA A PAGA POR FORA (bloco 6, passo 6e — decisão do operador, 31/10/2026, P149: "Sim, com confirmação"): o jeito de
+ * desfazer uma liberação feita na conta ou no plano errado sem ir à Stripe. Só a paga por fora (a marca `pago_por_fora`): a
+ * assinatura acaba na hora (`cancelarNaHora`, pela operação na assinatura — a trava e a sincronia, que corta o acesso e
+ * derruba as sessões, como toda perda de acesso pelo operador). Nada se devolve pela Stripe: o dinheiro foi recebido por fora,
+ * e se devolve por fora. Fica no registro, com quem fez.
+ */
+export async function encerrarPagaPorForaPeloOperador(espelhoId: number, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  const achada = await naStripe(espelhoId);
+  if (achada.resultado !== "ok") return achada;
+  const { linha, detalhes } = achada;
+  if (!detalhes.pagoPorFora || encerradaDeVez(detalhes)) return { resultado: "nada-a-fazer" };
+  const id = linha.stripeSubscriptionId;
+  const operacao = await operarNaAssinatura(id, async (): Promise<"encerrada" | "nada"> => {
+    // Relida com a trava: a já encerrada não se encerra de novo.
+    if (encerradaDeVez(await buscarDetalhes(id))) return "nada";
+    await cancelarNaHora(id, {});
+    return "encerrada";
+  });
+  if (!operacao) return { resultado: "ocupada" };
+  if (operacao.feito === "nada") return { resultado: "nada-a-fazer" };
+  const detalhe = "a assinatura paga por fora acabou agora; o dinheiro recebido por fora se devolve por fora";
+  await registrar(por, "encerrar-paga-por-fora", { userId: linha.ownerUserId, assinatura: id, cliente: linha.stripeCustomerId }, detalhe);
   return { resultado: "ok", feito: { detalhe } };
 }
 

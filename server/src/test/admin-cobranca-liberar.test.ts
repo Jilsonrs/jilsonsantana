@@ -31,12 +31,13 @@ vi.mock("../lib/stripe-pix.js", async (importOriginal) => ({
   operadorDaPagaPorFora: (id: string) => operadorDaPagaPorFora(id),
 }));
 const statusDaContestacao = vi.fn<(id: string) => Promise<string | null>>();
+const cancelarNaHora = vi.fn<(id: string, dado: MotivoDado) => Promise<void>>();
 const tirarMarcaDeContestacao = vi.fn<(id: string) => Promise<"tirada" | "outra-nao-ganha">>();
 vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-reembolso.js")>()),
   statusDaContestacao: (id: string) => statusDaContestacao(id),
   tirarMarcaDeContestacao: (id: string) => tirarMarcaDeContestacao(id),
-  cancelarNaHora: async (_id: string, _dado: MotivoDado) => undefined,
+  cancelarNaHora: (id: string, dado: MotivoDado) => cancelarNaHora(id, dado),
 }));
 const buscarPrecos = vi.fn<() => Promise<PrecoDoPlano[]>>();
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
@@ -110,6 +111,9 @@ beforeEach(async () => {
   await prisma.subscription.deleteMany({ where: { ownerUserId: aluna } });
   criarAssinaturaPagaPorFora.mockReset().mockResolvedValue({ id: POR_FORA, faturaPaga: true });
   statusDaContestacao.mockReset().mockResolvedValue("won");
+  cancelarNaHora.mockReset().mockImplementation(async () => {
+    naStripe = { status: "canceled", pagoAte: new Date(Date.now() - DIA) };
+  });
   tirarMarcaDeContestacao.mockReset().mockImplementation(async () => {
     naStripe = { status: "canceled", pagoAte: EM_30_DIAS };
     return "tirada";
@@ -319,5 +323,35 @@ describe("liberar de novo (a contestação ganha)", () => {
     const doTeste = (res.body as { casos: { tipo: string; consertos: string[]; aluno: { id: string } | null }[] }).casos.filter((c) => c.tipo === "CONTESTACAO" && c.aluno?.id === aluna);
     expect(doTeste.length).toBeGreaterThan(0);
     expect(doTeste.every((c) => c.consertos.includes("liberar-de-novo"))).toBe(true);
+  });
+});
+
+// ENCERRAR AGORA A PAGA POR FORA (passo 6e — decisão do operador, P149): desfazer a liberação feita por engano, sem ir à Stripe.
+describe("encerrar agora a paga por fora (passo 6e)", () => {
+  it("só admin: sem login 401, aluno 403 — e nada vai à Stripe", async () => {
+    expect((await acao("encerrar-paga-por-fora", { assinatura: 1 }, [])).status).toBe(401);
+    expect((await acao("encerrar-paga-por-fora", { assinatura: 1 }, member)).status).toBe(403);
+    expect(cancelarNaHora).not.toHaveBeenCalled();
+  });
+
+  it("a paga por fora: acaba agora, a pessoa perde o acesso, e fica no registro — nada se devolve pela Stripe", async () => {
+    await acao("liberar-pago-por-fora", { conta: aluna, plano: "mensal" });
+    expect(await temAcessoAtivo(aluna)).toBe(true);
+    const espelho = await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: POR_FORA } });
+    const res = await acao("encerrar-paga-por-fora", { assinatura: espelho.id });
+    expect([res.status, res.body]).toEqual([200, { detalhe: "a assinatura paga por fora acabou agora; o dinheiro recebido por fora se devolve por fora" }]);
+    expect(cancelarNaHora.mock.calls).toEqual([[POR_FORA, {}]]);
+    expect(await temAcessoAtivo(aluna)).toBe(false);
+    expect(await prisma.billingLog.findFirst({ where: { action: "encerrar-paga-por-fora", stripeSubscriptionId: POR_FORA } })).toMatchObject({ who: "OPERADOR", actorUserId: adminId, userId: aluna });
+  });
+
+  it("a que não é paga por fora (uma assinatura de cartão), e a já encerrada: 409, e nada é encerrado", async () => {
+    await prisma.subscription.create({ data: { stripeSubscriptionId: `sub_${S}_cartao`, ownerUserId: aluna, status: "active", currentPeriodEnd: EM_30_DIAS } });
+    const deCartao = await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: `sub_${S}_cartao` } });
+    buscarDetalhes.mockImplementation(async (id) => ({ ...daStripe(id), pagoPorFora: false, acabaEm: null, acabaNoFimDoPeriodo: false }));
+    expect((await acao("encerrar-paga-por-fora", { assinatura: deCartao.id })).body).toEqual({ error: "NadaAFazer" });
+    buscarDetalhes.mockImplementation(async (id) => ({ ...daStripe(id), status: "canceled" }));
+    expect((await acao("encerrar-paga-por-fora", { assinatura: deCartao.id })).body).toEqual({ error: "NadaAFazer" });
+    expect(cancelarNaHora).not.toHaveBeenCalled();
   });
 });
