@@ -1,8 +1,9 @@
 import { entrarPara, lerDocumentoFiscal, TELA_DE_PAGAR_COM_PIX, type AcaoFeita, type ConferenciaPelaFicha, type ConsertoDoCaso, type FichaQuery, type LinkParaOAluno } from "@jilson/core";
 import { prisma, QuemFez, TipoDeCaso } from "./prisma.js";
+import { consertoDoCaso } from "./casos.js";
 import { AssinaturaNaoEncontrada, buscarAssinatura, DocumentoRecusado, trocarNumeroFiscal } from "./stripe.js";
 import { buscarDetalhes, type DetalhesDaAssinatura } from "./stripe-assinatura.js";
-import { anularFatura, soltarAgendamento } from "./stripe-plano.js";
+import { anularFatura, assinaturaDaFatura, soltarAgendamento } from "./stripe-plano.js";
 import { cancelarNaHora } from "./stripe-reembolso.js";
 import { pixConfigurado } from "./stripe-pix.js";
 import { enviarEmail } from "./email.js";
@@ -94,7 +95,7 @@ export async function cancelarPeloOperador(espelhoId: number, por: PorQuem): Pro
   const achada = await naStripe(espelhoId);
   if (achada.resultado !== "ok") return achada;
   const { linha, detalhes } = achada;
-  const feita = await pararRenovacaoDe(detalhes, linha.ownerUserId ?? "sem-conta", {});
+  const feita = await pararRenovacaoDe(detalhes, linha.ownerUserId ?? "sem-conta", {}, { peloDono: false });
   if (feita.resultado === "ocupada" || feita.resultado === "pre-paga") return { resultado: feita.resultado };
   if (feita.resultado !== "ok") return { resultado: "nada-a-fazer" };
   const detalhe = feita.terminou ? "terminou agora (a cobrança estava atrasada)" : `não renova; acesso até ${feita.acessoAte?.slice(0, 10) ?? "o fim do período"}`;
@@ -159,8 +160,9 @@ const ENCERRADA = new Set(["canceled", "incomplete_expired"]);
  */
 export async function resolverCasoPeloOperador(casoId: number, acao: ConsertoDoCaso, por: PorQuem): Promise<Resultado<AcaoFeita>> {
   const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeSubscriptionId: true, stripeObjectId: true } });
-  const esperado: Record<ConsertoDoCaso, TipoDeCaso> = { "anular-cobranca": TipoDeCaso.COBRANCA_EM_ABERTO, "soltar-agendamento": TipoDeCaso.TROCA_DE_PLANO, "encerrar-na-hora": TipoDeCaso.ATIVA_SEM_PERIODO_PAGO };
-  if (!caso || !caso.open || caso.kind !== esperado[acao] || !caso.stripeSubscriptionId) return { resultado: "nao-encontrada" };
+  // O conserto tem de ser O DO CASO (o tipo e a chave): o "soltar" de um caso de troca sem agendamento na chave soltaria o
+  // que a Stripe tiver agora — talvez a troca que o próprio aluno marcou (revisão de segurança do bloco 3).
+  if (!caso || !caso.open || consertoDoCaso(caso.kind, caso.key) !== acao || !caso.stripeSubscriptionId) return { resultado: "nao-encontrada" };
   const id = caso.stripeSubscriptionId;
   const alvo = { userId: caso.userId, assinatura: id };
   let detalhes: DetalhesDaAssinatura;
@@ -175,6 +177,8 @@ export async function resolverCasoPeloOperador(casoId: number, acao: ConsertoDoC
     const fatura = caso.stripeObjectId;
     if (!fatura) return { resultado: "nada-a-fazer" };
     if (!ENCERRADA.has(detalhes.status) && fatura !== detalhes.faturaDaTrocaId) return { resultado: "assinatura-viva" };
+    // A fatura é DESTA assinatura (revisão de segurança do bloco 3): a de outra, ainda viva, seria reativada sem pagamento.
+    if ((await assinaturaDaFatura(fatura)) !== id) return { resultado: "nada-a-fazer" };
     const ficou = await anularFatura(fatura);
     const detalhe = ficou === "anulada" ? "a cobrança em aberto foi anulada" : "a cobrança já estava paga: nada foi anulado";
     await concluirCaso(casoId, por, "anular-cobranca", alvo, detalhe);
@@ -182,8 +186,7 @@ export async function resolverCasoPeloOperador(casoId: number, acao: ConsertoDoC
   }
 
   if (acao === "soltar-agendamento") {
-    const agendamento = caso.key.startsWith("agendamento:") ? caso.key.slice("agendamento:".length) : detalhes.agendamentoId;
-    if (!agendamento) return { resultado: "nada-a-fazer" };
+    const agendamento = caso.key.slice("agendamento:".length);
     const operacao = await operarNaAssinatura(id, () => soltarAgendamento(agendamento));
     if (!operacao) return { resultado: "ocupada" };
     const detalhe = "o agendamento da troca foi solto";
@@ -192,8 +195,16 @@ export async function resolverCasoPeloOperador(casoId: number, acao: ConsertoDoC
   }
 
   if (ENCERRADA.has(detalhes.status)) return { resultado: "nada-a-fazer" };
-  const operacao = await operarNaAssinatura(id, () => cancelarNaHora(id, {}));
+  const operacao = await operarNaAssinatura(id, async (): Promise<"encerrada" | "nada"> => {
+    // COM A TRAVA, relida (revisão de segurança do bloco 3): quem pagou entre o caso e o clique (a renovação passou e o
+    // aviso ainda não chegou) não é encerrado — a sincronia logo depois fecha o caso sozinha.
+    const agora = await buscarDetalhes(id);
+    if (ENCERRADA.has(agora.status) || (agora.pagoAte !== null && agora.pagoAte.getTime() > Date.now())) return "nada";
+    await cancelarNaHora(id, {});
+    return "encerrada";
+  });
   if (!operacao) return { resultado: "ocupada" };
+  if (operacao.feito === "nada") return { resultado: "nada-a-fazer" };
   const detalhe = "encerrada agora, sem devolver";
   await concluirCaso(casoId, por, "encerrar-na-hora", alvo, detalhe);
   return { resultado: "ok", feito: { detalhe } };

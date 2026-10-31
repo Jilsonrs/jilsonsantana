@@ -410,15 +410,17 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
-  return pararRenovacaoDe(achada.detalhes, userId, dado);
+  return pararRenovacaoDe(achada.detalhes, userId, dado, { peloDono: true });
 }
 
 /**
  * A MESMA operação de cancelar, numa assinatura JÁ ACHADA — a da conta do aluno logado (acima) ou a que o admin
  * escolheu na ficha (o painel da cobrança, etapa 4.7b, passo 3a: "o painel e o JilsonAI chamam as mesmas"). `userId`:
- * a dona, para o registro e para os casos.
+ * a dona, para o registro e para os casos. `peloDono`: a sessão fica, na atrasada que termina, só quando foi a PRÓPRIA
+ * pessoa que pediu (CLAUDE.md → Access Architecture: são três operações da pessoa, e só elas) — o cancelamento pelo
+ * operador derruba a sessão, como toda perda de acesso (revisão de segurança do bloco 3 da 4.7b).
  */
-export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: string, dado: MotivoDado): Promise<Parada> {
+export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: string, dado: MotivoDado, quem: { peloDono: boolean }): Promise<Parada> {
   // A pré-paga (etapa 4.9) já termina no fim do período: não há renovação a parar — e o reembolso é outra porta.
   if (prePaga(detalhes)) return { resultado: "pre-paga" };
   const { id } = detalhes;
@@ -468,7 +470,7 @@ export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: s
     },
     // Quem cancela com a cobrança atrasada perde as aulas na hora e CONTINUA LOGADO, como no
     // reembolso: foi a própria pessoa que pediu, e ela precisa ler a confirmação.
-    { manterSessao: (feito) => feito.resultado === "ok" && feito.terminou },
+    { manterSessao: (feito) => quem.peloDono && feito.resultado === "ok" && feito.terminou },
   );
   if (!operacao) return { resultado: "ocupada" };
   const feito = operacao.feito;

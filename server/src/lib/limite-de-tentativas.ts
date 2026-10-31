@@ -409,6 +409,15 @@ export const limiteDoCodigo: RequestHandler[] = [
   enderecoDoCodigo.contar,
 ];
 
+/**
+ * O CÓDIGO DA CORREÇÃO DO E-MAIL (etapa 4.7b, passo 3c — revisão de segurança do bloco 3): o mesmo teto por e-mail do
+ * código de entrar, contado pelo e-mail de DESTINO — uma sessão de admin não enche a caixa de ninguém com e-mails da escola.
+ */
+export const limiteDoCodigoDoEmailNovo: RequestHandler[] = [
+  limitador("correcao-email:hora", "email", HORA, LIMITES_DO_CODIGO.email.porHora, { chave: (req) => `correcao-email-hora email:${emailDoPedido(req) ?? "-"}` }),
+  limitador("correcao-email:dia", "email", DIA, LIMITES_DO_CODIGO.email.porDia, { chave: (req) => `correcao-email-dia email:${emailDoPedido(req) ?? "-"}` }),
+];
+
 /** A contagem dos clientes novos do dia, por endereço (zera nos testes, como as outras). */
 const clientesNovos = lojaNova("visitante-clientes-novos:dia");
 // Seguro: a loja só lê a janela das opções do pacote; o resto não se aplica a uma contagem avulsa.

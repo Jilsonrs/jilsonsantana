@@ -934,7 +934,9 @@ confundir quem assina — foi o motivo da decisão de 10/10.*
 revisão ampla da cobrança; no código desde 31/10/2026, etapa 4.7b, passo 3c)*: na ficha da conta, **Corrigir o
 e-mail** — o código vai ao e-mail certo, a pessoa o passa a quem a atende, e só com ele a troca vale. A troca
 encerra as sessões e a senha (a pessoa entra pelo código no e-mail novo, que fica confirmado), e a ficha do
-visitante e o cliente da Stripe passam ao e-mail novo. A troca do Better Auth continua desligada para o aluno.
+visitante e o cliente da Stripe passam ao e-mail novo. A conta de admin não se corrige por aqui (revisão de segurança
+do bloco 3: com uma sessão de admin roubada, seria a porta para tomar a conta do operador). A troca do Better Auth
+continua desligada para o aluno.
 
 **O "Pix em conferência" só aparece para a aba que pagou** *(decisão do operador, 29/10/2026, P124 — a terceira
 passada da revisão do passo 6 da 4.9; plano → 4.9b, E17; no código desde 30/10/2026)*: sem login, o 409

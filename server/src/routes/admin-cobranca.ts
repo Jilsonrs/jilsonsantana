@@ -6,6 +6,7 @@ import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
 import { cancelarPeloOperador, conferirPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
+import { limiteDoCodigoDoEmailNovo } from "../lib/limite-de-tentativas.js";
 import { QuemFez } from "../lib/prisma.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
 import { corrigirEmailComCodigo, pedirCodigoDoEmailNovo, type NaoCorrigido } from "../lib/correcao-de-email.js";
@@ -87,14 +88,21 @@ function responder<T>(res: Response, resultado: Resultado<T>): void {
   const [status, error] = STATUS_DO_QUE_NAO_FOI[resultado.resultado];
   res.status(status).json({ error });
 }
-/** Quem faz: o operador da sessão. Sem a Stripe configurada, nenhuma ação vai a ela. */
-function operador(req: { user?: { id: string } }, res: Response): { quem: typeof QuemFez.OPERADOR; conta: string } | null {
+/**
+ * Quem faz: o operador da sessão. Sem a Stripe configurada, nenhuma ação vai a ela. Sem a conta na sessão (o
+ * `requireAdmin` sempre a põe), responde 401 — nunca deixa o pedido pendurado (revisão de segurança do bloco 3).
+ */
+export function operador(req: { user?: { id: string } }, res: Response): { quem: typeof QuemFez.OPERADOR; conta: string } | null {
   res.set("Cache-Control", "private, no-store");
   if (!cobrancaConfigurada()) {
     res.status(503).json({ error: "NaoConfigurado" });
     return null;
   }
-  return req.user ? { quem: QuemFez.OPERADOR, conta: req.user.id } : null;
+  if (!req.user) {
+    res.status(401).json({ error: "SemSessao" });
+    return null;
+  }
+  return { quem: QuemFez.OPERADOR, conta: req.user.id };
 }
 
 // POST /api/admin/cobranca/acoes/conferir — { conta } | { assinatura } | { visitante }: a sincronia de sempre (passo 3a).
@@ -171,6 +179,7 @@ router.post("/admin/cobranca/acoes/enviar-link", requireAdmin, async (req, res) 
 // CORRIGIR O E-MAIL (passo 3c — P121): o que não deu, com nome.
 const STATUS_DA_CORRECAO: Record<NaoCorrigido, [number, string]> = {
   "nao-encontrada": [404, "NaoEncontrada"],
+  "conta-de-admin": [409, "ContaDeAdmin"],
   "mesmo-email": [409, "MesmoEmail"],
   "email-de-outra-conta": [409, "EmailDeOutraConta"],
   "email-nao-saiu": [502, "EmailNaoSaiu"],
@@ -189,7 +198,7 @@ function responderACorrecao<T>(res: Response, resultado: { resultado: "ok"; feit
 }
 
 // POST /api/admin/cobranca/acoes/corrigir-email/codigo — { conta, email }: o código vai ao e-mail certo (passo 3c).
-router.post("/admin/cobranca/acoes/corrigir-email/codigo", requireAdmin, async (req, res) => {
+router.post("/admin/cobranca/acoes/corrigir-email/codigo", requireAdmin, ...limiteDoCodigoDoEmailNovo, async (req, res) => {
   const por = operador(req, res);
   if (!por) return;
   const corpo = validate(pedirCodigoDoEmailSchema, req.body, res);

@@ -210,6 +210,12 @@
 > do operador: *"Publica e envia o que está pronto"*. CI e publicação com sucesso. **Revisão `jilson-prod-00055`** (100% do
 > tráfego): a subida com a cobrança conferida e nenhuma linha de erro; a página, 200; a versão do app a mesma
 > (`mvvbqspl-b34b3a6f`), como devia.
+> **Publicado em 31/10/2026: `2ce2799`** — o bloco 1 da 4.7b (o painel da Cobrança: ver tudo) — **e `34f93fa`** — os blocos
+> 2 e 3 (os casos "Precisa de você", o aviso ao operador, as ações sem dinheiro e corrigir o e-mail); ordens do operador:
+> *"Sim, pode publicar"* e *"publica e continua"*. CI e publicação com sucesso. **Revisão `jilson-prod-00057`** (100% do
+> tráfego), a versão do app `mvwgmspf-3dfc57a7`: a saúde, 200; as rotas novas do painel, 401 sem login. **Em produção (só
+> leitura):** nenhuma tabela sem RLS; as migrations `20261031200000_casos_da_cobranca` e `20261031220000_correcao_de_email`
+> aplicadas; nenhum caso nem pedido de correção ainda. O detalhe: a etapa 4.7b, os fechamentos dos blocos.
 >
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 31/10/2026: a 4.7b remapeada; antes, 30/10, depois da publicação `7000a96`):**
 > **O PRÓXIMO BLOCO (decisão do operador, 30/10/2026, ao fim do dia): "as telas administrativas da parte de cobrança que
@@ -217,12 +223,15 @@
 > de pagamento de aluno se resolve no admin, sem ir à Stripe; ele acompanha tudo e só é chamado quando precisa (a caixa
 > *Precisa de você*); e fica pronta para automatizar depois (o JilsonAI ou outra ferramenta). O mapa e os passos — 6
 > blocos, um passo por sessão, uma revisão de segurança por bloco — estão na etapa 4.7b. **A tela dos leads fica fora**
-> (decisão dele, 31/10). **O BLOCO 1 ESTÁ NO AR desde 31/10/2026 (merge `2ce2799`)**; o 2a e o 2b estão no `dev`.
+> (decisão dele, 31/10). **OS BLOCOS 1, 2 E 3 ESTÃO NO AR desde 31/10/2026 (merges `2ce2799` e `34f93fa`)**; as correções
+> da revisão do bloco 3 estão no `dev`, e sobem com a próxima publicação. **O próximo passo: o 4a** (o bloco 4, as ações com
+> dinheiro — prova pela rota em cada passo). Esperam o operador: a P147 (os textos dos e-mails) e a P148 (avisar o e-mail
+> antigo na correção).
 > **Os 6 blocos entram ANTES da abertura** (decisão dele, 31/10/2026, à P146 — entre isso, os
 > blocos 1 a 4, que o agente recomendou, e só os blocos 1 e 2). **Os 6 blocos aprovados de uma vez e as 9 decisões
 > (P137 a P145) respondidas no mesmo dia** — cada uma no seu lugar, na etapa. **Como trabalhar (decisões dele, 31/10):**
 > os passos correm direto, um commit por passo com os gates; a revisão de segurança de cada bloco roda em segundo plano;
-> no fim de cada bloco, só a pergunta "posso publicar?"; foto, só do que o aluno vê. **O próximo passo: o 1a.** Isso muda
+> no fim de cada bloco, só a pergunta "posso publicar?"; foto, só do que o aluno vê. Isso muda
 > *O PLANO DE LANÇAMENTO*: a 4.7b deixa de ser "depois da abertura".
 > **O DIA 30/10/2026 FECHOU A PARTE DE VENDA, menos o teste com dinheiro de verdade** — que o operador decidiu fazer **por
 > último, como um aluno de verdade, depois da 6g do Antigravity** (*"Eu nunca testei com meu cartão de verdade; iria testar
@@ -6482,7 +6491,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               arquivo de teste (`setup.ts`, como o limite de tentativas: um caso urgente de outro arquivo faria o aviso
               sair num teste que conta e-mails). **Mutação: 6 de 6 reprovaram.** *Docs check (context7): não
               disparado.*
-        - [ ] **Fechamento do bloco 2.** **A revisão de segurança (31/10/2026, só o que mudou — os passos 2a a 2d):
+        - [x] **Fechamento do bloco 2.** **A revisão de segurança (31/10/2026, só o que mudou — os passos 2a a 2d):
               nenhum P0 nem P1.** Os cinco menores, fechados com teste e mutação (6 de 6 reprovaram), sem nova rodada.
               Três se fecharam com UMA mudança — **o caso aberto dentro de uma transação da cobrança é guardado e
               gravado quando ela termina, tenha dado certo ou não** (`transacaoDaCobranca`, em `casos.ts`; a regra foi
@@ -6499,9 +6508,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               Testes: `casos-uma-ligacao.test.ts` (novo — o banco aceitando UMA ligação: a contestação com a cobrança
               que não se anula, e o agendamento pela metade dentro de uma operação que falha), `casos.test.ts`,
               `avisos-ao-operador.test.ts` (+3) e `reembolso.test.ts` (+1: a devolução e a sincronia falhando juntas).
-              **Falta:** os dois e-mails ao operador (no e-mail de verdade) e publicar — **junto com o bloco 3**: as
-              correções desta revisão mexem em código que o bloco 3 também mudou, e publicar o 2 sozinho pediria
-              refazê-las numa cópia à parte. Depois do deploy, conferir em produção (só leitura) o RLS da `billing_case`.
+              **PUBLICADO em 31/10/2026, junto com o bloco 3 (merge `34f93fa` — o detalhe no fechamento do bloco 3)**:
+              as correções desta revisão mexiam em código que o bloco 3 também mudou. Os dois e-mails ao operador foram
+              mandados de verdade e esperam a aprovação dele (P147).
       - [ ] **BLOCO 3 — AS AÇÕES SEM DINHEIRO**
         - [x] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
               Stripe (a sincronia, agora na ficha), Cancelar no fim do período, Desfazer, Copiar ou enviar o link,
@@ -6571,7 +6580,28 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               guarda o id da pessoa, não o e-mail; a troca de e-mail do recurso de código exige a sessão da própria pessoa (não
               serve ao admin) — e, no código instalado (1.7.13), as rotinas de código só valem para e-mail que já tem conta.
               Stripe → `/websites/stripe` → a fatura finalizada guarda o e-mail de quando foi finalizada.*
-        - [ ] **Fechamento do bloco 3.**
+        - [x] **Fechamento do bloco 3.** **PUBLICADO em 31/10/2026, junto com o bloco 2, com a ordem do operador ("publica e
+              continua"): merge `34f93fa`**, revisão `jilson-prod-00057` (100% do tráfego), CI e Deploy verdes. **No ar:**
+              `/api/health` 200; as rotas novas do painel recusam quem não entrou (401). **Em produção (só leitura, branch
+              `production`):** nenhuma tabela sem RLS (`billing_case` e `email_correction` com RLS); as migrations
+              `20261031200000_casos_da_cobranca` e `20261031220000_correcao_de_email` aplicadas; nenhum caso, pedido de
+              correção ou linha de registro ainda. **A revisão de segurança (31/10/2026, só o que mudou — `b7bca19`,
+              `77abaa5`, `f9d69cd`): nenhum P0 nem P1.** Os nove de engenharia, fechados com teste e mutação (10 de 10
+              reprovaram), sem nova rodada, no `dev` (sobem com a próxima publicação): (P2) a correção do e-mail aceitava a
+              conta de admin — com uma sessão roubada, a troca daria a conta de admin a quem a roubou: agora a conta de
+              admin e a do próprio operador recebem 409 `ContaDeAdmin`, no pedido e de novo com as travas; (P2) "Encerrar
+              na hora, sem devolver" decidia fora da trava, com o que tinha lido antes — agora relê com ela, e quem pagou no
+              meio não é encerrado; (P2) as rotas do 3b não tinham o teste de quem entra (401/403) — agora têm, provado
+              trocando o `requireAdmin` pelo `requireAuth`; (P3) a tentativa do código conta ANTES de comparar (5
+              tentativas ao mesmo tempo comparam no máximo 3); (P3) o cancelamento da atrasada pelo OPERADOR derruba a
+              sessão da pessoa — a sessão fica só quando é ela que pede (`pararRenovacaoDe(…, { peloDono })`, como o
+              `CLAUDE.md` → *Access Architecture* já dizia); (P3) o "soltar" só vale para o caso com o agendamento na chave,
+              e solta só aquele; (P3) o "anular" confere que a fatura é da assinatura do caso (`assinaturaDaFatura`); (P3) a
+              ação sem a conta na sessão responde 401 em vez de ficar pendurada; (P3) o código da correção tem o teto do
+              código de entrar, por e-mail de DESTINO (3 por hora, 6 por dia). **Ficaram para o operador:** os textos dos
+              e-mails, com a sugestão da revisão contra golpe (P147), e avisar o e-mail antigo na correção (P148). Os
+              e-mails foram mandados de verdade (o resumo da manhã numa segunda tentativa: a chave do dia já tinha sido
+              usada na prova do 2d — é o esperado, um resumo por dia).
       - [ ] **BLOCO 4 — AS AÇÕES COM DINHEIRO** (prova pela rota em cada passo)
         - [ ] **4a — Devolver:** cancelar e devolver num clique (cartão e Pix), devolver um pagamento (inteiro ou em
               parte, P139), devolver de novo a que falhou.

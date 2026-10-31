@@ -215,6 +215,20 @@ export async function anularFatura(faturaId: string): Promise<"anulada" | "paga"
   }
 }
 
+/**
+ * De que ASSINATURA é esta fatura (o "anular" do painel confere que a fatura do caso é da assinatura dele — revisão de
+ * segurança do bloco 3 da 4.7b). Nenhuma: a fatura não é de assinatura.
+ */
+export async function assinaturaDaFatura(faturaId: string): Promise<string | null> {
+  try {
+    const assinatura = (await stripe().invoices.retrieve(faturaId)).parent?.subscription_details?.subscription;
+    if (!assinatura) return null;
+    return typeof assinatura === "string" ? assinatura : assinatura.id;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura da fatura");
+  }
+}
+
 /** O segredo com que o site completa a confirmação do banco de uma fatura em aberto — ou nenhum. */
 export async function segredoDaFatura(faturaId: string): Promise<string | null> {
   try {
