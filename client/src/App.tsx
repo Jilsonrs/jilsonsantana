@@ -41,6 +41,7 @@ import { CobrancaFichaPage } from "@/pages/admin/cobranca/CobrancaFichaPage";
 import { CobrancaTentativasPage } from "@/pages/admin/cobranca/CobrancaTentativasPage";
 import { CobrancaOQueAconteceuPage } from "@/pages/admin/cobranca/CobrancaOQueAconteceuPage";
 import { CobrancaPrecisaDeVocePage } from "@/pages/admin/cobranca/CobrancaPrecisaDeVocePage";
+import { CobrancaCodigosPage } from "@/pages/admin/cobranca/CobrancaCodigosPage";
 import { AvisosPage } from "@/pages/admin/comunicacao/AvisosPage";
 import { AvisoEditorPage } from "@/pages/admin/comunicacao/AvisoEditorPage";
 import { MensagensAutomaticasPage } from "@/pages/admin/comunicacao/MensagensAutomaticasPage";
@@ -152,6 +153,7 @@ export default function App() {
           <Route path="/admin/cobranca/assinaturas/ficha" element={<CobrancaFichaPage />} />
           <Route path="/admin/cobranca/tentativas" element={<CobrancaTentativasPage />} />
           <Route path="/admin/cobranca/o-que-aconteceu" element={<CobrancaOQueAconteceuPage />} />
+          <Route path="/admin/cobranca/codigos" element={<CobrancaCodigosPage />} />
         </Route>
         {/* Endereço que não existe no app — um favorito antigo de /conta, um
             endereço digitado errado — leva ao Início (decisão do operador,

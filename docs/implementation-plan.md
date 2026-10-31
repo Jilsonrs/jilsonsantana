@@ -6805,7 +6805,23 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               `admin-cobranca-numeros.test.ts` (novo, 4) e `NumerosDoMes.test.tsx` (novo, 5). **Mutação: 7 de 7 reprovaram.**
               Conferido na Stripe de teste, só lendo: as duas somas respondem. *Docs check (context7): Stripe → já consultado
               nesta sessão (a lista de cobranças e de devoluções com `created` e a paginação da biblioteca) — sem consulta nova.*
-        - [ ] **6d — Os códigos promocionais no admin** (P142).
+        - [x] **6d — Os códigos promocionais no admin** (P142). **FEITO (31/10/2026):** Admin → Cobrança → *Códigos
+              promocionais* (`/admin/cobranca/codigos`, `CobrancaCodigosPage` + `CriarCodigo`): criar, pausar, reativar e ver
+              quantos usaram, de `GET/POST /api/admin/cobranca/codigos` e `POST /api/admin/cobranca/codigos/ativo`
+              (`lib/codigos-do-painel.ts`; a ida à Stripe em `lib/stripe-codigos.ts`). As regras de `billing.md` →
+              *Códigos promocionais* no formulário e no servidor (`criarCodigoSchema`, no `core`): a cortesia é 100%, para
+              sempre, com o código sorteado pelo servidor e o limite de usos (até 20 — escolha do agente, a confirmar); o
+              desconto tem validade e não tem limite; os tipos da P125 não passam. Com a trava dos códigos, sem esperar, e o
+              **pedido** (um número sorteado pela tela): o mesmo pedido de novo devolve o código já criado, sem criar outro nem
+              registrar em dobro. Cada ação fica no registro. Testes: `admin-cobranca-codigos.test.ts` (novo, 13),
+              `CriarCodigo.test.tsx` (novo, 6), `CobrancaCodigosPage.test.tsx` (novo, 6) e o submenu
+              (`navigation.test.ts`). **Mutação: 19 de 19 reprovaram.** **Prova pela rota** (servidor local, banco de dev,
+              Stripe de teste): a cortesia e o desconto nasceram como pedido; o pedido repetido devolveu o mesmo código; o texto
+              repetido, 409; o checkout aceitou a cortesia, recusou-a pausada e aceitou de novo reativada; quatro linhas no
+              registro; tudo desfeito no fim. *Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026 (1 consulta): o
+              código se cria com `promotion: { type: "coupon", coupon }`, `max_redemptions` e `expires_at` são do código,
+              reativar só com o cupom válido, o texto é único entre os ativos; a lista por `code`, `coupon` e `created`
+              conferida nos tipos da biblioteca.*
         - [x] **6e — "Encerrar agora" na assinatura paga por fora** (P149 — decisão do operador, 31/10/2026: "Sim, com
               confirmação"). **FEITO (31/10/2026):** `encerrarPagaPorForaPeloOperador` (`POST
               /api/admin/cobranca/acoes/encerrar-paga-por-fora`), só para a marca `pago_por_fora` (a lista passa a dizer

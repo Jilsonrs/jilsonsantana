@@ -1815,7 +1815,13 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 ## Códigos promocionais — como criar na Stripe *(decisão do operador, 19/10/2026)*
 
 *(Decisão do operador, 31/10/2026, P142: os códigos passam a ser criados, pausados e acompanhados pelo admin, com as
-regras abaixo no formulário — 4.7b, passo 6d. Até lá, na Stripe, como está aqui.)*
+regras abaixo no formulário — 4.7b, passo 6d, **no código desde 31/10/2026**: Admin → Cobrança → Códigos promocionais,
+`lib/codigos-do-painel.ts`. A cortesia nasce 100%, "para sempre", com o código sorteado pelo servidor (`PRESENTE-` e 6
+letras sem 0, O, 1 e I) e um limite de usos obrigatório; o desconto nasce com a validade — o fim do dia escolhido, no
+horário de Brasília — e sem limite de usos. Os dois tipos da P125 não existem no formulário nem passam no servidor. O
+nome do cupom, que a Stripe mostra na fatura, é o próprio código. **O teto de 20 usos da cortesia é escolha do agente**
+para "poucos usos" (`USOS_DA_CORTESIA`, no `core`), a confirmar pelo operador. Para criar um código fora dessas regras,
+a Stripe, como está aqui.)*
 
 **A regra:** **limite de usos, só em código de 100%** (cortesia, presente): ele ativa a assinatura
 no próprio clique, então o uso é gasto em acesso de verdade. **Código de desconto parcial**
@@ -2047,7 +2053,8 @@ lá, vale o texto de hoje):
 - **Sem botão de pedir reembolso depois dos 7 dias** (P138): a política é não devolver depois dos 7 dias, e um botão
   convida o pedido. O pedido chega pelo suporte e, quando o JilsonAI existir, por ele, que abre o caso.
 - **O aluno vê as próprias cobranças e baixa o recibo** em Faturamento (P144). — passo 6a.
-- **Os códigos promocionais pelo admin** (P142), com as regras de *Códigos promocionais* no formulário. — passo 6d.
+- **Os códigos promocionais pelo admin** (P142), com as regras de *Códigos promocionais* no formulário. — passo 6d, no
+  código desde 31/10/2026.
 - **O aviso ao operador** (P137): na hora, só o urgente (quem pagou e está sem acesso; a contestação); o resto num
   resumo por dia, de manhã. — passo 2d.
 *Reabre se uma ação no admin custar mais que o problema que resolve (um caso raro que pede uma integração grande): aí

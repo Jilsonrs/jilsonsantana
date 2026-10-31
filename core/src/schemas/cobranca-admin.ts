@@ -362,3 +362,51 @@ export type NumerosDoMes = {
   entrou: number | null;
   devolvido: number | null;
 };
+
+/**
+ * OS CÓDIGOS PROMOCIONAIS NO ADMIN (bloco 6, passo 6d — decisão do operador, 31/10/2026, P142): criar, pausar e ver quantos
+ * usaram, com as regras de `billing.md` → *Códigos promocionais* no formulário. A CORTESIA (100%) nasce com o código gerado pelo
+ * servidor, difícil de adivinhar, "para sempre" e com poucos usos; o DESCONTO parcial tem validade e não tem limite de usos. Os
+ * dois tipos que esperam a P125 — o de 100% que não é para sempre e o "por N meses" — não se criam aqui.
+ */
+export const DURACOES_DO_CODIGO = ["uma-vez", "para-sempre"] as const;
+export type DuracaoDoCodigo = (typeof DURACOES_DO_CODIGO)[number];
+/** O teto de usos de uma cortesia: "poucos usos" (o código de 100% dá acesso a quem o achar). */
+export const USOS_DA_CORTESIA = 20;
+/** Um dia, como o campo de data o manda. Se ele existe e não passou, o servidor confere. */
+const diaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/**
+ * O PEDIDO: um número que a tela sorteia para cada código que vai criar, e repete se o mesmo pedido for de novo (a resposta
+ * que se perdeu). Com ele, o servidor devolve o código já criado, em vez de criar outro.
+ */
+const pedidoSchema = z.string().regex(/^[a-f0-9]{32}$/);
+export const criarCodigoSchema = z.discriminatedUnion("tipo", [
+  z.object({ tipo: z.literal("cortesia"), pedido: pedidoSchema, usos: z.number().int().min(1).max(USOS_DA_CORTESIA), validoAte: diaSchema.optional() }).strict(),
+  z
+    .object({
+      tipo: z.literal("desconto"),
+      pedido: pedidoSchema,
+      codigo: z.string().trim().toUpperCase().regex(/^[A-Z0-9][A-Z0-9-]{3,29}$/),
+      percentual: z.number().int().min(1).max(99),
+      duracao: z.enum(DURACOES_DO_CODIGO),
+      validoAte: diaSchema,
+    })
+    .strict(),
+]);
+export type CriarCodigoInput = z.infer<typeof criarCodigoSchema>;
+/** Pausar (`ativo: false`) ou reativar um código — pelo id dele na Stripe. */
+export const mudarCodigoSchema = z.object({ id: z.string().regex(/^promo_[A-Za-z0-9]{1,100}$/), ativo: z.boolean() }).strict();
+export type SituacaoDoCodigo = "ativo" | "pausado" | "esgotado" | "vencido";
+export type CodigoDaLista = {
+  id: string;
+  codigo: string;
+  percentual: number | null;
+  duracao: DuracaoDoCodigo | "por-meses" | null;
+  meses: number | null;
+  usados: number;
+  maximo: number | null;
+  validoAte: string | null;
+  situacao: SituacaoDoCodigo;
+  criadoEm: string;
+};
+export type CodigoCriado = { detalhe: string; codigo: string };

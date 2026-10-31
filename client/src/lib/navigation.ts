@@ -282,6 +282,8 @@ export function navegacao(t: AppTexts): Secao[] {
         { label: "Assinaturas", to: "/admin/cobranca/assinaturas" },
         { label: "Tentativas", to: "/admin/cobranca/tentativas" },
         { label: "O que aconteceu", to: "/admin/cobranca/o-que-aconteceu" },
+        // Os códigos promocionais (passo 6d — P142, 31/10/2026).
+        { label: "Códigos promocionais", to: "/admin/cobranca/codigos" },
       ],
     },
     {

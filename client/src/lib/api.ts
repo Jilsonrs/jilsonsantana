@@ -1,7 +1,7 @@
 import axios from "axios";
 import { anotarVersaoDoServidor } from "@/lib/versao";
 import type { CredenciaisDeEnvio, DadosDoEnvio } from "@/lib/video-upload";
-import type { TipoDeEvento, Level, Layer, Material, ContentStatus, PlanItemType, CourseCreateInput, CourseUpdateInput, CourseStructureInput, LessonInsertInput, ModuleInsertInput, LessonKind, ModuleCreateInput, ModuleUpdateInput, LessonCreateInput, LessonUpdateInput, Dict, TestimonialCreateInput, TestimonialUpdateInput, HomeFaqCreateInput, HomeFaqUpdateInput, AnnouncementInput, AnnouncementAudience, PlanosDaAssinatura, PreviaInput, PreviaDaAssinatura, CorpoDeAssinar, CorpoDeAssinarSemLogin, CorpoDePix, CorpoDePixDaAtrasada, CorpoDePixSemLogin, CampoNaoAbriuInput, AssinaturaSemLogin, ConfirmacaoSemLogin, SenhaCriada, AssinaturaCriada, SituacaoDaAssinatura, SincroniaDaConta, FiltroDasAssinaturas, ListaDeAssinaturas, FichaDaCobranca, OndeLeva, ListaDeTentativas, OQueAconteceu, ListaDeCasos, AcaoFeita, ConferenciaPelaFicha, ConsertoDoCaso, LinkParaOAluno, CodigoDoEmailEnviado, EmailCorrigido, PreviaDaDevolucao, Plano, MinhaAssinatura, TrocaDeCartaoPreparada, CartaoTrocado, CancelarInput, RenovacaoParada, ReembolsoFeito, MudarDePlanoInput, PlanoMudado, TrocaDesfeita, TrocaDisponivel, PedirCodigoInput, CodigoPedido, ProvasDaContestacao, NumerosDoMes } from "@jilson/core";
+import type { TipoDeEvento, Level, Layer, Material, ContentStatus, PlanItemType, CourseCreateInput, CourseUpdateInput, CourseStructureInput, LessonInsertInput, ModuleInsertInput, LessonKind, ModuleCreateInput, ModuleUpdateInput, LessonCreateInput, LessonUpdateInput, Dict, TestimonialCreateInput, TestimonialUpdateInput, HomeFaqCreateInput, HomeFaqUpdateInput, AnnouncementInput, AnnouncementAudience, PlanosDaAssinatura, PreviaInput, PreviaDaAssinatura, CorpoDeAssinar, CorpoDeAssinarSemLogin, CorpoDePix, CorpoDePixDaAtrasada, CorpoDePixSemLogin, CampoNaoAbriuInput, AssinaturaSemLogin, ConfirmacaoSemLogin, SenhaCriada, AssinaturaCriada, SituacaoDaAssinatura, SincroniaDaConta, FiltroDasAssinaturas, ListaDeAssinaturas, FichaDaCobranca, OndeLeva, ListaDeTentativas, OQueAconteceu, ListaDeCasos, AcaoFeita, ConferenciaPelaFicha, ConsertoDoCaso, LinkParaOAluno, CodigoDoEmailEnviado, EmailCorrigido, PreviaDaDevolucao, Plano, MinhaAssinatura, TrocaDeCartaoPreparada, CartaoTrocado, CancelarInput, RenovacaoParada, ReembolsoFeito, MudarDePlanoInput, PlanoMudado, TrocaDesfeita, TrocaDisponivel, PedirCodigoInput, CodigoPedido, ProvasDaContestacao, NumerosDoMes, CodigoDaLista, CodigoCriado, CriarCodigoInput } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
 // forwards /api -> :3000; in prod Express serves the client from the same
@@ -1237,10 +1237,24 @@ export async function adminCorrigirEmail(conta: string, email: string, codigo: s
   return data;
 }
 
-/** "Precisa de você": os casos abertos ou os fechados (etapa 4.7b, passo 2c). */
 /** Os números do mês, para a faixa no topo da Cobrança (passo 6c). */
 export async function adminNumerosDoMes(): Promise<NumerosDoMes> {
   const { data } = await client.get<NumerosDoMes>("/admin/cobranca/numeros");
+  return data;
+}
+/** Os códigos promocionais da escola, com quantos usaram (passo 6d). */
+export async function adminListarCodigos(): Promise<CodigoDaLista[]> {
+  const { data } = await client.get<CodigoDaLista[]>("/admin/cobranca/codigos");
+  return data;
+}
+/** Cria um código: a cortesia (o servidor sorteia o código) ou o desconto (passo 6d). */
+export async function adminCriarCodigo(pedido: CriarCodigoInput): Promise<CodigoCriado> {
+  const { data } = await client.post<CodigoCriado>("/admin/cobranca/codigos", pedido);
+  return data;
+}
+/** Pausa (`ativo: false`) ou reativa um código (passo 6d). */
+export async function adminMudarCodigo(id: string, ativo: boolean): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/codigos/ativo", { id, ativo });
   return data;
 }
 /** A prévia das provas da contestação (passo 5b): o texto exato que vai ao banco. */
@@ -1248,6 +1262,7 @@ export async function adminProvasDaContestacao(casoId: number): Promise<ProvasDa
   const { data } = await client.get<ProvasDaContestacao>(`/admin/cobranca/casos/${casoId}/provas`);
   return data;
 }
+/** "Precisa de você": os casos abertos ou os fechados (etapa 4.7b, passo 2c). */
 export async function adminListarCasos(consulta: { situacao: "abertos" | "fechados"; pagina: number }): Promise<ListaDeCasos> {
   const { data } = await client.get<ListaDeCasos>("/admin/cobranca/casos", { params: consulta });
   return data;
