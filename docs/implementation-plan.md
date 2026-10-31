@@ -6630,7 +6630,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               devolvido; o registro com os valores; o retrato do banco igual antes e depois. *Docs check (context7): Stripe →
               `/websites/stripe` → a devolução de uma parte, várias vezes, até o total (31/10/2026, depois da compactação da
               sessão).*
-        - [ ] **4b — Tentar cobrar de novo agora** (a atrasada).
+        - [x] **4b — Tentar cobrar de novo agora** (a atrasada). **FEITO (31/10/2026).** Na ficha, a assinatura atrasada
+              ganha **"Tentar cobrar de novo agora"** ao lado de "Cancelar agora" (`POST …/acoes/cobrar-de-novo`), para quando
+              o aluno avisa que resolveu o cartão: a MESMA cobrança que a troca de cartão do aluno faz (`pagarFatura`), com a
+              trava e a sincronia (`operarNaAssinatura`), e relida com a trava — a que foi paga no meio não é cobrada de novo; a
+              em dia é recusada antes da trava (409 `NadaAFazer`). Passou: as aulas voltam na hora. Recusada: a Stripe segue
+              tentando sozinha. O banco pedindo confirmação: só a pessoa completa, pelo link de trocar o cartão (a resposta
+              diz isso). Fica no registro. Testes: `admin-cobranca-acoes.test.ts` (+2, e a rota na fronteira 401/403) e a
+              ficha (+1). **Mutação: 5 de 5 reprovaram.** **Prova pela rota** (servidor local, banco de dev, um aluno
+              descartável, o relógio de teste da Stripe 40 dias no passado): a assinatura paga, o cartão trocado por um que é
+              recusado, o relógio avançado — a renovação falhou, `past_due`, o aluno sem aulas; "cobrar de novo" com o cartão
+              ruim: recusada, sem aulas; com o cartão bom no lugar: a fatura paga, a assinatura `active`, as aulas de volta;
+              na que está em dia: 409; o retrato do banco igual antes e depois. *Docs check (context7): não disparado — a ida à
+              Stripe é a de sempre (`pagarFatura`).*
         - [ ] **4c — O Pix em conferência** (aceitar, devolver) e **o dinheiro sem assinatura** (devolver, liberar).
         - [ ] **4d — Liberar acesso pago por fora** e **liberar de novo depois da contestação ganha**.
         - [ ] **Fechamento do bloco 4.**

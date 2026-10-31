@@ -9,6 +9,7 @@ const adminFichaDaCobranca = vi.fn<(quem: Quem) => Promise<FichaDaCobranca>>();
 const adminConferir = vi.fn<(quem: Quem) => Promise<{ temAcesso: boolean; detalhe: string }>>();
 const adminCancelar = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
 const adminDesfazerCancelamento = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
+const adminCobrarDeNovo = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
 const adminCorrigirDocumento = vi.fn<(quem: Quem, documento: string) => Promise<{ detalhe: string }>>();
 const adminEnviarLink = vi.fn<(conta: string, link: string) => Promise<{ detalhe: string }>>();
 vi.mock("@/lib/api", () => ({
@@ -18,6 +19,7 @@ vi.mock("@/lib/api", () => ({
   adminConferir: (quem: Quem) => adminConferir(quem),
   adminCancelar: (assinatura: number) => adminCancelar(assinatura),
   adminDesfazerCancelamento: (assinatura: number) => adminDesfazerCancelamento(assinatura),
+  adminCobrarDeNovo: (assinatura: number) => adminCobrarDeNovo(assinatura),
 }));
 
 import { CobrancaFichaPage } from "./CobrancaFichaPage";
@@ -219,6 +221,19 @@ describe("a ficha — as ações (passo 3a)", () => {
     const confirmar = screen.getAllByRole("button", { name: "Confirmar" });
     fireEvent.click(confirmar[1] as HTMLElement);
     await waitFor(() => expect(adminDesfazerCancelamento.mock.calls).toEqual([[8]]));
+  });
+
+  it("atrasada (passo 4b): 'Tentar cobrar de novo agora' pede confirmação com o efeito, cobra e diz o que a Stripe respondeu", async () => {
+    adminCobrarDeNovo.mockReset().mockResolvedValue({ detalhe: "a cobrança passou; com acesso às aulas" });
+    adminFichaDaCobranca.mockResolvedValue(ficha({ assinaturas: [{ ...assinatura, situacao: "atrasada" }] }));
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Tentar cobrar de novo agora" }));
+    expect(screen.getByText("Cobra agora a cobrança em aberto, no cartão da assinatura. Se passar, as aulas voltam na hora; se for recusada, a Stripe segue tentando sozinha.")).toBeTruthy();
+    expect(adminCobrarDeNovo).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect(await screen.findByText("Feito: a cobrança passou; com acesso às aulas.")).toBeTruthy();
+    expect(adminCobrarDeNovo.mock.calls).toEqual([[7]]);
+    expect(adminCancelar).not.toHaveBeenCalled();
   });
 
   it("a ação que não deu: diz por quê; a cancelada e a pré-paga não têm botão", async () => {

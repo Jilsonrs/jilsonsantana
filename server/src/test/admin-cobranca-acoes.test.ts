@@ -15,8 +15,10 @@ import type { PedidoDeEmail, Envio } from "../lib/email.js";
 const buscarDetalhes = vi.fn<(id: string) => Promise<DetalhesDaAssinatura>>();
 const pararRenovacao = vi.fn<(id: string, dado: MotivoDado) => Promise<DetalhesDaAssinatura>>();
 const retomarRenovacao = vi.fn<(id: string, acabaNoFimDoPeriodo: boolean) => Promise<DetalhesDaAssinatura>>();
+const pagarFatura = vi.fn<(faturaId: string) => Promise<"paga" | "recusada" | "pede-confirmacao">>();
 vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-assinatura.js")>()),
+  pagarFatura: (faturaId: string) => pagarFatura(faturaId),
   buscarDetalhes: (id: string) => buscarDetalhes(id),
   pararRenovacao: (id: string, dado: MotivoDado) => pararRenovacao(id, dado),
   retomarRenovacao: (id: string, acabaNoFimDoPeriodo: boolean) => retomarRenovacao(id, acabaNoFimDoPeriodo),
@@ -96,6 +98,7 @@ beforeEach(() => {
   buscarDetalhes.mockReset().mockImplementation(async (id) => daStripe(id));
   pararRenovacao.mockReset().mockImplementation(async (id) => daStripe(id));
   retomarRenovacao.mockReset().mockImplementation(async (id) => daStripe(id));
+  pagarFatura.mockReset().mockResolvedValue("paga");
   cancelarNaHora.mockReset().mockResolvedValue(undefined);
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: aluna, livemode: false, ...naStripe }));
   enviarEmail.mockReset().mockResolvedValue({ enviado: true, id: "re_teste" });
@@ -133,6 +136,7 @@ describe("as ações — quem entra e o formato", () => {
       ["/api/admin/cobranca/casos/1/reenviar", {}],
       ["/api/admin/cobranca/acoes/corrigir-documento", { conta: aluna, documento: "529.982.247-25" }],
       ["/api/admin/cobranca/acoes/enviar-link", { conta: aluna, link: "reativar" }],
+      ["/api/admin/cobranca/acoes/cobrar-de-novo", { assinatura: espelhoId }],
     ];
     for (const [rota, corpo] of pedidos) {
       expect((await request(servidor).post(rota).set("Cookie", []).send(corpo)).status).toBe(401);
@@ -194,6 +198,29 @@ describe("cancelar e desfazer", () => {
       await prisma.session.deleteMany({ where: { userId: aluna } });
       await prisma.subscription.update({ where: { id: espelhoId }, data: { status: "active", currentPeriodEnd: EM_30_DIAS } });
     }
+  });
+
+  // O PASSO 4b: tentar cobrar de novo agora a cobrança em aberto da atrasada.
+  it("cobrar de novo a atrasada: a cobrança em aberto, com a trava e a sincronia — e o registro diz como foi", async () => {
+    detalhes = { status: "past_due", pagoAte: new Date(Date.now() - 5 * DIA), faturaEmAbertoId: `in_${S}_aberta` };
+    const res = await acao("cobrar-de-novo", { assinatura: espelhoId });
+    expect([res.status, res.body]).toEqual([200, { detalhe: "a cobrança passou; com acesso às aulas" }]);
+    expect(pagarFatura.mock.calls).toEqual([[`in_${S}_aberta`]]);
+    expect(buscarAssinatura).toHaveBeenCalledWith(SUB);
+    expect(await ultimaDoRegistro("cobrar-de-novo")).toMatchObject({ who: "OPERADOR", userId: aluna, stripeSubscriptionId: SUB, detail: "a cobrança passou; com acesso às aulas" });
+    pagarFatura.mockResolvedValueOnce("recusada").mockResolvedValueOnce("pede-confirmacao");
+    expect((await acao("cobrar-de-novo", { assinatura: espelhoId })).body).toEqual({ detalhe: "o cartão foi recusado de novo; a Stripe segue tentando sozinha" });
+    expect((await acao("cobrar-de-novo", { assinatura: espelhoId })).body).toEqual({ detalhe: "o banco pede uma confirmação que só a pessoa dá: mande o link de trocar o cartão" });
+  });
+
+  it("cobrar de novo a que está em dia, ou a que foi paga no meio (relida com a trava): 409, e nada é cobrado", async () => {
+    expect((await acao("cobrar-de-novo", { assinatura: espelhoId })).body).toEqual({ error: "NadaAFazer" });
+    // A em dia é recusada antes da trava: a Stripe é lida uma vez só.
+    expect(buscarDetalhes).toHaveBeenCalledTimes(1);
+    detalhes = { status: "past_due", faturaEmAbertoId: `in_${S}_aberta` };
+    buscarDetalhes.mockImplementationOnce(async (id) => daStripe(id)).mockImplementationOnce(async (id) => ({ ...daStripe(id), status: "active", faturaEmAbertoId: null }));
+    expect((await acao("cobrar-de-novo", { assinatura: espelhoId })).body).toEqual({ error: "NadaAFazer" });
+    expect(pagarFatura).not.toHaveBeenCalled();
   });
 
   it("a pré-paga do Pix não tem renovação: 409, e nada muda", async () => {

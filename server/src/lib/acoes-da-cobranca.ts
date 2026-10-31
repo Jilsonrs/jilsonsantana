@@ -2,7 +2,7 @@ import { entrarPara, lerDocumentoFiscal, TELA_DE_PAGAR_COM_PIX, type AcaoFeita, 
 import { prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 import { consertoDoCaso } from "./casos.js";
 import { AssinaturaNaoEncontrada, buscarAssinatura, DocumentoRecusado, trocarNumeroFiscal } from "./stripe.js";
-import { buscarDetalhes, type DetalhesDaAssinatura } from "./stripe-assinatura.js";
+import { buscarDetalhes, pagarFatura, type CobrancaDaFatura, type DetalhesDaAssinatura } from "./stripe-assinatura.js";
 import { anularFatura, assinaturaDaFatura, soltarAgendamento } from "./stripe-plano.js";
 import { cancelarNaHora } from "./stripe-reembolso.js";
 import { pixConfigurado } from "./stripe-pix.js";
@@ -11,7 +11,7 @@ import { getDict } from "./dict.js";
 import { enderecoDoSite } from "./endereco-do-site.js";
 import { manterAssinaturaDe, pararRenovacaoDe } from "./minha-assinatura.js";
 import { operarNaAssinatura, sincronizarAssinatura, sincronizarConta, sincronizarPedido, type Conferida } from "./assinaturas.js";
-import { temAcessoAtivo } from "./acesso.js";
+import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 
@@ -100,6 +100,36 @@ export async function cancelarPeloOperador(espelhoId: number, por: PorQuem): Pro
   if (feita.resultado !== "ok") return { resultado: "nada-a-fazer" };
   const detalhe = feita.terminou ? "terminou agora (a cobrança estava atrasada)" : `não renova; acesso até ${feita.acessoAte?.slice(0, 10) ?? "o fim do período"}`;
   await registrar(por, "cancelar", { userId: linha.ownerUserId, assinatura: linha.stripeSubscriptionId, cliente: linha.stripeCustomerId }, detalhe);
+  return { resultado: "ok", feito: { detalhe } };
+}
+
+/**
+ * TENTAR COBRAR DE NOVO AGORA (bloco 4, passo 4b): a cobrança em aberto da ATRASADA, no cartão da assinatura — quando o
+ * aluno avisa que resolveu o cartão. A MESMA cobrança que a troca de cartão do aluno faz (`pagarFatura`), com a trava e a
+ * sincronia, e relida com a trava (paga no meio, não cobra de novo): passou, as aulas voltam na hora. Recusada, a Stripe
+ * segue tentando sozinha. O banco pedindo uma confirmação, só a pessoa a completa — pelo link de trocar o cartão.
+ */
+export async function cobrarDeNovoPeloOperador(espelhoId: number, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  const achada = await naStripe(espelhoId);
+  if (achada.resultado !== "ok") return achada;
+  const { linha, detalhes } = achada;
+  if (!cobrancaAtrasada(detalhes) || !detalhes.faturaEmAbertoId) return { resultado: "nada-a-fazer" };
+  const id = linha.stripeSubscriptionId;
+  const operacao = await operarNaAssinatura(id, async (): Promise<CobrancaDaFatura | "nada"> => {
+    const agora = await buscarDetalhes(id);
+    if (!cobrancaAtrasada(agora) || !agora.faturaEmAbertoId) return "nada";
+    return pagarFatura(agora.faturaEmAbertoId);
+  });
+  if (!operacao) return { resultado: "ocupada" };
+  if (operacao.feito === "nada") return { resultado: "nada-a-fazer" };
+  const comAcesso = linha.ownerUserId ? await temAcessoAtivo(linha.ownerUserId) : false;
+  const detalhe =
+    operacao.feito === "paga"
+      ? `a cobrança passou; ${comAcesso ? "com acesso" : "sem acesso"} às aulas`
+      : operacao.feito === "recusada"
+        ? "o cartão foi recusado de novo; a Stripe segue tentando sozinha"
+        : "o banco pede uma confirmação que só a pessoa dá: mande o link de trocar o cartão";
+  await registrar(por, "cobrar-de-novo", { userId: linha.ownerUserId, assinatura: id, cliente: linha.stripeCustomerId }, detalhe);
   return { resultado: "ok", feito: { detalhe } };
 }
 

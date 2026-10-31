@@ -1240,6 +1240,11 @@ export async function adminCancelar(assinatura: number): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cancelar", { assinatura });
   return data;
 }
+/** Tentar cobrar de novo agora a cobrança em aberto da atrasada (passo 4b). */
+export async function adminCobrarDeNovo(assinatura: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cobrar-de-novo", { assinatura });
+  return data;
+}
 export async function adminDesfazerCancelamento(assinatura: number): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/desfazer-cancelamento", { assinatura });
   return data;
