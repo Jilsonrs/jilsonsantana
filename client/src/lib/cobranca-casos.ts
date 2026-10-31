@@ -1,6 +1,6 @@
 import { NOME_DO_TIPO_DE_CASO, type TipoDeCasoDaLista } from "@jilson/core";
 
-// "PRECISA DE VOCÊ" NO ADMIN (Fase 4, etapa 4.7b, passo 2c). Admin fica em português, com o texto aqui (decisão do
+// "PRECISA DE ATENDENTE" NO ADMIN (Fase 4, etapa 4.7b, passo 2c). Admin fica em português, com o texto aqui (decisão do
 // operador, 23/09/2026); o operador confere usando (31/10/2026). O "o que resolve" é o da lista B do mapa aprovado.
 
 /** O nome de cada tipo — o mesmo do e-mail ao operador (vem do `core`). */

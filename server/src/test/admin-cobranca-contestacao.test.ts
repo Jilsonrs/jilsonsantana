@@ -185,7 +185,20 @@ describe("responder com provas (passo 5b)", () => {
     expect(enviarProvasDaContestacao.mock.calls).toEqual([[contestacao, Object.fromEntries(daPrevia.campos.map((c) => [c.campo, c.texto]))]]);
     expect(await prisma.billingCase.findUniqueOrThrow({ where: { id } })).toMatchObject({ open: true, urgent: false });
     expect((await prisma.billingCase.findUniqueOrThrow({ where: { id } })).detail).toMatch(/^provas enviadas em \d{2}\/\d{2}\/\d{4} · fraudulent$/);
-    expect(await prisma.billingLog.findFirst({ where: { action: "enviar-provas", stripeSubscriptionId: SUB }, orderBy: { id: "desc" } })).toMatchObject({ who: "OPERADOR", actorUserId: adminId, userId: aluna, amount: 9990, detail: "provas enviadas ao banco; a contestação ficou under_review" });
+    expect(await prisma.billingLog.findFirst({ where: { action: "enviar-provas", stripeSubscriptionId: SUB }, orderBy: { id: "desc" } })).toMatchObject({ who: "OPERADOR", actorUserId: adminId, userId: aluna, amount: 9990, detail: `provas enviadas ao banco (${contestacao}); a contestação ficou under_review` });
+  });
+
+  // A revisão de segurança do bloco 5: dentro da janela da chave, a Stripe devolve a MESMA resposta ao segundo clique — o envio
+  // não se grava em dobro.
+  it("o clique duplo dentro da janela (a Stripe responde de novo): uma linha só no registro, e o caso não muda", async () => {
+    const { id } = await casoDaAluna();
+    expect((await resolver(id, "enviar-provas")).status).toBe(200);
+    const detalhe = (await prisma.billingCase.findUniqueOrThrow({ where: { id } })).detail;
+    const res = await resolver(id, "enviar-provas");
+    expect([res.status, res.body]).toEqual([200, { detalhe: "as provas já tinham ido ao banco; agora é a decisão dele (a ficha mostra a situação da contestação)" }]);
+    const caso = await prisma.billingCase.findUniqueOrThrow({ where: { id } });
+    expect(await prisma.billingLog.count({ where: { action: "enviar-provas", detail: { contains: caso.key.slice(3) } } })).toBe(1);
+    expect(caso.detail).toBe(detalhe);
   });
 
   it("o clique duplo: a outra aba já enviou (a Stripe recusa) — 409; a Stripe fora do ar com ela ainda aberta — 500", async () => {

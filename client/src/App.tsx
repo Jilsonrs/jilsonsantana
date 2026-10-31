@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router";
+import { TELA_PRECISA_DE_ATENDENTE } from "@jilson/core";
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
@@ -29,6 +30,7 @@ import { TrocarCartaoPage } from "@/pages/aluno/TrocarCartaoPage";
 import { PagarComPixPage } from "@/pages/aluno/PagarComPixPage";
 import { CancelarPage } from "@/pages/aluno/CancelarPage";
 import { MudarDePlanoPage } from "@/pages/aluno/MudarDePlanoPage";
+import { ReciboPage } from "@/pages/aluno/ReciboPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -41,6 +43,7 @@ import { CobrancaFichaPage } from "@/pages/admin/cobranca/CobrancaFichaPage";
 import { CobrancaTentativasPage } from "@/pages/admin/cobranca/CobrancaTentativasPage";
 import { CobrancaOQueAconteceuPage } from "@/pages/admin/cobranca/CobrancaOQueAconteceuPage";
 import { CobrancaPrecisaDeVocePage } from "@/pages/admin/cobranca/CobrancaPrecisaDeVocePage";
+import { CobrancaCodigosPage } from "@/pages/admin/cobranca/CobrancaCodigosPage";
 import { AvisosPage } from "@/pages/admin/comunicacao/AvisosPage";
 import { AvisoEditorPage } from "@/pages/admin/comunicacao/AvisoEditorPage";
 import { MensagensAutomaticasPage } from "@/pages/admin/comunicacao/MensagensAutomaticasPage";
@@ -68,6 +71,18 @@ export default function App() {
           </ProtecaoDoApp>
         }
       />
+      {/* O RECIBO DA ESCOLA (etapa 4.7b, passo 6a — decisão do operador, 31/10/2026): FORA do Layout, para imprimir só
+          o recibo, sem o menu do app. Só com login: as cobranças são as da conta da sessão. */}
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/aluno/conta/faturamento/recibo/:chave"
+          element={
+            <ProtecaoDoApp>
+              <ReciboPage />
+            </ProtecaoDoApp>
+          }
+        />
+      </Route>
       <Route element={<Layout />}>
         {/* NÃO existe rota "/" aqui, e é de propósito: a raiz é a home PÚBLICA,
             servida pelo Express. Em produção ele responde antes de o React
@@ -143,15 +158,16 @@ export default function App() {
           <Route path="/admin/comunicacao/notificacoes/nova" element={<AvisoEditorPage />} />
           <Route path="/admin/comunicacao/notificacoes/:id" element={<AvisoEditorPage />} />
           <Route path="/admin/comunicacao/mensagens-automaticas" element={<MensagensAutomaticasPage />} />
-          {/* COBRANÇA (etapa 4.7b — o nome e o submenu decididos pelo operador, 31/10/2026). O link do menu é
-              /admin/cobranca, que leva à primeira tela: "Precisa de você" (passo 2c). */}
-          <Route path="/admin/cobranca" element={<Navigate to="/admin/cobranca/precisa-de-voce" replace />} />
-          <Route path="/admin/cobranca/precisa-de-voce" element={<CobrancaPrecisaDeVocePage />} />
-          <Route path="/admin/cobranca/assinaturas" element={<CobrancaAssinaturasPage />} />
+          {/* FINANCEIRO → RECEITA (o painel da cobrança, etapa 4.7b — o nome e o submenu decididos pelo operador,
+              31/10/2026). O link do menu é /admin/financeiro, que leva à primeira tela: "Precisa de atendente" (passo 2c). */}
+          <Route path="/admin/financeiro" element={<Navigate to={TELA_PRECISA_DE_ATENDENTE} replace />} />
+          <Route path={TELA_PRECISA_DE_ATENDENTE} element={<CobrancaPrecisaDeVocePage />} />
+          <Route path="/admin/financeiro/receita/assinaturas" element={<CobrancaAssinaturasPage />} />
           {/* A ficha do aluno (passo 1d): debaixo de "Assinaturas", que fica aceso no submenu. */}
-          <Route path="/admin/cobranca/assinaturas/ficha" element={<CobrancaFichaPage />} />
-          <Route path="/admin/cobranca/tentativas" element={<CobrancaTentativasPage />} />
-          <Route path="/admin/cobranca/o-que-aconteceu" element={<CobrancaOQueAconteceuPage />} />
+          <Route path="/admin/financeiro/receita/assinaturas/ficha" element={<CobrancaFichaPage />} />
+          <Route path="/admin/financeiro/receita/tentativas" element={<CobrancaTentativasPage />} />
+          <Route path="/admin/financeiro/receita/o-que-aconteceu" element={<CobrancaOQueAconteceuPage />} />
+          <Route path="/admin/financeiro/receita/codigos" element={<CobrancaCodigosPage />} />
         </Route>
         {/* Endereço que não existe no app — um favorito antigo de /conta, um
             endereço digitado errado — leva ao Início (decisão do operador,

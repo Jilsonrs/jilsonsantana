@@ -13,6 +13,8 @@ import { prisma } from "../lib/prisma.js";
 import { pagarComPix } from "../lib/pix-pre-pago.js";
 import { pagarAAtrasadaComPix } from "../lib/pix-da-atrasada.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
+import { minhasCobrancas } from "../lib/minhas-cobrancas.js";
+import { reciboDaConta } from "../lib/recibo.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 import { enderecoDoPedido, limiteDeTentativas, limiteSemLogin } from "../lib/limite-de-tentativas.js";
@@ -335,6 +337,51 @@ router.get("/billing/minha-assinatura", requireAuth, ...limiteDeTentativas.leitu
     return;
   }
   res.json(leitura.assinatura);
+});
+
+// GET /api/billing/minhas-cobrancas — as cobranças que passaram e o recibo de cada uma (etapa 4.7b, passo 6a — P144). A
+// conta é a da sessão; os clientes dela, o servidor acha.
+router.get("/billing/minhas-cobrancas", requireAuth, ...limiteDeTentativas.leitura, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] minhas cobranças recusadas: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  res.set("Cache-Control", "private, no-store");
+  res.json(await minhasCobrancas(user.id));
+});
+
+// GET /api/billing/minhas-cobrancas/:chave — o RECIBO DA ESCOLA de uma cobrança (etapa 4.7b, passo 6a — decisões do
+// operador, 31/10/2026). A cobrança se acha pela chave, só entre as da conta da sessão; os detalhes (o plano, o período, o
+// preço, o desconto) vêm da Stripe na hora. Chave de outra conta, ou que não existe: 404, sem dizer qual dos dois.
+router.get("/billing/minhas-cobrancas/:chave", requireAuth, ...limiteDeTentativas.leitura, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const chave = String(req.params.chave);
+  if (!/^[0-9a-f]{16}$/.test(chave)) {
+    res.status(400).json({ error: "ValidationError" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] recibo recusado: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  res.set("Cache-Control", "private, no-store");
+  const recibo = await reciboDaConta(user.id, chave);
+  if (!recibo) {
+    res.status(404).json({ error: "NaoEncontrado" });
+    return;
+  }
+  res.json(recibo);
 });
 
 // TROCAR O CARTÃO (etapa 4.6), em dois tempos — o campo da Stripe fica no meio, e o dado do

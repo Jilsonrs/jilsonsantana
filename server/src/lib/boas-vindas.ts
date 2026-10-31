@@ -5,6 +5,8 @@ import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { enderecoDoSite } from "./endereco-do-site.js";
 import { abrirCaso, resolvidoSozinho, TipoDeCaso } from "./casos.js";
+import { pagamentoDaConfirmacao, reciboNoEmail } from "./recibo-por-email.js";
+import type { AssinaturaNaStripe } from "./stripe.js";
 
 // O E-MAIL DE BOAS-VINDAS de quem assinou sem conta (Fase 4, etapa 4.7, passo 5 — decisão do
 // operador, 21/10/2026): confirma a assinatura e diz como entrar. Não é preciso para começar (a senha
@@ -43,7 +45,8 @@ export function primeiroNomeDoTitulo(nome: string | null): string | null {
   return [...primeiro].length <= TAMANHO_DO_PRIMEIRO_NOME && PRIMEIRO_NOME_COMUM.test(primeiro) ? primeiro : null;
 }
 
-export async function mandarBoasVindasDaAssinatura(assinaturaId: string): Promise<void> {
+/** `naStripe`: a assinatura como a Stripe acabou de dizer — de onde sai o pagamento do recibo, embaixo (decisão do operador, 31/10/2026). */
+export async function mandarBoasVindasDaAssinatura(assinaturaId: string, naStripe?: AssinaturaNaStripe): Promise<void> {
   try {
     const espelho = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: assinaturaId }, select: { ownerUserId: true } });
     if (!espelho?.ownerUserId) return;
@@ -61,12 +64,14 @@ export async function mandarBoasVindasDaAssinatura(assinaturaId: string): Promis
     const primeiroNome = primeiroNomeDoTitulo(ficha.nome);
     const titulo = primeiroNome ? t.titulo.replace("{nome}", () => primeiroNome) : t.tituloSemNome;
     const entrar = enderecoDoSite("/login");
+    // O recibo do pagamento, embaixo das boas-vindas (decisão do operador, 31/10/2026) — sem ele, elas saem assim mesmo.
+    const recibo = naStripe ? await reciboNoEmail(conta.id, pagamentoDaConfirmacao(naStripe)) : null;
     const envio = await enviarEmail({
       para: conta.email,
       tipo: "boas-vindas",
       referencia: `conta:${conta.id} ficha:${ficha.id}`,
       chave: `boas-vindas/${conta.id}`,
-      mensagem: { assunto: t.assunto, titulo, paragrafos: [t.confirmada, t.comoEntrar], ...(entrar ? { botao: { texto: t.botao, endereco: entrar } } : {}) },
+      mensagem: { assunto: t.assunto, titulo, paragrafos: [t.confirmada, t.comoEntrar], ...(recibo ? { recibo: recibo.recibo } : {}), ...(entrar ? { botao: { texto: t.botao, endereco: entrar } } : {}), ...(recibo?.endereco ? { depoisDoBotao: [{ link: t.verRecibo, endereco: recibo.endereco }] } : {}) },
     });
     // Falhou: a marca volta, e o próximo aviso da Stripe tenta de novo. "Duplicado" é o outro envio,
     // com a mesma chave, saindo — a marca fica.

@@ -363,7 +363,9 @@ export const pt = {
         tituloSemNome: "Olá! Seja bem-vindo(a)",
         confirmada: "Sua assinatura foi confirmada: você já tem acesso a todos os cursos e trilhas.",
         comoEntrar: "Para entrar, use seu e-mail e sua senha. Se ainda não criou a senha, ou não lembra dela, use \"Receber código de acesso\" na tela de entrar.",
-        botao: "Entrar na escola"
+        botao: "Entrar na escola",
+        // O recibo do pagamento, embaixo (decisão do operador, 31/10/2026). Rascunho do agente.
+        verRecibo: "Ver o recibo para imprimir"
       },
       // O LINK QUE O OPERADOR MANDA DO PAINEL DA COBRANÇA (etapa 4.7b, passo 3b): trocar o cartão, reativar ou pagar a
       // atrasada com Pix — o botão leva a entrar e seguir para a tela certa. RASCUNHO do agente: o operador aprova vendo
@@ -442,7 +444,17 @@ export const pt = {
         anual: "Anual",
         todoMes: "todo mês",
         todoAno: "todo ano",
-        botao: "Ir para a escola"
+        botao: "Ir para a escola",
+        // O recibo do pagamento, embaixo (decisão do operador, 31/10/2026). Rascunho do agente.
+        verRecibo: "Ver o recibo para imprimir"
+      },
+      // O RECIBO POR E-MAIL em todo pagamento depois do primeiro — a renovação e a troca de plano (decisão do operador,
+      // 31/10/2026). O recibo vai no corpo; o botão abre o recibo na escola, para imprimir. Rascunho do agente.
+      pagamentoRecebido: {
+        assunto: "Recebemos seu pagamento",
+        titulo: "Pagamento recebido",
+        texto: "Recebemos o pagamento da sua assinatura. O recibo está aqui embaixo.",
+        botao: "Ver o recibo para imprimir"
       },
       // O E-MAIL DO PRÉ-PAGO (etapa 4.9, passo 4 — decisão do operador, 28/10/2026: 3 dias antes de acabar):
       // Texto APROVADO pelo operador em 29/10/2026 (P111; rascunho do agente). Sem botão: pagar de novo é só depois de acabar
@@ -777,6 +789,52 @@ export const pt = {
       // Sem a data (a Stripe não a tem): o texto aprovado, sem o "em {data}". Rascunho do agente.
       terminouSemData: "Sua assinatura terminou.",
       erro: "Não foi possível carregar a sua assinatura. Tente de novo.",
+      // MINHAS COBRANÇAS (4.7b, passo 6a — decisão do operador, 31/10/2026, P144): as cobranças que passaram e o recibo de
+      // cada uma. Rascunho do agente: o operador aprova pelas fotos. `{bandeira}`, `{final}`, `{valor}` e `{data}` são
+      // trocados no código.
+      cobrancas: {
+        titulo: "Cobranças",
+        vazio: "Nenhuma cobrança ainda.",
+        erro: "Não foi possível carregar as cobranças. Tente de novo.",
+        cartao: "Cartão {bandeira} final {final}",
+        cartaoSemBandeira: "Cartão final {final}",
+        pix: "Pix",
+        outra: "Outra forma de pagamento",
+        paga: "Paga",
+        devolvida: "Devolvida",
+        devolvidaEmParte: "{valor} devolvidos",
+        contestada: "Contestada no banco",
+        recibo: "Ver recibo",
+        reciboDe: "Ver o recibo de {data} (abre em outra aba)"
+      },
+      // O RECIBO DA ESCOLA (etapa 4.7b, passo 6a — decisões do operador, 31/10/2026: no lugar do recibo da Stripe, sem o CPF
+      // de quem pagou, e com os itens que ele escolheu). Os dados da escola: o nome empresarial, mandado por ele, e o CNPJ
+      // da matriz que sai dele. Rascunho do agente: o operador aprova vendo.
+      recibo: {
+        titulo: "Recibo",
+        imprimir: "Imprimir ou salvar em PDF",
+        numero: "Nº {numero} · {data}",
+        emitente: "67.633.954 JILSON RODRIGUES DE SANTANA",
+        cnpj: "CNPJ 67.633.954/0001-02",
+        site: "jilsonsantana.com",
+        assinante: "Assinante",
+        planoMensal: "Assinatura Mensal",
+        planoAnual: "Assinatura Anual",
+        semPlano: "Assinatura da escola Jilson Santana",
+        periodo: "{de} a {ate}",
+        preco: "Preço",
+        desconto: "Desconto ({codigo})",
+        descontoSemCodigo: "Desconto",
+        credito: "Crédito do plano anterior",
+        abatimento: "−{valor}",
+        total: "Total pago",
+        forma: "Forma de pagamento",
+        situacao: "Situação",
+        duvidas: "Dúvidas sobre este recibo? Escreva para suporte@jilsonsantana.com.",
+        naoEncontrado: "Este recibo não foi encontrado.",
+        erro: "Não foi possível carregar o recibo. Tente de novo.",
+        tentarDeNovo: "Tentar de novo"
+      },
       // A tela de trocar o cartão.
       cartaoDescricao: "O novo cartão passa a valer na próxima cobrança.",
       salvarCartao: "Salvar cartão",

@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { DuracaoDoDesconto, MOTIVOS_DE_CANCELAMENTO, PLANOS, formatarDocumentoFiscal, type DescontoDoCodigo, type DocumentoFiscal, type MotivoDoCancelamento, type Plano, type TipoDeDocumento } from "@jilson/core";
 import { erroSemMensagem, stripe, VERSAO_DA_API } from "./stripe-cliente.js";
-import { periodoDevolvido } from "./stripe-devolucao.js";
+import { pagamentosDaFatura, periodoDevolvido } from "./stripe-devolucao.js";
 
 // A biblioteca já com a chave e o erro sem a mensagem dela moram em `stripe-cliente.ts`, e saem
 // por aqui para quem já os importava deste arquivo.
@@ -24,7 +24,9 @@ export { erroSemMensagem, stripe, VERSAO_DA_API };
  * DEVOLVIDO fala de uma cobrança, não de uma assinatura — a assinatura se acha pelo pagamento.
  * `devolucaoFalhou`: uma devolução que tinha sido aceita FALHOU depois — o dinheiro não voltou.
  */
-export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean; devolucaoQueFalhou?: DevolucaoQueFalhou | null; pagamentoPrePago?: PagamentoPrePago | null; contestacao?: Contestacao | null; avisoDeFraude?: AvisoDeFraude | null };
+export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean; devolucaoQueFalhou?: DevolucaoQueFalhou | null; pagamentoPrePago?: PagamentoPrePago | null; contestacao?: Contestacao | null; avisoDeFraude?: AvisoDeFraude | null; faturaPaga?: FaturaPaga | null };
+/** A fatura paga de um aviso `invoice.paid`: o id e o motivo (`subscription_create`, `subscription_cycle`, `subscription_update`…). */
+export type FaturaPaga = { id: string; motivo: string | null };
 
 /**
  * A DEVOLUÇÃO QUE FALHOU, de um aviso de devolução (achado P1 da revisão do bloco 4, 31/10/2026): o id dela, o VALOR e a
@@ -162,6 +164,11 @@ export type AssinaturaNaStripe = {
   motivoDoCancelamento?: MotivoDoCancelamento | null;
   /** PAGA POR FORA pelo operador (`METADADO_PAGO_POR_FORA` — 4.7b, passo 4d, P120): pré-paga, como a do Pix, sem Pix. */
   pagoPorFora?: boolean;
+  /**
+   * A última fatura, se PAGA por um pagamento (não por fora), e o pagamento dela — para o recibo por e-mail (4.7b, passo
+   * 6a — decisão do operador, 31/10/2026), sem outra ida à Stripe. Só escolhe o recibo do e-mail: nunca decide acesso.
+   */
+  ultimaFaturaPaga?: { fatura: string; pagamento: string } | null;
 };
 
 /**
@@ -854,7 +861,15 @@ export function paraAviso(evento: Stripe.Event): AvisoDaStripe {
     pagamentoPrePago: pagamentoPrePagoDoAviso(evento),
     contestacao: contestacaoDoAviso(evento),
     avisoDeFraude: avisoDeFraudeDoAviso(evento),
+    faturaPaga: faturaPagaDoAviso(evento),
   };
+}
+
+/** A fatura de um aviso `invoice.paid` e o motivo dela (`billing_reason`) — o recibo por e-mail (4.7b, passo 6a). Função pura. */
+function faturaPagaDoAviso(evento: Stripe.Event): FaturaPaga | null {
+  if (evento.type !== "invoice.paid") return null;
+  const fatura = evento.data.object;
+  return fatura.id ? { id: fatura.id, motivo: fatura.billing_reason ?? null } : null;
 }
 
 /** A contestação de um aviso `charge.dispute.created` ou `charge.dispute.funds_withdrawn`, ou nada. Função pura. */
@@ -974,7 +989,9 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   const precoDeAgora = itens[0]?.price;
   const planoAtual = precoDeAgora ? planoDoPreco(precoDeAgora) : null;
   const motivoDoCancelamento = MOTIVOS_DE_CANCELAMENTO.find((m) => m === assinatura.metadata.motivo) ?? null;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano, planoAtual, acabaEm: quandoAcaba(assinatura), codigoPromocional: codigoDaAssinatura(assinatura), motivoDoCancelamento, pagoPorFora: Boolean(assinatura.metadata[METADADO_PAGO_POR_FORA]) };
+  const pagamentoDaUltima = typeof ultima === "object" && ultima !== null && ultima.status === "paid" && ultima.id ? pagamentosDaFatura(ultima)[0] : undefined;
+  const ultimaFaturaPaga = typeof ultima === "object" && ultima?.id && pagamentoDaUltima ? { fatura: ultima.id, pagamento: pagamentoDaUltima } : null;
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano, planoAtual, acabaEm: quandoAcaba(assinatura), codigoPromocional: codigoDaAssinatura(assinatura), motivoDoCancelamento, pagoPorFora: Boolean(assinatura.metadata[METADADO_PAGO_POR_FORA]), ultimaFaturaPaga };
 }
 
 /**

@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, corrigirEmailSchema, devolverPagamentoSchema, devolverTudoSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, liberarPagoPorForaSchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
+import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, criarCodigoSchema, mudarCodigoSchema, corrigirEmailSchema, devolverPagamentoSchema, devolverTudoSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, liberarPagoPorForaSchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
 import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
-import { aceitarContestacaoPeloOperador, aceitarPixPeloOperador, cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, liberarDeNovoPeloOperador, liberarPagoPorForaPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
+import { aceitarContestacaoPeloOperador, aceitarPixPeloOperador, cancelarPeloOperador, encerrarPagaPorForaPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, liberarDeNovoPeloOperador, liberarPagoPorForaPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { limiteDoCodigoDoEmailNovo } from "../lib/limite-de-tentativas.js";
 import { QuemFez } from "../lib/prisma.js";
@@ -13,6 +13,8 @@ import { corrigirEmailComCodigo, pedirCodigoDoEmailNovo, type NaoCorrigido } fro
 import { devolverDeNovoPeloOperador, devolverEstePagamentoPeloOperador, devolverPagamentoPeloOperador, devolverPixPeloOperador, devolverTudoPeloOperador, previaDeDevolverTudo } from "../lib/devolucoes-do-painel.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 import { enviarProvasPeloOperador, previaDasProvas } from "../lib/provas-da-contestacao.js";
+import { numerosDoMes } from "../lib/numeros-do-mes.js";
+import { criarCodigoPeloOperador, listarCodigosDoPainel, mudarCodigoPeloOperador } from "../lib/codigos-do-painel.js";
 import type { ConsertoDoCaso } from "@jilson/core";
 import type { AcaoFeita } from "@jilson/core";
 import type { PorQuem } from "../lib/acoes-da-cobranca.js";
@@ -49,7 +51,7 @@ router.get("/admin/cobranca/o-que-aconteceu", requireAdmin, async (req, res) => 
   res.json(await oQueAconteceu(pedido.pagina));
 });
 
-// GET /api/admin/cobranca/casos?situacao=abertos|fechados&pagina=… — "Precisa de você" (passo 2c).
+// GET /api/admin/cobranca/casos?situacao=abertos|fechados&pagina=… — "Precisa de atendente" (passo 2c).
 router.get("/admin/cobranca/casos", requireAdmin, async (req, res) => {
   res.set("Cache-Control", "private, no-store");
   const pedido = validate(casosQuerySchema, req.query, res);
@@ -98,6 +100,10 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "sem-valor-da-devolucao": [409, "SemValorDaDevolucao"],
   "outra-contestacao-nao-ganha": [409, "OutraContestacaoNaoGanha"],
   "pix-sem-assinatura": [409, "PixSemAssinatura"],
+  "data-invalida": [400, "DataInvalida"],
+  "codigo-ja-existe": [409, "CodigoJaExiste"],
+  "nao-reativa": [409, "NaoReativa"],
+  "fora-das-regras": [409, "ForaDasRegras"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {
@@ -140,6 +146,15 @@ router.post("/admin/cobranca/acoes/cancelar", requireAdmin, async (req, res) => 
   const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
   if (corpo === null) return;
   responder(res, await cancelarPeloOperador(corpo.assinatura, por));
+});
+
+// POST /api/admin/cobranca/acoes/encerrar-paga-por-fora — { assinatura }: desfaz a liberação paga por fora (passo 6e, P149).
+router.post("/admin/cobranca/acoes/encerrar-paga-por-fora", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await encerrarPagaPorForaPeloOperador(corpo.assinatura, por));
 });
 
 // POST /api/admin/cobranca/acoes/cobrar-de-novo — { assinatura }: a cobrança em aberto da atrasada, agora (passo 4b).
@@ -212,6 +227,38 @@ router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res)
   const corpo = validate(resolverCasoSchema, req.body, res);
   if (corpo === null) return;
   responder(res, await resolverConserto(id, corpo.acao, por));
+});
+
+// GET /api/admin/cobranca/numeros — os números do mês, para a faixa no topo da Cobrança (passo 6c, P143).
+router.get("/admin/cobranca/numeros", requireAdmin, async (_req, res) => {
+  res.set("Cache-Control", "private, no-store");
+  res.json(await numerosDoMes());
+});
+
+// OS CÓDIGOS PROMOCIONAIS (passo 6d, P142).
+// GET /api/admin/cobranca/codigos — os códigos da escola, com quantos usaram.
+router.get("/admin/cobranca/codigos", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  res.json(await listarCodigosDoPainel());
+});
+
+// POST /api/admin/cobranca/codigos — { tipo: "cortesia", pedido, usos, validoAte? } | { tipo: "desconto", pedido, codigo, percentual, duracao, validoAte }.
+router.post("/admin/cobranca/codigos", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(criarCodigoSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await criarCodigoPeloOperador(corpo, por));
+});
+
+// POST /api/admin/cobranca/codigos/ativo — { id, ativo }: pausar ou reativar.
+router.post("/admin/cobranca/codigos/ativo", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(mudarCodigoSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await mudarCodigoPeloOperador(corpo.id, corpo.ativo, por));
 });
 
 // GET /api/admin/cobranca/casos/:id/provas — a prévia das provas da contestação: o texto exato que vai ao banco (passo 5b).

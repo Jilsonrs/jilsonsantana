@@ -84,8 +84,8 @@ export function paraVisitanteDaFicha(ficha: FichaDeEspera): VisitanteDaFicha {
 }
 const DA_FICHA_DE_ESPERA = { id: true, nome: true, email: true, ultimaTentativaEm: true, lembreteEnviadoEm: true, novidades: true, naoApagadaEm: true, userId: true, stripeCustomerId: true } as const;
 
-/** Os clientes da Stripe de uma conta: o do checkout logado, o da ficha do visitante e os das assinaturas. */
-async function clientesDaConta(conta: string | null, dasAssinaturas: (string | null)[]): Promise<string[]> {
+/** Os clientes da Stripe de uma conta: o do checkout logado, o da ficha do visitante e os das assinaturas. A tela do aluno usa a mesma (passo 6a). */
+export async function clientesDaConta(conta: string | null, dasAssinaturas: (string | null)[]): Promise<string[]> {
   const ids = new Set<string>(dasAssinaturas.filter((id): id is string => id !== null));
   if (conta) {
     const logado = await prisma.stripeCustomer.findUnique({ where: { userId: conta }, select: { stripeCustomerId: true } });

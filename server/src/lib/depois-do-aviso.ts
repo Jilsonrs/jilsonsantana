@@ -8,6 +8,7 @@ import { registrarAviso } from "./registro-da-cobranca.js";
 import { abrirCaso, casoJaResolvido, TipoDeCaso } from "./casos.js";
 import { QuemFez } from "./prisma.js";
 import { avisarUrgentes } from "./avisos-ao-operador.js";
+import { mandarReciboDoPagamento } from "./recibo-por-email.js";
 
 // O QUE VEM DEPOIS DE PROCESSAR UM AVISO DA STRIPE — os alertas, o registro, as boas-vindas e os e-mails da cobrança.
 // Mora aqui, e não na rota (estava em `routes/stripe-webhook.ts` até a 4.9b), porque são DOIS os caminhos de um aviso:
@@ -42,7 +43,7 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: DesfechoDoAv
   // novo e o alerta sai então.
   if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") {
     const falhou = aviso.devolucaoQueFalhou ?? null;
-    console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução${falhou ? ` de ${falhou.centavos} centavos` : ""} do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; devolver de novo em Precisa de você`);
+    console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução${falhou ? ` de ${falhou.centavos} centavos` : ""} do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; devolver de novo em Precisa de atendente`);
     // Um caso por DEVOLUÇÃO, com a cobrança e o valor dela (achado P1 da revisão do bloco 4, 31/10/2026): o "Devolver de novo"
     // devolve exatamente o que falhou. Sem a cobrança no aviso, o caso de antes (`pagamento:`), que manda para a ficha.
     await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: falhou?.cobranca ? `devolucao:${falhou.id}` : `pagamento:${aviso.pagamento ?? aviso.id}`, urgente: true, assinatura: aviso.assinatura, objeto: falhou?.cobranca ?? aviso.pagamento ?? null, centavos: falhou?.centavos ?? null, detalhe: "uma devolução falhou: o dinheiro não voltou ao aluno" });
@@ -111,11 +112,14 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: DesfechoDoAv
   // da assinatura — inclusive o repetido —, até sair uma vez. A assinatura que NASCEU de um Pix
   // pré-pago (etapa 4.9) só é conhecida depois de processar o aviso.
   const assinaturaDoAviso = aviso.assinatura ?? ("assinatura" in desfecho ? desfecho.assinatura.id : null);
-  if (assinaturaDoAviso) await mandarBoasVindasDaAssinatura(assinaturaDoAviso);
+  if (assinaturaDoAviso) await mandarBoasVindasDaAssinatura(assinaturaDoAviso, "assinatura" in desfecho ? desfecho.assinatura : undefined);
   // Os e-mails da cobrança (etapa 4.7, passo 7): a cobrança que falhou, o aviso antes de trancar, a
   // assinatura que terminou — com o que a Stripe acabou de dizer, DEPOIS do commit, uma vez cada. O
   // aviso repetido não traz a assinatura de agora: o que ficar para trás, a rodada do agendador manda.
   if (desfecho.resultado === "atualizada") await avisarSobreAAssinatura(desfecho.assinatura);
+  // O RECIBO POR E-MAIL da renovação e da troca de plano (4.7b, passo 6a — decisão do operador, 31/10/2026). A primeira
+  // cobrança vai na confirmação (ou nas boas-vindas), acima. Nunca lança.
+  if (desfecho.resultado === "atualizada" && aviso.faturaPaga) await mandarReciboDoPagamento(desfecho.assinatura, aviso.faturaPaga);
   // O caso URGENTE que este aviso (ou outro antes) abriu: o e-mail ao operador sai agora, fora de qualquer transação
   // (4.7b, passo 2d — P137). Nunca lança.
   await avisarUrgentes();

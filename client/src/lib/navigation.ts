@@ -13,7 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { MockHome, MockGrid, MockMap, MockUser } from "@/components/nav/MockIcons";
-import { Role, pt, type Dict } from "@jilson/core";
+import { Role, TELA_PRECISA_DE_ATENDENTE, pt, type Dict } from "@jilson/core";
 import { PASSOS_DO_CURSO } from "@/lib/course-steps";
 
 /**
@@ -269,19 +269,21 @@ export function navegacao(t: AppTexts): Secao[] {
       estado: "planejado", // Fase 4
     },
     {
-      // COBRANÇA (decisão do operador, 31/10/2026, P145 — etapa 4.7b): o painel em que se resolve todo problema de
-      // pagamento de aluno. No lugar de "Assinaturas" (etapa 4.4), depois de "Alunos". O que ainda não existe é EM
-      // BREVE: nenhum, desde o passo 2c.
-      label: "Cobrança",
-      to: "/admin/cobranca",
+      // FINANCEIRO (decisão do operador, 31/10/2026): o que nasceu como "Cobrança" (P145, etapa 4.7b — o painel em que
+      // se resolve todo problema de pagamento de aluno) é a RECEITA, um título do nível 2. Impostos e o que vier entram
+      // como outros títulos (`grupo`), e o endereço segue o menu: /admin/financeiro/<título>/<tela>. Depois de "Alunos".
+      label: "Financeiro",
+      to: "/admin/financeiro",
       icon: CreditCard,
       papel: Role.ADMIN,
       estado: "ativo",
       filhos: [
-        { label: "Precisa de você", to: "/admin/cobranca/precisa-de-voce" },
-        { label: "Assinaturas", to: "/admin/cobranca/assinaturas" },
-        { label: "Tentativas", to: "/admin/cobranca/tentativas" },
-        { label: "O que aconteceu", to: "/admin/cobranca/o-que-aconteceu" },
+        { label: "Precisa de atendente", to: TELA_PRECISA_DE_ATENDENTE, grupo: "Receita" },
+        { label: "Assinaturas", to: "/admin/financeiro/receita/assinaturas", grupo: "Receita" },
+        { label: "Tentativas", to: "/admin/financeiro/receita/tentativas", grupo: "Receita" },
+        { label: "O que aconteceu", to: "/admin/financeiro/receita/o-que-aconteceu", grupo: "Receita" },
+        // Os códigos promocionais (passo 6d — P142, 31/10/2026).
+        { label: "Códigos promocionais", to: "/admin/financeiro/receita/codigos", grupo: "Receita" },
       ],
     },
     {

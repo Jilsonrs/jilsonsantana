@@ -847,7 +847,7 @@ model EmailCorrection {
   @@map("email_correction")
 }
 
-// OS CASOS — "PRECISA DE VOCÊ" (etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026): cada situação da
+// OS CASOS — "PRECISA DE ATENDENTE" (etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026): cada situação da
 // cobrança que precisa do operador (hoje um alerta que pede o painel da Stripe) vira UM caso — um por situação (`kind` +
 // `key`), sem repetir; se a situação volta depois de resolvida, o mesmo caso REABRE. Fecha sozinho quando a situação se
 // resolve, ou pelo operador, com uma nota. É o que o operador (e, no futuro, o JilsonAI) atende. Nada aqui decide acesso.

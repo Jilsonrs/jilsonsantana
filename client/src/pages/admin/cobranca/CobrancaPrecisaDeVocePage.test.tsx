@@ -14,11 +14,13 @@ vi.mock("@/lib/api", () => ({
   adminFecharCaso: (id: number, nota: string) => adminFecharCaso(id, nota),
   adminReenviarEmail: (id: number) => adminReenviarEmail(id),
   adminResolverCaso: (id: number, acao: string) => adminResolverCaso(id, acao),
+  // A faixa dos números do mês (passo 6c) tem teste próprio: aqui ela fica carregando.
+  adminNumerosDoMes: () => new Promise(() => {}),
 }));
 
 import { CobrancaPrecisaDeVocePage } from "./CobrancaPrecisaDeVocePage";
 
-// ADMIN → COBRANÇA → PRECISA DE VOCÊ (etapa 4.7b, passo 2c). O que estes testes protegem: os estados (carregando, erro
+// ADMIN → COBRANÇA → PRECISA DE ATENDENTE (etapa 4.7b, passo 2c). O que estes testes protegem: os estados (carregando, erro
 // com "tentar de novo", nada aberto, nada fechado); o que cada caso diz (o tipo, "Urgente", quando abriu, o valor, o
 // resumo, o aluno levando à ficha certa, o que resolve); o "Fechar" mandando o id e a nota aparada, e a lista pedida de
 // novo; a falha ao fechar; e a aba dos fechados (quem fechou e a nota).
@@ -49,7 +51,7 @@ beforeEach(() => {
   adminFecharCaso.mockReset().mockResolvedValue(undefined);
 });
 
-describe("Precisa de você — os estados", () => {
+describe("Precisa de atendente — os estados", () => {
   it("carregando", () => {
     adminListarCasos.mockReturnValue(new Promise(() => {}));
     renderWithProviders(<CobrancaPrecisaDeVocePage />);
@@ -62,7 +64,7 @@ describe("Precisa de você — os estados", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("Não foi possível carregar os casos.");
     adminListarCasos.mockResolvedValue(lista([], 0, 0));
     fireEvent.click(screen.getByRole("button", { name: "Tentar de novo" }));
-    expect(await screen.findByText("Nada precisa de você agora.")).toBeTruthy();
+    expect(await screen.findByText("Nada precisa de atendente agora.")).toBeTruthy();
   });
 
   it("nada fechado ainda, na aba dos fechados", async () => {
@@ -74,7 +76,7 @@ describe("Precisa de você — os estados", () => {
   });
 });
 
-describe("Precisa de você — os casos", () => {
+describe("Precisa de atendente — os casos", () => {
   it("quantos abertos e urgentes; e cada caso: o tipo, 'Urgente', quando, o valor, o resumo, a ficha certa e o que resolve", async () => {
     renderWithProviders(<CobrancaPrecisaDeVocePage />);
     expect(await screen.findByRole("heading", { name: "3 casos abertos · 1 urgente" })).toBeTruthy();
@@ -82,9 +84,9 @@ describe("Precisa de você — os casos", () => {
     expect(screen.getAllByText("Urgente")).toHaveLength(1);
     expect(screen.getAllByText("Abriu em 20/11/2026, 12:30 · R$ 99,90")).toHaveLength(2);
     expect(screen.getAllByText("pagou 9990 centavos e o plano anual custa 99500")).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "Ana Souza" }).getAttribute("href")).toBe("/admin/cobranca/assinaturas/ficha?conta=u-1");
+    expect(screen.getByRole("link", { name: "Ana Souza" }).getAttribute("href")).toBe("/admin/financeiro/receita/assinaturas/ficha?conta=u-1");
     const fichas = screen.getAllByRole("link", { name: "Abrir a ficha" }).map((l) => l.getAttribute("href"));
-    expect(fichas).toEqual(["/admin/cobranca/assinaturas/ficha?visitante=ficha-9", "/admin/cobranca/assinaturas/ficha?assinatura=7"]);
+    expect(fichas).toEqual(["/admin/financeiro/receita/assinaturas/ficha?visitante=ficha-9", "/admin/financeiro/receita/assinaturas/ficha?assinatura=7"]);
     expect(screen.getByText("O que resolve: Aceitar este Pix · Devolver")).toBeTruthy();
     expect(screen.getByText("O que resolve: Conferir na Stripe")).toBeTruthy();
   });
@@ -119,7 +121,7 @@ describe("Precisa de você — os casos", () => {
   });
 });
 
-describe("Precisa de você — reenviar (passo 3a)", () => {
+describe("Precisa de atendente — reenviar (passo 3a)", () => {
   it("só o e-mail que não saiu tem 'Reenviar'; ele manda o caso e diz o que aconteceu", async () => {
     adminReenviarEmail.mockReset().mockResolvedValue({ detalhe: "o e-mail saiu" });
     adminListarCasos.mockResolvedValue(lista([caso({ id: 5, tipo: "EMAIL_NAO_SAIU", urgente: false }), caso({ id: 6 })]));
@@ -131,7 +133,7 @@ describe("Precisa de você — reenviar (passo 3a)", () => {
   });
 });
 
-describe("Precisa de você — os consertos (passo 3b)", () => {
+describe("Precisa de atendente — os consertos (passo 3b)", () => {
   it("cada caso com conserto mostra o botão; a confirmação diz o efeito; o conserto vai ao servidor e a lista é relida", async () => {
     adminResolverCaso.mockReset().mockResolvedValue({ detalhe: "a cobrança em aberto foi anulada" });
     adminListarCasos.mockResolvedValue(

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BlocoDoCartao } from "@/components/faturamento/BlocoDoCartao";
 import { BlocoDoPlano } from "@/components/faturamento/BlocoDoPlano";
+import { BlocoDasCobrancas } from "@/components/faturamento/BlocoDasCobrancas";
 import { TELA_DE_ASSINAR } from "@/lib/assinar";
 import { comAcesso, dataPorExtenso, useMinhaAssinatura } from "@/lib/faturamento";
 import { useT } from "@/lib/language";
@@ -60,6 +61,8 @@ export function FaturamentoPage() {
           <BlocoDoCartao cartao={viva.cartao} aceitaCartao={viva.aceitaCartao} prePago={viva.prePago === true} pagarComPix={viva.situacao === SituacaoDoFaturamento.ATRASADA} />
         </div>
       )}
+      {/* As cobranças (passo 6a): de quem assina ou já assinou — quem nunca assinou não tem o que ver. */}
+      {assinatura && assinatura.situacao !== SituacaoDoFaturamento.NENHUMA && <BlocoDasCobrancas />}
     </PageContainer>
   );
 }

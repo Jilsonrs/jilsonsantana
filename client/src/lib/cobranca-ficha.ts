@@ -22,9 +22,9 @@ export function quemDaFicha(parametros: URLSearchParams): QuemDaFicha | null {
 
 /** O endereço da ficha de uma conta, de uma assinatura sem conta ou de um visitante que não terminou de assinar. */
 export function enderecoDaFicha(quem: { conta: string | null; assinatura: number | null; visitante?: string | null }): string | null {
-  if (quem.conta) return `/admin/cobranca/assinaturas/ficha?conta=${encodeURIComponent(quem.conta)}`;
-  if (quem.assinatura) return `/admin/cobranca/assinaturas/ficha?assinatura=${quem.assinatura}`;
-  if (quem.visitante) return `/admin/cobranca/assinaturas/ficha?visitante=${encodeURIComponent(quem.visitante)}`;
+  if (quem.conta) return `/admin/financeiro/receita/assinaturas/ficha?conta=${encodeURIComponent(quem.conta)}`;
+  if (quem.assinatura) return `/admin/financeiro/receita/assinaturas/ficha?assinatura=${quem.assinatura}`;
+  if (quem.visitante) return `/admin/financeiro/receita/assinaturas/ficha?visitante=${encodeURIComponent(quem.visitante)}`;
   return null;
 }
 

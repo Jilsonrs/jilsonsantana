@@ -165,6 +165,22 @@ export function entrarPara(destino: DestinoDepoisDeEntrar): string {
   return `/login?depois=${destino}`;
 }
 
+/** A chave de um recibo da escola: 16 letras e números (o começo do resumo do pagamento — `server/src/lib/minhas-cobrancas.ts`). */
+export const CHAVE_DO_RECIBO = /^[0-9a-f]{16}$/;
+
+/** A tela do recibo da escola (4.7b, passo 6a). */
+export function telaDoRecibo(chave: string): string {
+  return `/aluno/conta/faturamento/recibo/${chave}`;
+}
+
+/**
+ * ENTRAR E SEGUIR PARA UM RECIBO (o link dos e-mails do recibo — 4.7b, passo 6a): o nome `recibo` e a chave, que a tela de
+ * entrar confere (`CHAVE_DO_RECIBO`) antes de seguir — a lista continua fechada: nada de endereço no link.
+ */
+export function entrarParaORecibo(chave: string): string {
+  return `/login?depois=recibo&recibo=${chave}`;
+}
+
 /** O cartão guardado, como a tela o mostra: NUNCA o número — a bandeira, os 4 últimos e a validade. */
 export type CartaoDaAssinatura = { bandeira: string; final: string; mes: number; ano: number };
 
@@ -324,4 +340,61 @@ export type CartaoTrocado = {
   pagou: boolean;
   /** O banco pediu uma confirmação para a cobrança em aberto: o site a completa com este segredo. */
   confirmar?: string | null;
+};
+
+/**
+ * MINHAS COBRANÇAS (Fase 4, etapa 4.7b, passo 6a — decisão do operador, 31/10/2026, P144): uma cobrança que PASSOU, como o
+ * aluno a vê em Faturamento e no recibo da escola. Nenhum código da Stripe sai daqui.
+ */
+export type MinhaCobranca = {
+  em: string;
+  centavos: number;
+  moeda: string;
+  forma: "cartao" | "pix" | "outra";
+  cartao: { bandeira: string; final: string } | null;
+  situacao: "paga" | "devolvida" | "devolvida-em-parte" | "contestada";
+  /** Quanto já voltou, em centavos. */
+  devolvido: number;
+  /**
+   * Acha o recibo da escola (decisão do operador, 31/10/2026 — no lugar do recibo da Stripe, que mostra o CPF de quem
+   * pagou): a mesma para a mesma cobrança, e sem nenhum código da Stripe. Só vale dentro das cobranças da própria conta.
+   */
+  chave: string;
+};
+/** Resposta de `GET /api/billing/minhas-cobrancas`: da mais nova à mais antiga. */
+export type MinhasCobrancas = { cobrancas: MinhaCobranca[] };
+
+/**
+ * O RECIBO DA ESCOLA (Fase 4, etapa 4.7b, passo 6a — decisões do operador, 31/10/2026: no lugar do recibo da Stripe, e com os
+ * itens que ele escolheu). Uma cobrança que passou, com o que a Stripe sabe dela: o plano, o período pago, o preço, o desconto
+ * (com o código) e o crédito da troca de plano. Nenhum código da Stripe e nenhum CPF. Resposta de
+ * `GET /api/billing/minhas-cobrancas/:chave`.
+ */
+export type ReciboDaEscola = Omit<MinhaCobranca, "chave"> & {
+  /** O número do recibo, para a pessoa e o suporte: o começo da chave, "81DD-3FD1". */
+  numero: string;
+  plano: Plano | null;
+  /** O período pago, quando se sabe. */
+  periodo: { de: string; ate: string } | null;
+  /**
+   * O preço cheio e o que saiu dele — só quando a conta fecha com o total pago (`centavos`). Quando não fecha, nada: o recibo
+   * mostra só o total, e nunca uma conta errada.
+   */
+  detalhe: { preco: number; descontos: { codigo: string | null; centavos: number }[]; credito: number } | null;
+};
+
+/**
+ * O nome da BANDEIRA do cartão, como o aluno lê — o app e o recibo por e-mail usam a mesma lista. É nome próprio; a Stripe manda
+ * o código dela, e o que não estiver aqui (bandeira nova, ou "unknown") sai sem nome.
+ */
+export const NOME_DA_BANDEIRA: Partial<Record<string, string>> = {
+  visa: "Visa",
+  mastercard: "Mastercard",
+  amex: "American Express",
+  elo: "Elo",
+  hipercard: "Hipercard",
+  diners: "Diners Club",
+  discover: "Discover",
+  jcb: "JCB",
+  unionpay: "UnionPay",
 };

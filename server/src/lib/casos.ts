@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { CASOS_POR_PAGINA, type CasoDaLista, type ConsertoDoCaso, type ListaDeCasos, type QuemFezNoRegistro, type TipoDeCasoDaLista } from "@jilson/core";
 import { Prisma, prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 
-// OS CASOS — "PRECISA DE VOCÊ" (Fase 4, etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026). Cada situação
+// OS CASOS — "PRECISA DE ATENDENTE" (Fase 4, etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026). Cada situação
 // da cobrança que precisa do operador vira UM caso (o tipo + a chave da situação), aberto no MESMO lugar em que o alerta
 // sai — o alerta continua (é ele que avisa até o aviso por e-mail, passo 2d). O caso fecha sozinho quando a situação se
 // resolve, ou pelo operador, com uma nota.
@@ -108,7 +108,9 @@ export async function casoJaResolvido(caso: NovoCaso, por: { quem: QuemFez; nota
         "detail" = COALESCE(EXCLUDED."detail", "billing_case"."detail"),
         "updatedAt" = now(), "closedAt" = now(), "closedBy" = EXCLUDED."closedBy", "closedByUserId" = NULL, "note" = EXCLUDED."note"`;
   } catch (erro) {
-    console.warn(`[api] o caso ${caso.tipo} ${caso.chave} não foi gravado: ${erro instanceof Error ? erro.message : String(erro)}`);
+    // O caso já resolvido é o que o operador vê no painel do que a escola fez sozinha (o aviso de fraude): sem ele, alerta
+    // (revisão de segurança do bloco 5 da 4.7b) — o dinheiro já voltou e a assinatura já acabou.
+    console.error(`[stripe] o caso já resolvido ${caso.tipo} ${caso.chave} (assinatura ${caso.assinatura ?? "-"}) não foi gravado — o painel não o mostra: ${erro instanceof Error ? erro.message : String(erro)}`);
   }
 }
 
@@ -191,7 +193,7 @@ export function consertosDoCaso(tipo: TipoDeCasoDaLista, chave: string): Consert
 }
 
 /**
- * "PRECISA DE VOCÊ" (passo 2c): os casos abertos — os urgentes primeiro, e dos mais novos para os mais velhos — ou os
+ * "PRECISA DE ATENDENTE" (passo 2c): os casos abertos — os urgentes primeiro, e dos mais novos para os mais velhos — ou os
  * fechados (o fechamento mais recente primeiro). E quantos abertos há, e quantos urgentes.
  */
 export async function listarCasos({ situacao, pagina }: { situacao: "abertos" | "fechados"; pagina: number }): Promise<ListaDeCasos> {

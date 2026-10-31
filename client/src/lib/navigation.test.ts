@@ -280,23 +280,26 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     }
   });
 
-  // COBRANÇA (decisão do operador, 31/10/2026, P145 — etapa 4.7b; no lugar de "Assinaturas", de 10/10/2026): o painel
-  // da cobrança. É do ADMIN: o aluno não fica sabendo que a área existe.
-  it("Cobrança é do admin (o aluno não vê), vem logo depois de Alunos, com o submenu decidido e a lista acendendo Cobrança", () => {
+  // FINANCEIRO (decisão do operador, 31/10/2026 — o que nasceu como "Cobrança", P145, etapa 4.7b, no lugar de
+  // "Assinaturas", de 10/10/2026): a RECEITA é o título das telas do painel da cobrança no nível 2. É do ADMIN: o aluno
+  // não fica sabendo que a área existe.
+  it("Financeiro é do admin (o aluno não vê), vem logo depois de Alunos, com as telas sob o título Receita e a ficha acendendo Financeiro", () => {
     const doAdmin = secoesVisiveis(Role.ADMIN);
-    const cobranca = doAdmin.find((s) => s.label === "Cobrança");
-    expect(cobranca).toMatchObject({ to: "/admin/cobranca", estado: "ativo", papel: Role.ADMIN });
-    expect(cobranca?.filhos?.map((f) => [f.label, f.estado ?? "ativo"])).toEqual([
-      ["Precisa de você", "ativo"],
-      ["Assinaturas", "ativo"],
-      ["Tentativas", "ativo"],
-      ["O que aconteceu", "ativo"],
+    const financeiro = doAdmin.find((s) => s.label === "Financeiro");
+    expect(financeiro).toMatchObject({ to: "/admin/financeiro", estado: "ativo", papel: Role.ADMIN });
+    expect(financeiro?.filhos?.map((f) => [f.grupo, f.label, f.to, f.estado ?? "ativo"])).toEqual([
+      ["Receita", "Precisa de atendente", "/admin/financeiro/receita/precisa-de-atendente", "ativo"],
+      ["Receita", "Assinaturas", "/admin/financeiro/receita/assinaturas", "ativo"],
+      ["Receita", "Tentativas", "/admin/financeiro/receita/tentativas", "ativo"],
+      ["Receita", "O que aconteceu", "/admin/financeiro/receita/o-que-aconteceu", "ativo"],
+      ["Receita", "Códigos promocionais", "/admin/financeiro/receita/codigos", "ativo"],
     ]);
-    expect(secoesVisiveis(Role.MEMBER).some((s) => s.to.startsWith("/admin/cobranca"))).toBe(false);
+    expect(secoesVisiveis(Role.MEMBER).some((s) => s.to.startsWith("/admin/financeiro"))).toBe(false);
     const rotulos = doAdmin.map((s) => s.label);
-    expect(rotulos.indexOf("Cobrança")).toBe(rotulos.indexOf("Alunos") + 1);
+    expect(rotulos.indexOf("Financeiro")).toBe(rotulos.indexOf("Alunos") + 1);
+    expect(rotulos).not.toContain("Cobrança");
     expect(rotulos).not.toContain("Assinaturas");
-    expect(secaoAtiva("/admin/cobranca/assinaturas", doAdmin)?.label).toBe("Cobrança");
+    expect(secaoAtiva("/admin/financeiro/receita/assinaturas/ficha", doAdmin)?.label).toBe("Financeiro");
   });
 
   // COMUNICAÇÃO (decisões do operador, 06/10/2026): antes de "Alunos", com o nível 2;

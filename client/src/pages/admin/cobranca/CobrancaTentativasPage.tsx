@@ -48,7 +48,7 @@ export function CobrancaTentativasPage() {
             const endereco = tentativa.tipo === "visitante" ? enderecoDaFicha({ conta: null, assinatura: null, visitante: tentativa.visitante.id }) : enderecoDaFicha({ conta: tentativa.conta.id, assinatura: null });
             return (
               <li key={tentativa.tipo === "visitante" ? `v-${tentativa.visitante.id}` : `c-${tentativa.assinatura}`} className="space-y-1 px-5 py-4">
-                <Link to={endereco ?? "/admin/cobranca/tentativas"} className="font-medium text-foreground underline-offset-4 hover:underline">
+                <Link to={endereco ?? "/admin/financeiro/receita/tentativas"} className="font-medium text-foreground underline-offset-4 hover:underline">
                   {pessoa.nome ?? pessoa.email}
                 </Link>
                 {pessoa.nome ? <p className="text-sm text-muted-foreground">{pessoa.email}</p> : null}

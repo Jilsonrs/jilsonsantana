@@ -178,10 +178,15 @@ export async function enviarProvasPeloOperador(casoId: number, por: PorQuem): Pr
     if ((await statusDaContestacao(contestacaoId)) !== "needs_response") return { resultado: "contestacao-nao-aberta" };
     throw erro;
   }
+  // O clique duplo dentro da janela da chave recebe a MESMA resposta da Stripe: o envio já está no registro, e nada se grava em
+  // dobro (revisão de segurança do bloco 5 da 4.7b).
+  if (await prisma.billingLog.findFirst({ where: { action: "enviar-provas", detail: { startsWith: `provas enviadas ao banco (${contestacaoId})` } }, select: { id: true } })) {
+    return { resultado: "ok", feito: { detalhe: "as provas já tinham ido ao banco; agora é a decisão dele (a ficha mostra a situação da contestação)" } };
+  }
   const em = dataDeBrasilia(new Date());
   // O caso continua ABERTO até o banco decidir — sem a urgência do prazo, que foi cumprido.
   await abrirCaso({ tipo: TipoDeCaso.CONTESTACAO, chave, urgente: false, detalhe: `provas enviadas em ${em} · ${provas.motivo}` });
-  await registrar(por, "enviar-provas", { userId: contaId, assinatura }, `provas enviadas ao banco; a contestação ficou ${depois}`, centavos);
+  await registrar(por, "enviar-provas", { userId: contaId, assinatura }, `provas enviadas ao banco (${contestacaoId}); a contestação ficou ${depois}`, centavos);
   return { resultado: "ok", feito: { detalhe: "as provas foram ao banco; agora é a decisão dele (a ficha mostra a situação da contestação)" } };
 }
 

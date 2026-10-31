@@ -6783,22 +6783,163 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               depois. *Docs check (context7): Stripe → `/websites/stripe` → o aviso de fraude (`actionable`), a devolução com
               `reason: "fraudulent"` (as listas de bloqueio) (31/10/2026) — 3 consultas no bloco (a 3ª, sem achar o cartão de
               teste do aviso; ele saiu da forma do id, `issfr_`, e foi confirmado na prova).*
-        - [ ] **Fechamento do bloco 5.**
+        - [x] **Fechamento do bloco 5.** **PUBLICADO em 31/10/2026, com a ordem do operador ("Sim, pode publicar"): merge
+              `8d39117`**, revisão `jilson-prod-00059-9gg` (100% do tráfego), CI e Deploy verdes — junto foram as correções da
+              conferência do revisor do bloco 4 (`34d1380`). **No ar:** `/api/health` 200; a rota nova da prévia das provas
+              recusa quem não entrou (401). Sem migration neste bloco. **A revisão de segurança (31/10/2026, só o que mudou —
+              `378295c`, `34d1380`, `0804fba`): nenhum P0 nem P1**; dois P2 e dois P3, fechados com teste e mutação no `dev`
+              (5 de 5 reprovaram; sobem com a próxima publicação): (P2) o aviso de fraude e o "dinheiro saiu" da contestação passam pela vaga das
+              assinaturas (`comVaga`), como o Pix — um lote deles prenderia as ligações da cópia; (P2) o caso já resolvido que
+              não se grava vira alerta; (P3) o envio das provas não grava em dobro com o clique duplo; (P3) a devolução do aviso
+              de fraude sem assinatura que falha diz no alerta qual aviso foi.
       - [ ] **BLOCO 6 — O ALUNO SOZINHO E O QUE MAIS ENTROU** (decisões do operador, 31/10/2026)
-        - [ ] **6a — Minhas cobranças e os recibos**, na tela do aluno (P144).
+        - [x] **6a — Minhas cobranças e os recibos**, na tela do aluno (P144). **FEITO (31/10/2026):** em Faturamento, a seção
+              *Cobranças* (`BlocoDasCobrancas`), de `GET /api/billing/minhas-cobrancas` (`lib/minhas-cobrancas.ts`, com o limite
+              das leituras): as cobranças que PASSARAM, da mais nova à mais antiga — a data, o valor, como foi paga (cartão com a
+              bandeira e o final, ou Pix) e em que pé está (paga, devolvida, quanto voltou, contestada) — e o botão **Ver
+              recibo**, que abre numa aba nova o recibo da ESCOLA (desde a revisão do bloco 6; antes, a página de recibo da
+              Stripe). A MESMA leitura da ficha do admin (os clientes da conta e as cobranças de cada um), com a conta da
+              sessão; a recusada e a pendente não aparecem; nenhum código da Stripe sai na resposta. Aparece para quem assina ou já assinou (quem nunca assinou não
+              vê a seção). Textos no dicionário (`app.faturamento.cobrancas`) — **rascunho do agente, a aprovar pelas fotos**.
+              Testes: `minhas-cobrancas.test.ts` (novo, 2), o limite das leituras, `BlocoDasCobrancas.test.tsx` (novo, 5) e
+              `FaturamentoPage.test.tsx` (+2). **Mutação: 10 de 10 reprovaram.** Fotos com contas descartáveis no banco de dev
+              e a Stripe de teste (a lista no computador e no celular, o vazio da paga por fora, o erro), apagadas no fim.
+              *Docs check (context7): Stripe → não consultado — a leitura é a mesma `charges.list` da ficha (passo 1d).*
         - **6b — SAIU** *(P138, 31/10/2026: sem botão de pedir reembolso na tela do aluno; o pedido vem pelo suporte e,
               depois, pelo JilsonAI)*. O número não se reaproveita.
-        - [ ] **6c — Os números do mês** (P143).
-        - [ ] **6d — Os códigos promocionais no admin** (P142).
-        - [ ] **6e — "Encerrar agora" na assinatura paga por fora** (P149 — decisão do operador, 31/10/2026: "Sim, com
-              confirmação"). Só na paga por fora (a liberação do 4d), na ficha: o acesso acaba na hora (`cancelarNaHora` pela
+        - [x] **6c — Os números do mês** (P143). **FEITO (31/10/2026):** a faixa no topo da Cobrança (a tela "Precisa de você",
+              que é onde a Cobrança abre — `NumerosDoMes`), de `GET /api/admin/cobranca/numeros` (`lib/numeros-do-mes.ts`): os
+              assinantes agora, pela regra do gate, divididos em mensal, anual e "Pix e pagas por fora" (e "outros", se uma
+              assinatura não tem plano conhecido); os novos e os encerrados desde o começo do mês de Brasília; os atrasados
+              agora — só assinaturas com conta e do modo da chave da Stripe; o que entrou (as cobranças pagas) e o que foi
+              devolvido, lidos na Stripe (`lib/stripe-numeros.ts`) — sem ela, "—" e o resto aparece. Testes:
+              `admin-cobranca-numeros.test.ts` (novo, 4) e `NumerosDoMes.test.tsx` (novo, 5). **Mutação: 7 de 7 reprovaram.**
+              Conferido na Stripe de teste, só lendo: as duas somas respondem. *Docs check (context7): Stripe → já consultado
+              nesta sessão (a lista de cobranças e de devoluções com `created` e a paginação da biblioteca) — sem consulta nova.*
+        - [x] **6d — Os códigos promocionais no admin** (P142). **FEITO (31/10/2026):** Admin → Cobrança → *Códigos
+              promocionais* (`/admin/cobranca/codigos`, `CobrancaCodigosPage` + `CriarCodigo`): criar, pausar, reativar e ver
+              quantos usaram, de `GET/POST /api/admin/cobranca/codigos` e `POST /api/admin/cobranca/codigos/ativo`
+              (`lib/codigos-do-painel.ts`; a ida à Stripe em `lib/stripe-codigos.ts`). As regras de `billing.md` →
+              *Códigos promocionais* no formulário e no servidor (`criarCodigoSchema`, no `core`): a cortesia é 100%, para
+              sempre, com o código sorteado pelo servidor e o limite de usos (até 20 — escolha do agente, a confirmar); o
+              desconto tem validade e não tem limite; os tipos da P125 não passam. Com a trava dos códigos, sem esperar, e o
+              **pedido** (um número sorteado pela tela): o mesmo pedido de novo devolve o código já criado, sem criar outro nem
+              registrar em dobro. Cada ação fica no registro. Testes: `admin-cobranca-codigos.test.ts` (novo, 13),
+              `CriarCodigo.test.tsx` (novo, 6), `CobrancaCodigosPage.test.tsx` (novo, 6) e o submenu
+              (`navigation.test.ts`). **Mutação: 19 de 19 reprovaram.** **Prova pela rota** (servidor local, banco de dev,
+              Stripe de teste): a cortesia e o desconto nasceram como pedido; o pedido repetido devolveu o mesmo código; o texto
+              repetido, 409; o checkout aceitou a cortesia, recusou-a pausada e aceitou de novo reativada; quatro linhas no
+              registro; tudo desfeito no fim. *Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026 (1 consulta): o
+              código se cria com `promotion: { type: "coupon", coupon }`, `max_redemptions` e `expires_at` são do código,
+              reativar só com o cupom válido, o texto é único entre os ativos; a lista por `code`, `coupon` e `created`
+              conferida nos tipos da biblioteca.*
+        - [x] **6e — "Encerrar agora" na assinatura paga por fora** (P149 — decisão do operador, 31/10/2026: "Sim, com
+              confirmação"). **FEITO (31/10/2026):** `encerrarPagaPorForaPeloOperador` (`POST
+              /api/admin/cobranca/acoes/encerrar-paga-por-fora`), só para a marca `pago_por_fora` (a lista passa a dizer
+              `pagoPorFora`); a pré-paga do Pix não tem o botão. Testes: `admin-cobranca-liberar.test.ts` (+3) e a ficha (+1).
+              **Mutação: 3 de 3 reprovaram.** Sem prova pela rota: nada de dinheiro se move, e o encerramento é o mesmo
+              `cancelarNaHora` já provado na área de teste no passo 4a. Só na paga por fora (a liberação do 4d), na ficha: o acesso acaba na hora (`cancelarNaHora` pela
               operação na assinatura), sem devolver nada pela Stripe — o dinheiro recebido por fora o operador devolve por fora
               —, com a confirmação dizendo isso e a linha no registro. É o jeito de desfazer uma liberação feita na conta ou no
               plano errado sem ir ao painel da Stripe.
         - [ ] **Fechamento do bloco 6:** a revisão de segurança, as fotos das telas do aluno, publicar (com a ordem dele).
-      - [ ] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
+              **A revisão (31/10/2026): nenhum P0 nem P1.** O P3 — "Reativar" punha de volta no ar um código de 100% que
+              não é cortesia (os tipos da P125), criado na Stripe e pausado — fechado: 409 `ForaDasRegras`; e o caso que
+              faltava, "Encerrar agora" com a assinatura ocupada (409 `Ocupada`). Testes: os códigos (+1), liberar (+1), a
+              tela dos códigos (+1). **Mutação: 6 de 6 reprovaram.** O P2 — o "Ver recibo" abria a página da Stripe, **em
+              inglês**, com o botão que baixa a fatura com o **CPF inteiro de quem pagou** (provado na área de teste: o PDF
+              traz `BR CPF …`; com o cadastro em português, a página e o PDF saem em português e o CPF continua) — foi ao
+              operador, que escolheu **o recibo da escola, sem CPF**, com o nome empresarial e o CNPJ da escola, o site e o
+              e-mail (31/10/2026). **O recibo da escola — FEITO (31/10/2026):** `ReciboPage`, em
+              `/aluno/conta/faturamento/recibo/<chave>`, fora do menu do app (para imprimir) e só com login; a cobrança vem
+              da lista da conta da sessão, achada pela chave (o começo do SHA-256 do código da cobrança — nenhum código da
+              Stripe no navegador, e nenhum link para o recibo dela). Nele: o nome empresarial (mandado pelo operador) e o
+              CNPJ da matriz que sai dele (a confirmar), o site e o e-mail; quem assina, o que foi pago, a data, o valor, a
+              forma e a situação; "Imprimir ou salvar em PDF". Testes: `ReciboPage.test.tsx` (novo, 6), a lista (revista),
+              as rotas (+3: sem o menu, com o menu na conta, sem login vai ao login) e `minhas-cobrancas.test.ts` (revisto).
+              **Mutação: 9 de 9 reprovaram.**
+              **Os ajustes do operador (31/10/2026), à vista das fotos, do recibo da Mosh e da Udemy e da pesquisa do agente
+              (o art. 320 do Código Civil; a nota fiscal do MEI só é obrigatória para aluno empresa, ou a pedido):** o recibo
+              COMPLETO, sem o endereço da escola — o número, a data, a escola (nome empresarial, CNPJ e site), quem assina
+              (o nome), o plano e o período pago, o preço, o desconto com o código, o total pago, a forma, a situação, as
+              dúvidas (com o e-mail de suporte) e "Imprimir ou salvar em PDF"; saíram, por escolha dele, o e-mail de
+              suporte no bloco da escola (já está nas dúvidas) e o e-mail de quem assina. E o **RECIBO POR E-MAIL em todo
+              pagamento, já no bloco 6** (entre isso e deixá-lo para depois da publicação, que o agente recomendou): na
+              renovação, na troca de plano e no Pix, "Recebemos seu pagamento" com o botão "Ver recibo"; ao assinar, o
+              botão entra na confirmação que já sai.
+          - [x] **O recibo completo, no servidor** — `GET /api/billing/minhas-cobrancas/:chave` (`lib/recibo.ts`,
+                `lib/stripe-recibo.ts`): a cobrança achada pela chave, só entre as da conta da sessão (a de outra conta, a
+                que não passou e a que não existe: 404, iguais); do cartão, a fatura — o plano e o período da linha do
+                preço, o preço cheio, o desconto com o código e o crédito da troca de plano; do Pix, o plano da marca e o
+                período da assinatura que ele virou. O preço e o que saiu dele só quando a conta fecha com o total pago.
+                Nenhum código da Stripe e nenhum CPF na resposta. Docs check (context7): Stripe → `/websites/stripe` → o
+                `discounts` da fatura se expande (com o `promotion_code`), o `total_discount_amounts` traz o valor por
+                desconto, e a linha traz `period` e `pricing.price_details.price` (1 consulta). Testes: `recibo.test.ts`
+                (novo, 6) e o limite das leituras (+1 rota). **Mutação: 9 de 9 reprovaram.**
+          - [x] **A tela do recibo completo** (`ReciboPage`, lendo a rota acima): o número e a data; a escola (nome
+                empresarial, CNPJ, site); quem assina (o nome; a conta sem nome, o e-mail — escolha do agente, nas fotos);
+                o plano (Mensal, Anual, ou "Assinatura da escola Jilson Santana" quando não se sabe) e o período; o preço,
+                o desconto com o código, o "Crédito do plano anterior" (só na troca de plano — escolha do agente, nas
+                fotos: sem ele a conta não fecha) e o total pago; sem o detalhe do servidor, só o total; a forma, a
+                situação e as dúvidas. O 404 diz "não encontrado", sem tentar de novo. Textos no dicionário
+                (`app.faturamento.recibo`), rascunho do agente. Testes: `ReciboPage.test.tsx` (reescrito, 7) e as rotas.
+                **Mutação: 9 de 9 reprovaram.** As fotos vão junto com o e-mail, no fim.
+          - [x] **O recibo por e-mail em todo pagamento** *(decisões do operador, 31/10/2026: ao assinar, o recibo vai DENTRO
+                da confirmação — ou das boas-vindas, de quem assinou sem conta —, embaixo do texto, num e-mail só; e o número
+                do recibo ÚNICO por recibo)*. O número passou a ser a chave inteira (`81DD-3FD1-33E6-F9FB`), e a chave sai do
+                PAGAMENTO (antes, da cobrança). Na renovação e na troca de plano (`invoice.paid` com `subscription_cycle` ou
+                `subscription_update`, só a última fatura paga da assinatura), o e-mail próprio "Recebemos seu pagamento"
+                (`lib/recibo-por-email.ts`, de `depois-do-aviso.ts`), com a chave `pagamento-recebido/<número>`. O pagamento
+                vem da assinatura já lida na sincronia (`ultimaFaturaPaga`, ou o Pix da pré-paga): o recibo é o mesmo da
+                tela, sem o nome de quem assina e sem CPF. Sem o recibo (a Stripe não respondeu), a confirmação sai sem ele.
+                Os nomes das bandeiras foram para o `core` (`NOME_DA_BANDEIRA`). Textos: rascunho do agente. Testes:
+                `recibo-por-email.test.ts` (novo, 6) e o recibo (número). **Mutação: 8 de 8 reprovaram.**
+          - [x] **Os e-mails de verdade** — os três ("Recebemos seu pagamento", a confirmação e as boas-vindas, com o
+                recibo embaixo) chegaram ao Yahoo dele em 31/10/2026; ele pediu **o acabamento do Antigravity** (GEMINI.md,
+                item 39). Para o Antigravity conseguir formatar, o recibo virou um **bloco próprio no modelo de e-mail**
+                (`recibo` na mensagem — rótulo e valor em linhas; na versão desenhada e na de texto puro), em vez de
+                parágrafos; a montagem só de texto mora em `views/recibo-no-email.ts` (a prévia `email:previa` a usa).
+                **E com a MESMA arrumação da tela** *(pedido do operador, 31/10/2026: "porque você não aplica a mesma
+                formatação do recibo que abre na tela do aluno no corpo do e-mail")*: o título e o número, a escola, o
+                plano e o período, a caixa dos valores e a da forma com a situação, e as dúvidas — sem o nome de quem
+                assina (no e-mail, o nome fica de fora). Testes: o desenho (+3). **Mutação: 4 de 4 reprovaram.**
+          - [x] **Os links dos e-mails — achado da prova, corrigido com a ordem dele (31/10/2026):** quem NÃO estava logado
+                e clicava em "Ver o recibo" ou em "Trocar cartão" (o e-mail da cobrança que falhou, já no ar) entrava e
+                caía no Início. A causa: depois de entrar, a tela protegida do destino ainda não via a sessão e devolvia à
+                tela de entrar sem o destino. Agora a tela de entrar espera a sessão recarregar (`refetch` do Better Auth —
+                Docs check (context7): Better Auth → `/better-auth/better-auth` → `useSession` devolve `refetch(): Promise`
+                e `isRefetching`) antes de seguir, na senha e no código. E o recibo entrou no "entrar e seguir", com a
+                lista ainda fechada: `/login?depois=recibo&recibo=<chave>`, a chave conferida (16 letras e números).
+                **Provado no app local** (conta descartável, cartão de teste): deslogado, o link do recibo levou ao recibo
+                `B65D-A447-12C7-ECDE` e o do cartão à tela Trocar cartão; antes da correção, os dois caíam no Início.
+                Testes: a tela de entrar (+9). **Mutação: 3 de 3 reprovaram.**
+          - [x] **A segunda revisão de segurança** (sobre `6c9e305..dev`, 31/10/2026): nenhum P0 nem P1. O P3 — o código
+                promocional com `$&` deformava a linha do desconto no e-mail — fechado (troca por função; teste +1). O P2 fica
+                como dívida: cada recibo aberto faz várias leituras na Stripe dentro do limite comum de leituras. *Reabre se o
+                limite das leituras começar a recusar alunos, ou a conta da Stripe reclamar de volume: aí um limite próprio
+                para o recibo, ou guardar a lista de cobranças por 1 minuto.*
+          - [ ] **O acabamento do Antigravity** (item 39: as telas, o recibo e os e-mails do recibo) — depois da
+                publicação, por ordem do operador ("pode continuar e depois publicar", 31/10/2026).
+          - [ ] **Publicar o bloco 6** (com a ordem dele).
+      - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA
-            CONTINUAR*.
+            CONTINUAR*. **FEITO (31/10/2026):** o roteiro, passo a passo pelo painel (os casos de *Precisa de você* e o
+            botão de cada um, a ficha, as ações com e sem dinheiro, os códigos), rascunho do agente a revisar pelo
+            operador; no `GEMINI.md`, o **item 39** — o acabamento das telas novas da Cobrança e da seção *Cobranças* do
+            aluno —, ao lado do 38, com o passo a passo. A pergunta das telas da *mesma família* do item 38 vai ao
+            operador no fechamento.
+      - [x] **O menu do painel: Financeiro → Receita, e "Precisa de atendente"** *(decisões do operador, 31/10/2026, ao
+            usar o painel no ar)*: "Cobrança" no menu vira **Financeiro**, e o que era a Cobrança é a **Receita** — um
+            título do nível 2 (o `grupo` da coluna do lado), com as 5 telas embaixo; Impostos e o que vier entram como
+            outros títulos (a pergunta, com a recomendação do agente, entre isso e a Receita como item com as telas em
+            abas). Os endereços seguem o menu (`/admin/financeiro/receita/<tela>`); o antigo não redireciona (regra dele
+            de 29/09). E **"Precisa de você" vira "Precisa de atendente"** em todo lugar — a tela, o menu, o e-mail ao
+            operador e os alertas —, porque *"no futuro posso ter outra pessoa me ajudando"*. Os nomes dos arquivos e as
+            rotas da API continuam com "cobranca" (código). *Sem gatilho — muda só por decisão dele.*
+      - [ ] **DEPOIS — o sino do atendente** *(pedido do operador, 31/10/2026, para quando houver outra pessoa ajudando)*:
+            o caso que precisa de atendente vira **alerta no sino**; o clique já abre a tela para resolver, e dali se
+            navega normalmente e se veem todos os atendimentos pendentes. Pede o papel de **atendente** (hoje só existem o
+            admin e o aluno) — o desenho é dele, quando chegar a hora. *Gatilho: a segunda pessoa no atendimento.*
       **OS 6 BLOCOS ENTRAM ANTES DA ABERTURA** *(decisão do operador, 31/10/2026, à pergunta P146 — entre isso, os
       blocos 1 a 4 antes e o 5 e o 6 logo depois, que o agente recomendou, e só os blocos 1 e 2 antes)*. Do bloco 6,
       respondido no mesmo dia: entram o 6a, o 6c e o 6d; o 6b saiu (P138). *A conta, dita sem rodeio:* são 23 passos e

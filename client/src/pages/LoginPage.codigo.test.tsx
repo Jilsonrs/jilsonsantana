@@ -60,7 +60,8 @@ function entrarComCodigo(codigo: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useSession.mockReturnValue({ data: null, isPending: false });
+  // Depois de entrar, a tela espera a sessão recarregar antes de seguir (achado de 31/10/2026).
+  useSession.mockReturnValue({ data: null, isPending: false, refetch: () => Promise.resolve() });
   pedirCodigo.mockResolvedValue({ ok: true });
   signInEmailOtp.mockResolvedValue({ error: null });
 });

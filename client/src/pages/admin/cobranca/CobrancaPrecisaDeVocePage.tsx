@@ -2,11 +2,12 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import { CartaoDoCaso } from "@/components/admin/cobranca/CartaoDoCaso";
+import { NumerosDoMes } from "@/components/admin/cobranca/NumerosDoMes";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
 
 /**
- * ADMIN → COBRANÇA → PRECISA DE VOCÊ (Fase 4, etapa 4.7b, passo 2c — o mapa aprovado pelo operador, 31/10/2026): a
+ * ADMIN → COBRANÇA → PRECISA DE ATENDENTE (Fase 4, etapa 4.7b, passo 2c — o mapa aprovado pelo operador, 31/10/2026): a
  * primeira tela da Cobrança. Cada situação que precisa do operador é um caso — os urgentes primeiro —, com quem é o
  * aluno, o que resolve e o "Fechar" com uma nota. O que a escola resolve sozinha não aparece aqui. Admin: texto na tela.
  */
@@ -29,7 +30,7 @@ export function CobrancaPrecisaDeVocePage() {
         </Button>
       </div>
     );
-  else if (casos.data.casos.length === 0) conteudo = <p className="text-muted-foreground">{situacao === "abertos" ? "Nada precisa de você agora." : "Nenhum caso fechado ainda."}</p>;
+  else if (casos.data.casos.length === 0) conteudo = <p className="text-muted-foreground">{situacao === "abertos" ? "Nada precisa de atendente agora." : "Nenhum caso fechado ainda."}</p>;
   else
     conteudo = (
       <div className="space-y-4">
@@ -55,7 +56,10 @@ export function CobrancaPrecisaDeVocePage() {
   const urgentes = casos.data?.urgentes;
   return (
     <PageContainer>
-      <PageHeader title="Precisa de você" description="O que precisa de você na cobrança. O que a escola resolve sozinha não aparece aqui." />
+      <PageHeader title="Precisa de atendente" description="O que precisa de atendente na cobrança. O que a escola resolve sozinha não aparece aqui." />
+      <div className="mb-8">
+        <NumerosDoMes />
+      </div>
       <PageSection title={abertos === undefined ? "Casos" : `${abertos} ${abertos === 1 ? "caso aberto" : "casos abertos"}${urgentes ? ` · ${urgentes} ${urgentes === 1 ? "urgente" : "urgentes"}` : ""}`}>
         <div className="space-y-6">
           <div role="group" aria-label="Abertos ou fechados" className="flex gap-2">

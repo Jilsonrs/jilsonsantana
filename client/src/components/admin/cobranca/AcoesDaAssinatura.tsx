@@ -21,6 +21,10 @@ function acoesPara(assinatura: AssinaturaDaLista, quem: string): Acao[] {
       { rotulo: "Cancelar agora", efeito: "A cobrança está atrasada: a assinatura termina agora, sem acesso, e a cobrança em aberto não é mais tentada.", fazer: () => api.adminCancelar(assinatura.id) },
     ];
   }
+  // A paga por fora (passo 6e, P149): desfazer a liberação feita por engano, sem ir à Stripe.
+  if (assinatura.situacao === "pre-paga" && assinatura.pagoPorFora === true) {
+    return [{ rotulo: "Encerrar agora", efeito: `A assinatura paga por fora termina agora, e ${quem} perde o acesso às aulas. Nada volta pela Stripe: o dinheiro que você recebeu por fora, você devolve por fora.`, fazer: () => api.adminEncerrarPagaPorFora(assinatura.id) }];
+  }
   if (assinatura.situacao === "vai-cancelar") {
     return [{ rotulo: "Desfazer o cancelamento", efeito: "A assinatura volta a renovar no fim do período.", fazer: () => api.adminDesfazerCancelamento(assinatura.id) }];
   }

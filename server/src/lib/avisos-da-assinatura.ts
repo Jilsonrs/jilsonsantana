@@ -9,6 +9,7 @@ import { montarAvisoDaCobranca, type EmailDevido } from "../views/email-da-cobra
 import { enderecoDoSite } from "./endereco-do-site.js";
 import { pixConfigurado } from "./stripe-pix.js";
 import { abrirCaso, resolvidoSozinho, TipoDeCaso } from "./casos.js";
+import { pagamentoDaConfirmacao, reciboNoEmail } from "./recibo-por-email.js";
 
 // OS E-MAILS DA COBRANÇA (Fase 4, etapa 4.7, passo 7 — decisões do operador, 28/10/2026;
 // billing.md → *Régua de inadimplência*). UMA regra decide qual e-mail é devido AGORA, pelo espelho
@@ -173,7 +174,9 @@ export async function avisarSobreAAssinatura(naStripe: AssinaturaNaStripe, agora
     }
 
     // Montado ANTES de tomar a marca: uma falha aqui não deixa a marca presa sem e-mail.
-    const mensagem = montarAvisoDaCobranca(devido, naStripe, agora, (await getDict()).app.email, enderecoDoSite, pixConfigurado());
+    // A confirmação leva o recibo do pagamento embaixo (decisão do operador, 31/10/2026); sem ele, sai assim mesmo.
+    const recibo = devido.tipo === SubscriptionEmailKind.CONFIRMADA ? await reciboNoEmail(conta.id, pagamentoDaConfirmacao(naStripe)) : null;
+    const mensagem = montarAvisoDaCobranca(devido, naStripe, agora, (await getDict()).app.email, enderecoDoSite, pixConfigurado(), recibo);
     const marca = await tomar(espelho.id, devido);
     if (marca === null) return;
     const tipo = TIPO_DO_ENVIO[devido.tipo];

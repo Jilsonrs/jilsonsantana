@@ -46,9 +46,9 @@ describe("Cobrança → Tentativas", () => {
 
   it("cada linha diz o que aconteceu e leva à ficha certa", async () => {
     renderWithProviders(<CobrancaTentativasPage />);
-    expect((await screen.findByRole("link", { name: "tiago@exemplo.com" })).getAttribute("href")).toBe("/admin/cobranca/assinaturas/ficha?conta=u-1");
+    expect((await screen.findByRole("link", { name: "tiago@exemplo.com" })).getAttribute("href")).toBe("/admin/financeiro/receita/assinaturas/ficha?conta=u-1");
     expect(screen.getByText("Esperando o primeiro pagamento · 21/11/2026")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Vera Visitante" }).getAttribute("href")).toBe("/admin/cobranca/assinaturas/ficha?visitante=ficha-1");
+    expect(screen.getByRole("link", { name: "Vera Visitante" }).getAttribute("href")).toBe("/admin/financeiro/receita/assinaturas/ficha?visitante=ficha-1");
     expect(screen.getByText("Visitante sem conta · última tentativa em 20/11/2026 · lembrete saiu em 20/11/2026 · some em 27/11/2026 · quer receber novidades")).toBeTruthy();
     expect(screen.getByText("Visitante sem conta · última tentativa em 20/11/2026 · lembrete ainda não saiu · pagamento achado: a ficha não foi apagada")).toBeTruthy();
     expect(screen.getByText("Expirou sem pagar · 10/11/2026")).toBeTruthy();
