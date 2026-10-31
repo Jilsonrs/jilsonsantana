@@ -325,3 +325,21 @@ export type CartaoTrocado = {
   /** O banco pediu uma confirmação para a cobrança em aberto: o site a completa com este segredo. */
   confirmar?: string | null;
 };
+
+/**
+ * MINHAS COBRANÇAS (Fase 4, etapa 4.7b, passo 6a — decisão do operador, 31/10/2026, P144): uma cobrança que PASSOU, como o
+ * aluno a vê em Faturamento. Nenhum código da Stripe sai daqui; o recibo é o endereço da página de recibo dela (só `https`).
+ */
+export type MinhaCobranca = {
+  em: string;
+  centavos: number;
+  moeda: string;
+  forma: "cartao" | "pix" | "outra";
+  cartao: { bandeira: string; final: string } | null;
+  situacao: "paga" | "devolvida" | "devolvida-em-parte" | "contestada";
+  /** Quanto já voltou, em centavos. */
+  devolvido: number;
+  recibo: string | null;
+};
+/** Resposta de `GET /api/billing/minhas-cobrancas`: da mais nova à mais antiga. */
+export type MinhasCobrancas = { cobrancas: MinhaCobranca[] };

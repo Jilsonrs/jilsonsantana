@@ -51,6 +51,19 @@ export async function lerClienteNaStripe(clienteId: string): Promise<ClienteNaSt
 }
 
 /**
+ * As cobranças de UM cliente (as 100 mais novas), para a tela do aluno (etapa 4.7b, passo 6a). O cliente apagado, ou que a
+ * Stripe não conhece, não tem nenhuma.
+ */
+export async function cobrancasDoCliente(clienteId: string): Promise<Stripe.Charge[]> {
+  try {
+    return (await stripe().charges.list({ customer: clienteId, limit: 100 })).data;
+  } catch (erro) {
+    if (naoExiste(erro)) return [];
+    throw erroSemMensagem(erro, "a leitura das cobranças do cliente");
+  }
+}
+
+/**
  * De que cliente é o código da Stripe que veio num alerta: a cobrança (`ch_`), a fatura (`in_`), a contestação
  * (`du_`) ou o pagamento (`pi_`). Nenhum, se a Stripe não o conhece ou ele não tem cliente.
  */

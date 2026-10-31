@@ -13,6 +13,7 @@ import { prisma } from "../lib/prisma.js";
 import { pagarComPix } from "../lib/pix-pre-pago.js";
 import { pagarAAtrasadaComPix } from "../lib/pix-da-atrasada.js";
 import { pixConfigurado } from "../lib/stripe-pix.js";
+import { minhasCobrancas } from "../lib/minhas-cobrancas.js";
 import { desistirDaTroca, lerTrocaDePlano, mudarMeuPlano } from "../lib/meu-plano.js";
 import { aplicarCartaoNovo, lerMinhaAssinatura, manterMinhaAssinatura, pararMinhaRenovacao, prepararTrocaDeCartao, reembolsarMinhaAssinatura, registrarAssinaturaDesconhecida } from "../lib/minha-assinatura.js";
 import { enderecoDoPedido, limiteDeTentativas, limiteSemLogin } from "../lib/limite-de-tentativas.js";
@@ -335,6 +336,23 @@ router.get("/billing/minha-assinatura", requireAuth, ...limiteDeTentativas.leitu
     return;
   }
   res.json(leitura.assinatura);
+});
+
+// GET /api/billing/minhas-cobrancas — as cobranças que passaram e o recibo de cada uma (etapa 4.7b, passo 6a — P144). A
+// conta é a da sessão; os clientes dela, o servidor acha.
+router.get("/billing/minhas-cobrancas", requireAuth, ...limiteDeTentativas.leitura, async (req, res) => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!cobrancaConfigurada()) {
+    console.error("[stripe] minhas cobranças recusadas: STRIPE_SECRET_KEY ausente");
+    res.status(503).json({ error: "NaoConfigurado" });
+    return;
+  }
+  res.set("Cache-Control", "private, no-store");
+  res.json(await minhasCobrancas(user.id));
 });
 
 // TROCAR O CARTÃO (etapa 4.6), em dois tempos — o campo da Stripe fica no meio, e o dado do

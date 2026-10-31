@@ -1,15 +1,17 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, act } from "@testing-library/react";
-import type { MinhaAssinatura, TrocaDesfeita } from "@jilson/core";
+import type { MinhaAssinatura, MinhasCobrancas, TrocaDesfeita } from "@jilson/core";
 import { renderWithProviders } from "@/test-utils";
 
 const getMinhaAssinatura = vi.fn<() => Promise<MinhaAssinatura>>();
 const manterMinhaAssinatura = vi.fn<() => Promise<void>>();
 const desistirDaTroca = vi.fn<() => Promise<TrocaDesfeita>>();
+const getMinhasCobrancas = vi.fn<() => Promise<MinhasCobrancas>>();
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
   getMinhaAssinatura: () => getMinhaAssinatura(),
+  getMinhasCobrancas: () => getMinhasCobrancas(),
   manterMinhaAssinatura: () => manterMinhaAssinatura(),
   desistirDaTroca: () => desistirDaTroca(),
 }));
@@ -62,6 +64,7 @@ beforeEach(() => {
   getMinhaAssinatura.mockReset().mockResolvedValue(ATIVA);
   manterMinhaAssinatura.mockReset().mockResolvedValue(undefined);
   desistirDaTroca.mockReset().mockResolvedValue({ trocado: false });
+  getMinhasCobrancas.mockReset().mockResolvedValue({ cobrancas: [] });
 });
 
 describe("FaturamentoPage — carregando e falha", () => {
@@ -107,6 +110,9 @@ describe("FaturamentoPage — sem acesso", () => {
     abrir();
     expect(await screen.findByText("Você ainda não tem uma assinatura.")).toBeTruthy();
     expect(screen.queryByText("Seu plano")).toBeNull();
+    // As cobranças (passo 6a): quem nunca assinou não tem o que ver — nem a seção, nem a leitura.
+    expect(screen.queryByText("Cobranças")).toBeNull();
+    expect(getMinhasCobrancas).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("link", { name: "Assinar" }));
     expect(await screen.findByText("TELA DE ASSINAR")).toBeTruthy();
   });
@@ -116,6 +122,9 @@ describe("FaturamentoPage — sem acesso", () => {
     abrir();
     expect(await screen.findByText("Sua assinatura terminou em 10/11/2026.")).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Assinar" })).toBeNull();
+    // Quem já assinou continua vendo as cobranças e os recibos (passo 6a).
+    expect(await screen.findByText("Nenhuma cobrança ainda.")).toBeTruthy();
+    expect(screen.getByText("Cobranças")).toBeTruthy();
     fireEvent.click(screen.getByRole("link", { name: "Reativar assinatura" }));
     expect(await screen.findByText("TELA DE ASSINAR")).toBeTruthy();
   });

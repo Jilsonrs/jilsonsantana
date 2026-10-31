@@ -777,6 +777,24 @@ export const pt = {
       // Sem a data (a Stripe não a tem): o texto aprovado, sem o "em {data}". Rascunho do agente.
       terminouSemData: "Sua assinatura terminou.",
       erro: "Não foi possível carregar a sua assinatura. Tente de novo.",
+      // MINHAS COBRANÇAS (4.7b, passo 6a — decisão do operador, 31/10/2026, P144): as cobranças que passaram e o recibo de
+      // cada uma. Rascunho do agente: o operador aprova pelas fotos. `{bandeira}`, `{final}`, `{valor}` e `{data}` são
+      // trocados no código.
+      cobrancas: {
+        titulo: "Cobranças",
+        vazio: "Nenhuma cobrança ainda.",
+        erro: "Não foi possível carregar as cobranças. Tente de novo.",
+        cartao: "Cartão {bandeira} final {final}",
+        cartaoSemBandeira: "Cartão final {final}",
+        pix: "Pix",
+        outra: "Outra forma de pagamento",
+        paga: "Paga",
+        devolvida: "Devolvida",
+        devolvidaEmParte: "{valor} devolvidos",
+        contestada: "Contestada no banco",
+        recibo: "Ver recibo",
+        reciboDe: "Ver o recibo de {data} (abre em outra aba)"
+      },
       // A tela de trocar o cartão.
       cartaoDescricao: "O novo cartão passa a valer na próxima cobrança.",
       salvarCartao: "Salvar cartão",

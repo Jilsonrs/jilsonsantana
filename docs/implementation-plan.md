@@ -6793,7 +6793,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               não se grava vira alerta; (P3) o envio das provas não grava em dobro com o clique duplo; (P3) a devolução do aviso
               de fraude sem assinatura que falha diz no alerta qual aviso foi.
       - [ ] **BLOCO 6 — O ALUNO SOZINHO E O QUE MAIS ENTROU** (decisões do operador, 31/10/2026)
-        - [ ] **6a — Minhas cobranças e os recibos**, na tela do aluno (P144).
+        - [x] **6a — Minhas cobranças e os recibos**, na tela do aluno (P144). **FEITO (31/10/2026):** em Faturamento, a seção
+              *Cobranças* (`BlocoDasCobrancas`), de `GET /api/billing/minhas-cobrancas` (`lib/minhas-cobrancas.ts`, com o limite
+              das leituras): as cobranças que PASSARAM, da mais nova à mais antiga — a data, o valor, como foi paga (cartão com a
+              bandeira e o final, ou Pix) e em que pé está (paga, devolvida, quanto voltou, contestada) — e o botão **Ver
+              recibo**, que abre a página de recibo da Stripe numa aba nova. A MESMA leitura da ficha do admin (os clientes da
+              conta e as cobranças de cada um), com a conta da sessão; a recusada e a pendente não aparecem; nenhum código da
+              Stripe sai na resposta; o recibo só com `https`. Aparece para quem assina ou já assinou (quem nunca assinou não
+              vê a seção). Textos no dicionário (`app.faturamento.cobrancas`) — **rascunho do agente, a aprovar pelas fotos**.
+              Testes: `minhas-cobrancas.test.ts` (novo, 2), o limite das leituras, `BlocoDasCobrancas.test.tsx` (novo, 5) e
+              `FaturamentoPage.test.tsx` (+2). **Mutação: 10 de 10 reprovaram.** Fotos com contas descartáveis no banco de dev
+              e a Stripe de teste (a lista no computador e no celular, o vazio da paga por fora, o erro), apagadas no fim.
+              *Docs check (context7): Stripe → não consultado — a leitura é a mesma `charges.list` da ficha (passo 1d).*
         - **6b — SAIU** *(P138, 31/10/2026: sem botão de pedir reembolso na tela do aluno; o pedido vem pelo suporte e,
               depois, pelo JilsonAI)*. O número não se reaproveita.
         - [x] **6c — Os números do mês** (P143). **FEITO (31/10/2026):** a faixa no topo da Cobrança (a tela "Precisa de você",

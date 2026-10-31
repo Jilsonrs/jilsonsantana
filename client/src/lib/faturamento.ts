@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { SituacaoDoFaturamento, type CartaoDaAssinatura, type MinhaAssinatura } from "@jilson/core";
-import { getMinhaAssinatura } from "@/lib/api";
+import { getMinhaAssinatura, getMinhasCobrancas } from "@/lib/api";
 import type { AppTexts } from "@/lib/language";
 
 // FATURAMENTO E ASSINATURA (Fase 4, etapa 4.6): os endereços, a leitura da tela e o que ela
@@ -23,6 +23,15 @@ export const CONSULTA_DA_MINHA_ASSINATURA = { queryKey: CHAVE_DA_MINHA_ASSINATUR
 /** Quem lê a assinatura fora de uma tela (`fetchQuery`) usa a MESMA consulta: uma leitura sem o `gcTime: 0` voltaria a guardar o plano e o cartão por minutos. */
 export function useMinhaAssinatura(ligada: boolean = true) {
   return useQuery({ ...CONSULTA_DA_MINHA_ASSINATURA, enabled: ligada });
+}
+
+/**
+ * As cobranças que passaram e os recibos (etapa 4.7b, passo 6a). `gcTime: 0` pelo mesmo motivo da assinatura: o que a tela
+ * leu é esquecido assim que ela fecha, e outra conta na mesma aba nunca vê a lista da anterior.
+ */
+export const CONSULTA_DAS_MINHAS_COBRANCAS = { queryKey: ["billing", "minhas-cobrancas"] as const, queryFn: getMinhasCobrancas, gcTime: 0 } as const;
+export function useMinhasCobrancas(ligada: boolean = true) {
+  return useQuery({ ...CONSULTA_DAS_MINHAS_COBRANCAS, enabled: ligada });
 }
 
 /** A assinatura de quem TEM acesso: é a que traz plano, cobrança e cartão. */
@@ -52,6 +61,11 @@ const BANDEIRAS: Partial<Record<string, string>> = {
   jcb: "JCB",
   unionpay: "UnionPay",
 };
+
+/** O nome da bandeira, como o aluno lê — ou nada, se não for uma das conhecidas. */
+export function nomeDaBandeira(codigo: string): string | undefined {
+  return BANDEIRAS[codigo];
+}
 
 /** O cartão por extenso: "Visa •••• 4242 · vence em 12/2028". Nunca o número. */
 export function descreverCartao(t: AppTexts["faturamento"], cartao: CartaoDaAssinatura): string {
