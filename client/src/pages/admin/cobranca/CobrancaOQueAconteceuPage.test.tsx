@@ -32,6 +32,7 @@ beforeEach(() => {
       linha({ id: 2, acao: "charge.dispute.created", detalhe: "aberta · fraudulent", centavos: 9990 }),
       linha({ id: 1, acao: "tipo.novo_da_stripe", quem: "RODADA" }),
       linha({ id: 4, acao: "caso-fechado", quem: "OPERADOR", detalhe: "PIX_EM_CONFERENCIA" }),
+      linha({ id: 5, acao: "radar.early_fraud_warning.created", detalhe: "made_with_stolen_card · devolvido-como-fraude · perdeu-acesso", centavos: 9990 }),
     ],
   });
 });
@@ -61,7 +62,9 @@ describe("Cobrança → O que aconteceu", () => {
     expect(screen.getByText("tipo.novo_da_stripe")).toBeTruthy();
     // O fechamento de um caso pelo operador (passo 2c), com o tipo do caso em português.
     expect(screen.getByText("Caso fechado · Pix pago que não virou assinatura")).toBeTruthy();
-    expect(screen.getAllByText("20/11/2026, 12:30 · Stripe")).toHaveLength(2);
+    // O aviso de fraude resolvido sozinho (4.7b, passo 5c): o tipo em português e o que a escola fez.
+    expect(screen.getByText("Aviso de fraude do banco · cartão roubado · devolvido, marcado como fraude · perdeu o acesso · R$ 99,90")).toBeTruthy();
+    expect(screen.getAllByText("20/11/2026, 12:30 · Stripe")).toHaveLength(3);
     expect(screen.getByText("20/11/2026, 12:30 · A rodada de hora em hora")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ana Souza" }).getAttribute("href")).toBe("/admin/cobranca/assinaturas/ficha?conta=u-1");
   });

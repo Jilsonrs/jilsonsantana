@@ -4,6 +4,7 @@ import type { ConsertoDoCaso as Conserto } from "@jilson/core";
 import * as api from "@/lib/api";
 import { mensagemDaAcaoQueFalhou } from "@/lib/cobranca-acoes";
 import { Button } from "@/components/ui/button";
+import { ResponderComProvas } from "@/components/admin/cobranca/ResponderComProvas";
 
 const DO_CONSERTO: Record<Conserto, { rotulo: string; efeito: string }> = {
   "anular-cobranca": { rotulo: "Anular a cobrança em aberto", efeito: "A cobrança em aberto é anulada: ela não será mais tentada." },
@@ -15,10 +16,17 @@ const DO_CONSERTO: Record<Conserto, { rotulo: string; efeito: string }> = {
   "devolver-este-pagamento": { rotulo: "Devolver este pagamento", efeito: "O dinheiro que entrou volta inteiro para a pessoa." },
   "aceitar-contestacao": { rotulo: "Aceitar a perda", efeito: "A escola não manda provas: o banco encerra a contestação como perdida, e o dinheiro fica com a pessoa. Não tem volta." },
   "liberar-de-novo": { rotulo: "Liberar de novo", efeito: "Só se a escola ganhou a contestação (e as outras desta assinatura): o período que a pessoa pagou volta a valer até o fim. A assinatura continua cancelada." },
+  // A prévia e o envio têm tela própria (`ResponderComProvas`); o rótulo fica aqui com os outros.
+  "enviar-provas": { rotulo: "Responder com provas", efeito: "As provas vão ao banco." },
 };
 
 /** O conserto de um caso (etapa 4.7b, passo 3b): o botão, a confirmação dizendo o efeito, e o que a Stripe respondeu. */
 export function ConsertoDoCaso({ casoId, conserto }: { casoId: number; conserto: Conserto }) {
+  if (conserto === "enviar-provas") return <ResponderComProvas casoId={casoId} />;
+  return <ConsertoComConfirmacao casoId={casoId} conserto={conserto} />;
+}
+
+function ConsertoComConfirmacao({ casoId, conserto }: { casoId: number; conserto: Conserto }) {
   const [confirmando, setConfirmando] = useState(false);
   const queryClient = useQueryClient();
   const fazer = useMutation({

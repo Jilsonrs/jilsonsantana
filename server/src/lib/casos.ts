@@ -86,6 +86,32 @@ async function gravarCaso(caso: NovoCaso): Promise<void> {
   }
 }
 
+/**
+ * O caso que JÁ CHEGA RESOLVIDO (o aviso de fraude — P141, 4.7b, passo 5c: "o caso chega ao operador já resolvido"): gravado
+ * fechado, com quem resolveu e o que foi feito. Só DEPOIS de a cobrança ter dado certo e FORA das transações (`depois-do-aviso.ts`):
+ * gravado antes, um fracasso deixaria "resolvido" o que não foi — por isso não passa pela guarda de `transacaoDaCobranca`.
+ * Nunca lança.
+ */
+export async function casoJaResolvido(caso: NovoCaso, por: { quem: QuemFez; nota: string }): Promise<void> {
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO "billing_case" ("kind", "key", "open", "urgent", "userId", "stripeSubscriptionId", "stripeCustomerId", "stripeObjectId", "amount", "detail", "openedAt", "updatedAt", "closedAt", "closedBy", "note")
+      VALUES (${caso.tipo}::"TipoDeCaso", ${caso.chave}, false, ${caso.urgente}, ${caso.conta ?? null}, ${caso.assinatura ?? null}, ${caso.cliente ?? null}, ${caso.objeto ?? null}, ${caso.centavos ?? null}::integer, ${caso.detalhe ?? null}, now(), now(), now(), ${por.quem}::"QuemFez", ${por.nota})
+      ON CONFLICT ("kind", "key") DO UPDATE SET
+        "open" = false,
+        "urgent" = EXCLUDED."urgent",
+        "userId" = COALESCE(EXCLUDED."userId", "billing_case"."userId"),
+        "stripeSubscriptionId" = COALESCE(EXCLUDED."stripeSubscriptionId", "billing_case"."stripeSubscriptionId"),
+        "stripeCustomerId" = COALESCE(EXCLUDED."stripeCustomerId", "billing_case"."stripeCustomerId"),
+        "stripeObjectId" = COALESCE(EXCLUDED."stripeObjectId", "billing_case"."stripeObjectId"),
+        "amount" = COALESCE(EXCLUDED."amount", "billing_case"."amount"),
+        "detail" = COALESCE(EXCLUDED."detail", "billing_case"."detail"),
+        "updatedAt" = now(), "closedAt" = now(), "closedBy" = EXCLUDED."closedBy", "closedByUserId" = NULL, "note" = EXCLUDED."note"`;
+  } catch (erro) {
+    console.warn(`[api] o caso ${caso.tipo} ${caso.chave} não foi gravado: ${erro instanceof Error ? erro.message : String(erro)}`);
+  }
+}
+
 /** Fecha o caso aberto daquela situação. Devolve se havia um aberto. */
 export async function fecharCaso(alvo: { tipo: TipoDeCaso; chave: string }, por: { quem: QuemFez; conta?: string | null; nota?: string | null }, banco: Banco = prisma): Promise<boolean> {
   const fechados = await banco.$executeRaw`
@@ -155,8 +181,9 @@ export function consertosDoCaso(tipo: TipoDeCasoDaLista, chave: string): Consert
   if (tipo === "DEVOLUCAO_FALHOU" && (chave.startsWith("sub:") || chave.startsWith("devolucao:re_") || chave.startsWith("cobranca:"))) return ["devolver-de-novo"];
   if (tipo === "PIX_EM_CONFERENCIA" && chave.startsWith("pix:pi_")) return ["aceitar-pix", "devolver-pix"];
   if (tipo === "PAGO_SEM_ASSINATURA" && (chave.startsWith("sub:") || chave.startsWith("fatura:in_"))) return ["devolver-este-pagamento"];
-  // A contestação (bloco 5, passo 5a): aceitar a perda (só a aberta) — ou, se a escola ganhou, liberar de novo (passo 4d).
-  if (tipo === "CONTESTACAO" && chave.startsWith("du:")) return ["aceitar-contestacao", "liberar-de-novo"];
+  // A contestação (bloco 5): responder com provas (passo 5b) ou aceitar a perda (passo 5a) — só a aberta; e, se a escola
+  // ganhou, liberar de novo (passo 4d).
+  if (tipo === "CONTESTACAO" && chave.startsWith("du:")) return ["enviar-provas", "aceitar-contestacao", "liberar-de-novo"];
   if (tipo === "COBRANCA_EM_ABERTO") return ["anular-cobranca"];
   if (tipo === "TROCA_DE_PLANO" && chave.startsWith("agendamento:")) return ["soltar-agendamento"];
   if (tipo === "ATIVA_SEM_PERIODO_PAGO") return ["encerrar-na-hora"];

@@ -3,7 +3,7 @@ import { prisma, TipoDeCaso } from "./prisma.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
 import { buscarDetalhes } from "./stripe-assinatura.js";
 import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, cancelarNaHora, devolver, devolverParte, lerCobranca, oQueFoiPagoNaFatura, type CobrancaParaDevolver, type Pagamento } from "./stripe-reembolso.js";
-import { assinaturasDoPix } from "./stripe-pix.js";
+import { assinaturasDoPix, lerPagamentoPix } from "./stripe-pix.js";
 import { oQueFoiPago, reembolsarAssinaturaDe } from "./minha-assinatura.js";
 import { devolverPixEmConferencia, escolherPrePaga, operarNaAssinatura, type PixDevolvidoPeloOperador } from "./assinaturas.js";
 import { encerradaDeVez, temAcessoAtivo } from "./acesso.js";
@@ -89,6 +89,10 @@ export async function devolverPagamentoPeloOperador(quem: { conta: string } | { 
   if (cobranca.devolvido !== devolvidoMostrado) return { resultado: "valor-mudou" };
   if (centavos > cobranca.centavos - cobranca.devolvido) return { resultado: "valor-acima" };
   const assinatura = await assinaturaDaCobranca(cobranca.pagamentoId, cobranca.cliente);
+  // O Pix NOSSO que ainda não é de assinatura nenhuma (em conferência, ou à espera de virar uma) se devolve pelo caso dele, com
+  // a trava do Pix (`devolverPixEmConferencia`) — nunca solto daqui (conferência do revisor do bloco 4: o "Aceitar este Pix"
+  // ao mesmo tempo faria a pré-paga nascer com o Pix devolvido).
+  if (!assinatura && cobranca.pagamentoId && (await lerPagamentoPix(cobranca.pagamentoId)).pagamento) return { resultado: "pix-sem-assinatura" };
   let encerrou = false;
   // A cobrança relida AGORA: só segue se o que já voltou ainda é o que a tela mostrou (a chave de repetição leva esse valor).
   const relidaSemMudanca = async (): Promise<CobrancaParaDevolver | null> => {
@@ -187,7 +191,11 @@ export async function devolverDeNovoPeloOperador(casoId: number, por: PorQuem): 
     await concluirCaso(casoId, por, "devolver-de-novo", alvo, "nada faltava devolver");
     return { resultado: "ok", feito: { detalhe: "nada faltava devolver" } };
   }
-  const devolverAgora = () => devolverParte(cobranca, valor, { userId: caso.userId, assinaturaId: assinatura, operador: por.conta });
+  const devolverAgora = async (): Promise<void> => {
+    const nova = await devolverParte(cobranca, valor, { userId: caso.userId, assinaturaId: assinatura, operador: por.conta }, { deNovoDo: caso.key });
+    // Nunca a MESMA devolução que falhou (a conferência do revisor do bloco 4): só uma chave reaproveitada a traria de volta.
+    if (caso.key === `devolucao:${nova}`) throw new Error(`[stripe] a devolução de novo trouxe a mesma que falhou (${nova})`);
+  };
   try {
     if (assinatura) {
       if (!(await operarNaAssinatura(assinatura, devolverAgora))) return { resultado: "ocupada" };

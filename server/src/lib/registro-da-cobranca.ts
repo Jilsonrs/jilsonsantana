@@ -1,6 +1,6 @@
 import { MOTIVOS_DE_CANCELAMENTO, REGISTRO_POR_PAGINA, type LinhaDoRegistro, type MotivoContado, type OQueAconteceu } from "@jilson/core";
 import type { AvisoDaStripe } from "./stripe.js";
-import type { Desfecho } from "./assinaturas.js";
+import type { DesfechoDoAviso } from "./assinaturas.js";
 import { Prisma, prisma, QuemFez } from "./prisma.js";
 
 // O REGISTRO DA COBRANÇA (Fase 4, etapa 4.7b, passo 1f — o mapa aprovado pelo operador, 31/10/2026): o que
@@ -9,9 +9,15 @@ import { Prisma, prisma, QuemFez } from "./prisma.js";
 // acrescenta; nunca decide acesso. Sem dado pessoal no texto: ids, valores e status.
 
 /** O resumo de um aviso processado, em poucas palavras e sem dado pessoal. Função pura. */
-export function resumoDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): { detalhe: string | null; centavos: number | null } {
+export function resumoDoAviso(aviso: AvisoDaStripe, desfecho: DesfechoDoAviso): { detalhe: string | null; centavos: number | null } {
   if (aviso.contestacao) return { detalhe: `${aviso.contestacao.fase} · ${aviso.contestacao.motivo}`, centavos: aviso.contestacao.centavos };
-  if (aviso.avisoDeFraude) return { detalhe: aviso.avisoDeFraude.tipo, centavos: null };
+  // O aviso de fraude (P141 — 4.7b, passo 5c): o tipo, o que voltou e como ficou — o valor é o que a escola devolveu.
+  if (aviso.avisoDeFraude) {
+    const devolucao = desfecho.fraude?.devolucao;
+    const partes = [aviso.avisoDeFraude.tipo, !devolucao ? null : "devolvidos" in devolucao ? "devolvido-como-fraude" : `sem-devolucao:${devolucao.semDevolucao}`];
+    if (desfecho.resultado === "atualizada" && desfecho.perdeuAcesso) partes.push("perdeu-acesso");
+    return { detalhe: partes.filter((parte): parte is string => parte !== null).join(" · "), centavos: devolucao && "devolvidos" in devolucao ? devolucao.devolvidos : null };
+  }
   if (aviso.devolucaoFalhou) return { detalhe: "devolucao-falhou", centavos: aviso.devolucaoQueFalhou?.centavos ?? null };
   if (!("assinatura" in desfecho)) return { detalhe: null, centavos: null };
   const assinatura = desfecho.assinatura;
@@ -31,7 +37,7 @@ export function resumoDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): { detal
  * aviso já foi processado e gravado, e o registro é para acompanhar — falhar aqui não pode pedir à Stripe que entregue
  * de novo.
  */
-export async function registrarAviso(aviso: AvisoDaStripe, desfecho: Desfecho): Promise<void> {
+export async function registrarAviso(aviso: AvisoDaStripe, desfecho: DesfechoDoAviso): Promise<void> {
   if (desfecho.resultado === "repetido") return;
   try {
     const assinaturaId = aviso.assinatura ?? ("assinatura" in desfecho ? desfecho.assinatura.id : null);

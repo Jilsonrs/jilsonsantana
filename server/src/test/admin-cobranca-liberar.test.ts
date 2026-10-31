@@ -22,11 +22,13 @@ import type { PedidoDeEmail, Envio } from "../lib/email.js";
 const criarAssinaturaPagaPorFora = vi.fn<(pedido: { clienteId: string; precoId: string; plano: Plano; userId: string; operador: string }) => Promise<{ id: string; faturaPaga: boolean }>>();
 const listarPixDoCliente = vi.fn<(cliente: string) => Promise<PixDoCliente>>();
 const cancelarPagamentoPix = vi.fn<(id: string) => Promise<void>>();
+const operadorDaPagaPorFora = vi.fn<(id: string) => Promise<string | null>>();
 vi.mock("../lib/stripe-pix.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-pix.js")>()),
   criarAssinaturaPagaPorFora: (pedido: { clienteId: string; precoId: string; plano: Plano; userId: string; operador: string }) => criarAssinaturaPagaPorFora(pedido),
   listarPixDoCliente: (cliente: string) => listarPixDoCliente(cliente),
   cancelarPagamentoPix: (id: string) => cancelarPagamentoPix(id),
+  operadorDaPagaPorFora: (id: string) => operadorDaPagaPorFora(id),
 }));
 const statusDaContestacao = vi.fn<(id: string) => Promise<string | null>>();
 const tirarMarcaDeContestacao = vi.fn<(id: string) => Promise<"tirada" | "outra-nao-ganha">>();
@@ -114,6 +116,7 @@ beforeEach(async () => {
   });
   listarPixDoCliente.mockReset().mockResolvedValue({ pagos: [], pendentes: [] });
   cancelarPagamentoPix.mockReset().mockResolvedValue(undefined);
+  operadorDaPagaPorFora.mockReset().mockResolvedValue(null);
   assinaturasDoCliente.mockReset().mockResolvedValue([]);
   cancelarIncompleta.mockReset().mockResolvedValue("incomplete_expired");
   buscarPrecos.mockReset().mockResolvedValue(PRECOS);
@@ -192,9 +195,13 @@ describe("liberar acesso pago por fora", () => {
   it("o cliente da FICHA de visitante da conta também conta: a atrasada nele recusa", async () => {
     const daFicha = `cus_${S}_da_ficha`;
     await prisma.guestCheckout.create({ data: { id: `ficha-${S}`, email: `${aluna}@teste.local`, stripeCustomerId: daFicha, livemode: false, userId: aluna } });
-    assinaturasDoCliente.mockImplementation(async (cliente) => (cliente === daFicha ? [viva("past_due")] : []));
+    // No primeiro cliente, um cartão começado e um QR à espera: eles NÃO morrem se o segundo recusa (a conferência do revisor).
+    assinaturasDoCliente.mockImplementation(async (cliente) => (cliente === daFicha ? [viva("past_due")] : [viva("incomplete")]));
+    listarPixDoCliente.mockImplementation(async (cliente) => ({ pagos: [], pendentes: cliente === CLIENTE ? [{ id: `pi_${S}_qr_do_primeiro`, segredo: "x", plano: "mensal", precoId: "price_mensal", resumoDaTentativa: null }] : [] }));
     expect((await acao("liberar-pago-por-fora", { conta: aluna, plano: "mensal" })).body).toEqual({ error: "OutraAssinaturaViva" });
-    expect(assinaturasDoCliente.mock.calls.map(([cliente]) => cliente).sort()).toEqual([CLIENTE, daFicha].sort());
+    expect([...new Set(assinaturasDoCliente.mock.calls.map(([cliente]) => cliente))].sort()).toEqual([CLIENTE, daFicha].sort());
+    expect(cancelarIncompleta).not.toHaveBeenCalled();
+    expect(cancelarPagamentoPix).not.toHaveBeenCalled();
     expect(criarAssinaturaPagaPorFora).not.toHaveBeenCalled();
     await prisma.guestCheckout.deleteMany({ where: { userId: aluna } });
   });
@@ -213,11 +220,35 @@ describe("liberar acesso pago por fora", () => {
   // registro, e a nova tentativa dizia "nada foi liberado".
   it("a liberação que valeu e ficou SEM o registro: a nova tentativa registra e responde liberado; com o registro, 409", async () => {
     await prisma.subscription.create({ data: { stripeSubscriptionId: `sub_${S}_ja_liberada`, ownerUserId: aluna, status: "active", currentPeriodEnd: EM_30_DIAS, paidOutOfBand: true, plan: "mensal", stripeCustomerId: CLIENTE } });
+    // Em nome de QUEM LIBEROU (a marca da Stripe), não de quem repetiu (a conferência do revisor).
+    operadorDaPagaPorFora.mockResolvedValue("conta-de-outro-operador");
     const res = await acao("liberar-pago-por-fora", { conta: aluna, plano: "mensal" });
     expect([res.status, res.body]).toEqual([200, { detalhe: `mensal pago por fora; com acesso às aulas até ${EM_30_DIAS.toISOString().slice(0, 10)}` }]);
-    expect(await prisma.billingLog.findFirst({ where: { action: "liberar-pago-por-fora", stripeSubscriptionId: `sub_${S}_ja_liberada` } })).toMatchObject({ who: "OPERADOR", actorUserId: adminId, amount: 9990 });
+    expect(operadorDaPagaPorFora.mock.calls).toEqual([[`sub_${S}_ja_liberada`]]);
+    expect(await prisma.billingLog.findFirst({ where: { action: "liberar-pago-por-fora", stripeSubscriptionId: `sub_${S}_ja_liberada` } })).toMatchObject({ who: "OPERADOR", actorUserId: "conta-de-outro-operador", amount: 9990 });
     expect((await acao("liberar-pago-por-fora", { conta: aluna, plano: "mensal" })).body).toEqual({ error: "JaTemAcesso" });
     expect(criarAssinaturaPagaPorFora).not.toHaveBeenCalled();
+  });
+
+  it("a liberação sem o registro, com o pedido de antes AINDA com a trava da conta: 409 Ocupada, e nada é registrado em dobro", async () => {
+    await prisma.subscription.create({ data: { stripeSubscriptionId: `sub_${S}_ainda_criando`, ownerUserId: aluna, status: "active", currentPeriodEnd: EM_30_DIAS, paidOutOfBand: true, plan: "mensal", stripeCustomerId: CLIENTE } });
+    let soltar: () => void = () => {};
+    const segurando = new Promise<void>((ok) => (soltar = ok));
+    let pegou: () => void = () => {};
+    const pegouATrava = new Promise<void>((ok) => (pegou = ok));
+    const pedidoDeAntes = prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`assinar:${aluna}`}))`;
+      pegou();
+      await segurando;
+    });
+    await pegouATrava;
+    try {
+      expect((await acao("liberar-pago-por-fora", { conta: aluna, plano: "mensal" })).body).toEqual({ error: "Ocupada" });
+      expect(await prisma.billingLog.findFirst({ where: { action: "liberar-pago-por-fora", stripeSubscriptionId: `sub_${S}_ainda_criando` } })).toBeNull();
+    } finally {
+      soltar();
+      await pedidoDeAntes;
+    }
   });
 
   it("a liberação sem o registro achada JÁ COM A TRAVA (o aviso dela chegou entre as duas conferências): registrada também", async () => {

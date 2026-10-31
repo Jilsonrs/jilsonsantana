@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
 import request from "supertest";
 import type { DetalhesDaAssinatura, MotivoDado } from "../lib/stripe-assinatura.js";
-import type { AssinaturaNaStripe } from "../lib/stripe.js";
+import type { AssinaturaNaStripe, PagamentoPrePago } from "../lib/stripe.js";
 import type { CobrancaParaDevolver, DonoDaDevolucao, OQueFoiPago, Pagamento } from "../lib/stripe-reembolso.js";
 import type { PedidoDeEmail, Envio } from "../lib/email.js";
 import type { PrePagaDoPix } from "../lib/stripe-pix.js";
@@ -31,7 +31,8 @@ const buscarOQueFoiPago = vi.fn<(id: string) => Promise<OQueFoiPago>>();
 const buscarOQueFoiPagoNoPix = vi.fn<(id: string) => Promise<OQueFoiPago>>();
 const assinaturaDoPagamento = vi.fn<(pagamento: string) => Promise<string | null>>();
 const lerCobranca = vi.fn<(id: string) => Promise<CobrancaParaDevolver | null>>();
-const devolverParte = vi.fn<(cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }) => Promise<void>>();
+type OpcoesDaParte = { deNovoDo?: string; agora?: Date };
+const devolverParte = vi.fn<(cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }, opcoes?: OpcoesDaParte) => Promise<string>>();
 vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-reembolso.js")>()),
   cancelarNaHora: (id: string, dado: MotivoDado) => cancelarNaHora(id, dado),
@@ -40,7 +41,7 @@ vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
   buscarOQueFoiPagoNoPix: (id: string) => buscarOQueFoiPagoNoPix(id),
   assinaturaDoPagamento: (pagamento: string) => assinaturaDoPagamento(pagamento),
   lerCobranca: (id: string) => lerCobranca(id),
-  devolverParte: (cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }) => devolverParte(cobranca, centavos, dono),
+  devolverParte: (cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }, opcoes?: OpcoesDaParte) => (opcoes ? devolverParte(cobranca, centavos, dono, opcoes) : devolverParte(cobranca, centavos, dono)),
 }));
 const cobrancaDoPagamento = vi.fn<(pagamento: string) => Promise<{ centavos: number; devolvido: number }>>();
 vi.mock("../lib/stripe-devolucao.js", async (importOriginal) => ({
@@ -53,9 +54,11 @@ vi.mock("../lib/stripe-plano.js", async (importOriginal) => ({
   anularFatura: (id: string) => anularFatura(id),
 }));
 const assinaturasDoPix = vi.fn<(cliente: string, pagamento: string) => Promise<PrePagaDoPix[]>>();
+const lerPagamentoPix = vi.fn<(id: string) => Promise<{ status: string; pagamento: PagamentoPrePago | null }>>();
 vi.mock("../lib/stripe-pix.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-pix.js")>()),
   assinaturasDoPix: (cliente: string, pagamento: string) => assinaturasDoPix(cliente, pagamento),
+  lerPagamentoPix: (id: string) => lerPagamentoPix(id),
 }));
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
@@ -126,9 +129,10 @@ beforeEach(async () => {
   buscarOQueFoiPagoNoPix.mockReset().mockResolvedValue(pagos({ pagamentoId: `pi_${S}_pix`, centavos: 9990, devolvido: 0 }));
   assinaturaDoPagamento.mockReset().mockResolvedValue(SUB);
   lerCobranca.mockReset().mockResolvedValue(cobranca());
-  devolverParte.mockReset().mockResolvedValue(undefined);
+  devolverParte.mockReset().mockResolvedValue("re_nova");
   cobrancaDoPagamento.mockReset().mockResolvedValue({ centavos: 9990, devolvido: 0 });
   assinaturasDoPix.mockReset().mockResolvedValue([]);
+  lerPagamentoPix.mockReset().mockResolvedValue({ status: "succeeded", pagamento: null });
   anularFatura.mockReset().mockResolvedValue("anulada");
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_20_DIAS, clienteId: CLIENTE, userId: aluna, livemode: false, ...naStripe }));
   enviarEmail.mockReset().mockResolvedValue({ enviado: true, id: "re_teste" });
@@ -284,7 +288,17 @@ describe("devolver um pagamento", () => {
     expect(devolverParte).not.toHaveBeenCalled();
   });
 
-  it("o dinheiro sem assinatura (um Pix que não virou assinatura): devolve, sem sincronia", async () => {
+  // A conferência do revisor do bloco 4: o Pix NOSSO que ainda não virou assinatura se devolve pelo caso dele, com a trava do
+  // Pix — devolvido daqui, solto, o "Aceitar este Pix" ao mesmo tempo faria nascer a pré-paga com o Pix devolvido.
+  it("um Pix NOSSO que ainda não virou assinatura: 409, e nada é devolvido — é pelo caso dele", async () => {
+    assinaturaDoPagamento.mockResolvedValue(null);
+    lerCobranca.mockResolvedValue(cobranca({ pagamentoId: `pi_${S}_pix_em_conferencia` }));
+    lerPagamentoPix.mockResolvedValue({ status: "succeeded", pagamento: { id: `pi_${S}_pix_em_conferencia`, plano: "mensal", precoId: "price_mensal", clienteId: CLIENTE, livemode: false, centavos: 9990, userId: aluna, visitante: null } });
+    expect((await acao("devolver-pagamento", { conta: aluna, cobranca: `ch_${S}_1`, centavos: 9990, devolvido: 0 })).body).toEqual({ error: "PixSemAssinatura" });
+    expect(devolverParte).not.toHaveBeenCalled();
+  });
+
+  it("o dinheiro sem assinatura (que não é um Pix nosso): devolve, sem sincronia", async () => {
     assinaturaDoPagamento.mockResolvedValue(null);
     lerCobranca.mockResolvedValue(cobranca({ pagamentoId: `pi_${S}_solto` }));
     expect((await acao("devolver-pagamento", { conta: aluna, cobranca: `ch_${S}_1`, centavos: 9990, devolvido: 0 })).status).toBe(200);
@@ -376,11 +390,22 @@ describe("devolver de novo (o caso da devolução que falhou)", () => {
       expect(res.status).toBe(200);
       expect((res.body as { detalhe: string }).detalhe).toMatch(/^R\$\s20,00 devolvidos de novo$/);
       expect(lerCobranca).toHaveBeenCalledWith(`ch_${S}_1`);
-      expect(devolverParte.mock.calls).toEqual([[cobranca(), 2000, { userId: aluna, assinaturaId: SUB, operador: adminId }]]);
+      // Com a chave PRÓPRIA do caso (a conferência do revisor): nunca a resposta guardada da devolução que falhou.
+      expect(devolverParte.mock.calls).toEqual([[cobranca(), 2000, { userId: aluna, assinaturaId: SUB, operador: adminId }, { deNovoDo: chave }]]);
       expect(buscarAssinatura).toHaveBeenCalledWith(SUB);
       expect(await prisma.billingCase.findUniqueOrThrow({ where: { id } })).toMatchObject({ open: false, closedBy: "OPERADOR" });
     }
     expect(devolver).not.toHaveBeenCalled();
+  });
+
+  it("a Stripe devolveu a MESMA devolução que falhou: 502, e o caso continua aberto", async () => {
+    const id = await casoDe(`devolucao:re_${S}_mesma`, { objeto: `ch_${S}_1`, centavos: 2000 });
+    devolverParte.mockResolvedValueOnce(`re_${S}_mesma`);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect((await resolver(id)).body).toEqual({ error: "DevolucaoFalhou" });
+    expect((await prisma.billingCase.findUniqueOrThrow({ where: { id } })).open).toBe(true);
+    await prisma.billingCase.delete({ where: { id } });
+    vi.restoreAllMocks();
   });
 
   it("menos do que falhou ainda falta voltar (alguém devolveu uma parte por fora): devolve só o que falta", async () => {

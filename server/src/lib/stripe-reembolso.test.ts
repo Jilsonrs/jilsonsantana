@@ -16,6 +16,7 @@ const falsa = {
   paymentIntents: { retrieve: vi.fn() },
   refunds: { create: vi.fn() },
   disputes: { retrieve: vi.fn() },
+  charges: { retrieve: vi.fn() },
 };
 // A biblioteca falsa entra pela fábrica do cliente: é dela que saem TODAS as idas à Stripe,
 // inclusive as do próprio `stripe.ts` (a busca da assinatura que alimenta o espelho).
@@ -26,7 +27,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 
 import { AssinaturaNaoEncontrada, buscarAssinatura } from "./stripe.js";
 import { cobrancaDoPagamento, faturaDevolvida, periodoDevolvido, pixDevolvido } from "./stripe-devolucao.js";
-import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorContestacao, chaveDaDevolucao, devolver, encerrarParaOPix, idsDaMarca, juntarNaMarca, paraPedidoDeDevolucao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorAvisoDeFraude, cancelarPorContestacao, chaveDaDevolucao, devolver, devolverParte, devolverPorAvisoDeFraude, encerrarParaOPix, idsDaMarca, juntarNaMarca, paraPedidoDeDevolucao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
 
 const DONO = { userId: "u-1", assinaturaId: "sub_1" };
 const recusa = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
@@ -191,6 +192,22 @@ describe("cancelar a assinatura contestada", () => {
   });
 });
 
+// A conferência do revisor do bloco 4: o "Devolver de novo" com a chave do caso — com a da devolução de antes, a Stripe
+// devolveria a resposta guardada (a que falhou), e nada voltaria.
+describe("devolver uma parte pelo painel", () => {
+  const cobranca = { id: "ch_1", cliente: "cus_1", pagamentoId: "pi_1", centavos: 9990, devolvido: 0, moeda: "brl", paga: true };
+  const dono = { userId: "u-1", assinaturaId: "sub_1", operador: "admin-1" };
+  const agora = new Date("2026-11-02T12:00:00Z");
+  const janela = Math.floor(agora.getTime() / (5 * 60 * 1000));
+
+  it("a chave: a da cobrança e do valor; a do 'de novo', a do caso — e devolve o id da devolução", async () => {
+    falsa.refunds.create.mockResolvedValue({ id: "re_9", status: "pending" });
+    expect(await devolverParte(cobranca, 2000, dono, { agora })).toBe("re_9");
+    expect(await devolverParte(cobranca, 2000, dono, { deNovoDo: "devolucao:re_1", agora })).toBe("re_9");
+    expect(falsa.refunds.create.mock.calls.map(([, opcoes]) => (opcoes as { idempotencyKey: string }).idempotencyKey)).toEqual([`painel-devolucao-ch_1-0-2000-${janela}`, `painel-de-novo-devolucao:re_1-0-${janela}`]);
+  });
+});
+
 describe("a marca das contestações (revisão de segurança do bloco 4)", () => {
   it("juntar e ler: os ids separados por vírgula, sem repetir e sem vazio", () => {
     expect(juntarNaMarca(undefined, "dp_1")).toBe("dp_1");
@@ -220,6 +237,61 @@ describe("a marca das contestações (revisão de segurança do bloco 4)", () =>
     await expect(tirarMarcaDeContestacao("sub_1")).rejects.toThrow(/a leitura da marca da contestação/);
     await expect(tirarMarcaDeContestacao("sub_1")).rejects.not.toThrow(/sk_test_abc/);
     expect(falsa.subscriptions.update).not.toHaveBeenCalled();
+  });
+});
+
+// O AVISO DE FRAUDE (P141 — 4.7b, passo 5c; decisão do operador, 31/10/2026): a escola encerra e devolve sozinha, e a
+// devolução vai MARCADA COMO FRAUDE (a Stripe bloqueia o cartão e o e-mail).
+describe("o aviso de fraude na Stripe", () => {
+  it("encerrar: a marca do aviso (junta, sem apagar outra), depois o encerramento na hora — e diz se encerrou agora", async () => {
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", status: "active", metadata: { aviso_de_fraude: "issfr_0" } });
+    falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "active", latest_invoice: { id: "in_1", status: "paid" } });
+    falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
+    expect(await cancelarPorAvisoDeFraude("sub_1", "issfr_1")).toBe(true);
+    expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { metadata: { aviso_de_fraude: "issfr_0,issfr_1" }, expand: ["latest_invoice"] }]]);
+    expect(falsa.subscriptions.cancel.mock.calls).toEqual([["sub_1", { prorate: false, invoice_now: false, cancellation_details: { comment: "Aviso de fraude issfr_1" } }]]);
+    expect(falsa.subscriptions.update.mock.invocationCallOrder[0]).toBeLessThan(falsa.subscriptions.cancel.mock.invocationCallOrder[0] ?? 0);
+  });
+
+  it("encerrar a já encerrada (o aviso que volta): só a marca, e não encerrou agora; a falha sobe sem a mensagem da Stripe", async () => {
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", status: "canceled", metadata: {} });
+    falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "canceled" });
+    expect(await cancelarPorAvisoDeFraude("sub_1", "issfr_1")).toBe(false);
+    expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
+    falsa.subscriptions.update.mockRejectedValue(foraDoAr());
+    await expect(cancelarPorAvisoDeFraude("sub_1", "issfr_1")).rejects.toThrow(/o encerramento da assinatura do aviso de fraude/);
+    await expect(cancelarPorAvisoDeFraude("sub_1", "issfr_1")).rejects.not.toThrow(/sk_test_abc/);
+  });
+
+  const cobranca = (extra: Record<string, unknown> = {}) => ({ id: "ch_1", customer: "cus_1", payment_intent: "pi_1", amount: 9990, amount_refunded: 0, currency: "brl", paid: true, status: "succeeded", disputed: false, ...extra });
+
+  it("devolver: o que FALTA da cobrança, MARCADO COMO FRAUDE, de quem é e de que aviso — com a chave de repetição do aviso", async () => {
+    falsa.charges.retrieve.mockResolvedValue(cobranca({ amount_refunded: 1000 }));
+    falsa.refunds.create.mockResolvedValue({ id: "re_1", status: "succeeded" });
+    const agora = new Date("2026-11-02T12:00:00Z");
+    expect(await devolverPorAvisoDeFraude("ch_1", "issfr_1", { userId: "u-1", assinaturaId: "sub_1" }, agora)).toEqual({ devolvidos: 8990, moeda: "brl" });
+    expect(falsa.refunds.create.mock.calls).toEqual([[{ charge: "ch_1", amount: 8990, reason: "fraudulent", metadata: { para: "aviso-de-fraude", aviso: "issfr_1", userId: "u-1", assinatura: "sub_1" } }, { idempotencyKey: `fraude-issfr_1-1000-${Math.floor(agora.getTime() / (5 * 60 * 1000))}` }]]);
+  });
+
+  it("nada a devolver, sem ir à devolução: a contestada (segue pela contestação), a já devolvida, a não paga, a que a Stripe não conhece", async () => {
+    falsa.charges.retrieve.mockResolvedValueOnce(cobranca({ disputed: true })).mockResolvedValueOnce(cobranca({ amount_refunded: 9990 })).mockResolvedValueOnce(cobranca({ paid: false, status: "failed" })).mockRejectedValueOnce(recusa("resource_missing"));
+    const dono = { userId: null, assinaturaId: null };
+    expect(await devolverPorAvisoDeFraude("ch_1", "issfr_1", dono)).toEqual({ semDevolucao: "contestada" });
+    expect(await devolverPorAvisoDeFraude("ch_1", "issfr_1", dono)).toEqual({ semDevolucao: "ja-devolvida" });
+    expect(await devolverPorAvisoDeFraude("ch_1", "issfr_1", dono)).toEqual({ semDevolucao: "nao-paga" });
+    expect(await devolverPorAvisoDeFraude("ch_1", "issfr_1", dono)).toEqual({ semDevolucao: "nao-encontrada" });
+    expect(falsa.refunds.create).not.toHaveBeenCalled();
+  });
+
+  it("a devolução recusada, ou que nasceu falha: sobe, sem a mensagem da Stripe — nunca 'devolvido'", async () => {
+    falsa.charges.retrieve.mockResolvedValue(cobranca());
+    falsa.refunds.create.mockRejectedValueOnce(foraDoAr()).mockResolvedValueOnce({ id: "re_2", status: "failed" });
+    const dono = { userId: null, assinaturaId: null };
+    const falha: unknown = await devolverPorAvisoDeFraude("ch_1", "issfr_1", dono).catch((erro: unknown) => erro);
+    if (!(falha instanceof Error)) throw new Error("a devolução devia falhar");
+    expect(falha.message).toContain("a devolução do aviso de fraude");
+    expect(falha.message).not.toContain("sk_test_abc");
+    await expect(devolverPorAvisoDeFraude("ch_1", "issfr_1", dono)).rejects.toThrow(/a devolução nasceu failed/);
   });
 });
 

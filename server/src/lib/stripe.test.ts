@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
 import { codigoDaAssinatura, quandoAcaba } from "./stripe.js";
-import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, METADADO_DA_CONTESTACAO, METADADO_PAGO_POR_FORA, paraAviso, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, METADADO_DA_CONTESTACAO, METADADO_DO_AVISO_DE_FRAUDE, METADADO_PAGO_POR_FORA, paraAviso, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -78,6 +78,13 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     const contestada = assinatura({ status: "canceled", metadata: { [METADADO_DA_CONTESTACAO]: "dp_1" } });
     expect(paraAssinaturaNaStripe(contestada).pagoAte?.getTime()).toBe(inicio * 1000);
     expect(paraAssinaturaNaStripe(assinatura({ status: "canceled", metadata: { [METADADO_DA_CONTESTACAO]: "" } })).pagoAte?.getTime()).toBe(fim * 1000);
+  });
+
+  // O AVISO DE FRAUDE (P141 — 4.7b, passo 5c): a mesma regra — o aviso pode ser de uma cobrança antiga, e a última fatura
+  // continuaria paga; só a marca segura o acesso cortado depois do encerramento.
+  it("a assinatura do AVISO DE FRAUDE (com a marca): pago só até o COMEÇO do período, mesmo com a fatura paga", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled", metadata: { [METADADO_DO_AVISO_DE_FRAUDE]: "issfr_1" } })).pagoAte?.getTime()).toBe(inicio * 1000);
+    expect(paraAssinaturaNaStripe(assinatura({ status: "canceled", metadata: { [METADADO_DO_AVISO_DE_FRAUDE]: "" } })).pagoAte?.getTime()).toBe(fim * 1000);
   });
 
   // A PAGA POR FORA (4.7b, passo 4d — P120): a marca de quem liberou faz dela pré-paga; sem a marca (ou vazia), não.
@@ -570,9 +577,13 @@ describe("a contestação e o aviso de fraude no aviso", () => {
     expect(paraAviso(evento("charge.dispute.funds_withdrawn", disputa("needs_response", null)))).toMatchObject({ pagamento: null, contestacao: { fase: "dinheiro-saiu", pagamento: null } });
   });
 
-  it("o aviso de fraude: a cobrança, o pagamento e o tipo — sem mexer em pagamento nenhum (só alerta)", () => {
+  // P141 (4.7b, passo 5c): o aviso de fraude leva o PAGAMENTO ao processamento — é por ele que a assinatura se acha, para a
+  // escola encerrá-la e devolver sozinha.
+  it("o aviso de fraude: a cobrança, o pagamento e o tipo — e o pagamento vai ao processamento; sem pagamento, nenhum", () => {
     const aviso = paraAviso(evento("radar.early_fraud_warning.created", { id: "issfr_1", object: "radar.early_fraud_warning", charge: "ch_1", payment_intent: "pi_1", fraud_type: "made_with_stolen_card", actionable: true }));
-    expect(aviso).toMatchObject({ pagamento: null, assinatura: null, contestacao: null, avisoDeFraude: { id: "issfr_1", cobranca: "ch_1", pagamento: "pi_1", tipo: "made_with_stolen_card" } });
+    expect(aviso).toMatchObject({ pagamento: "pi_1", assinatura: null, contestacao: null, avisoDeFraude: { id: "issfr_1", cobranca: "ch_1", pagamento: "pi_1", tipo: "made_with_stolen_card" } });
+    const semPagamento = paraAviso(evento("radar.early_fraud_warning.created", { id: "issfr_2", object: "radar.early_fraud_warning", charge: "ch_2", payment_intent: null, fraud_type: "misc", actionable: true }));
+    expect(semPagamento).toMatchObject({ pagamento: null, avisoDeFraude: { id: "issfr_2", cobranca: "ch_2", pagamento: null } });
   });
 
   it("os outros avisos não trazem nenhum dos dois", () => {

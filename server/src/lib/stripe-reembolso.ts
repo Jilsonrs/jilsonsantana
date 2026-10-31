@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { COMENTARIO_DA_TROCA_POR_PIX, erroSemMensagem, METADADO_DA_CONTESTACAO, stripe } from "./stripe.js";
+import { COMENTARIO_DA_TROCA_POR_PIX, erroSemMensagem, METADADO_DA_CONTESTACAO, METADADO_DO_AVISO_DE_FRAUDE, stripe } from "./stripe.js";
 import { abrirCaso, TipoDeCaso } from "./casos.js";
 import { cobrancaDoPagamento, pagamentosDaFatura } from "./stripe-devolucao.js";
 import { paraMotivoNaStripe, type MotivoDado } from "./stripe-assinatura.js";
@@ -106,29 +106,49 @@ export async function cancelarNaHora(assinaturaId: string, dado: MotivoDado): Pr
  * alerta, e o cancelamento vale. A recusa sobe sem a mensagem crua.
  */
 export async function cancelarPorContestacao(assinaturaId: string, contestacaoId: string): Promise<void> {
+  await marcarEEncerrar(assinaturaId, { metadado: METADADO_DA_CONTESTACAO, id: contestacaoId, nome: `contestação ${contestacaoId}`, pelo: `pela contestação ${contestacaoId}`, comentario: `Contestação ${contestacaoId}`, contexto: "o cancelamento da assinatura contestada" });
+}
+
+/**
+ * A ASSINATURA DO AVISO DE FRAUDE (P141 — 4.7b, passo 5c; decisão do operador, 31/10/2026): como a contestada — a marca
+ * (`METADADO_DO_AVISO_DE_FRAUDE`) e então o encerramento na hora, e a cobrança em aberto anulada. O cartão avisado nunca mais é
+ * cobrado. Devolve se encerrou AGORA (a já encerrada só ganha a marca).
+ */
+export async function cancelarPorAvisoDeFraude(assinaturaId: string, avisoId: string): Promise<boolean> {
+  return marcarEEncerrar(assinaturaId, { metadado: METADADO_DO_AVISO_DE_FRAUDE, id: avisoId, nome: `aviso de fraude ${avisoId}`, pelo: `pelo aviso de fraude ${avisoId}`, comentario: `Aviso de fraude ${avisoId}`, contexto: "o encerramento da assinatura do aviso de fraude" });
+}
+
+/** O que MARCA e ENCERRA a assinatura, e como cada texto o chama: a contestação ou o aviso de fraude. */
+type MotivoDoCorte = { metadado: string; id: string; nome: string; pelo: string; comentario: string; contexto: string };
+
+/**
+ * Primeiro a marca — que JUNTA os ids (achado P1 da revisão do bloco 4, 31/10/2026: com um só, a segunda contestação apagava
+ * a primeira, e ganhar uma liberava as duas — `tirarMarcaDeContestacao`) —, e só então o encerramento na hora (os porquês
+ * estão em `cancelarPorContestacao`). Devolve se encerrou agora.
+ */
+async function marcarEEncerrar(assinaturaId: string, motivo: MotivoDoCorte): Promise<boolean> {
   let faturaEmAberto: string | null = null;
   try {
-    // A marca JUNTA as contestações da assinatura (achado P1 da revisão do bloco 4, 31/10/2026): com uma só, a segunda
-    // contestação apagava a primeira, e ganhar uma liberava as duas (`tirarMarcaDeContestacao`).
-    const atual = (await stripe().subscriptions.retrieve(assinaturaId)).metadata[METADADO_DA_CONTESTACAO];
-    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: juntarNaMarca(atual, contestacaoId) }, expand: ["latest_invoice"] });
-    if (marcada.status === "canceled" || marcada.status === "incomplete_expired") return;
+    const atual = (await stripe().subscriptions.retrieve(assinaturaId)).metadata[motivo.metadado];
+    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [motivo.metadado]: juntarNaMarca(atual, motivo.id) }, expand: ["latest_invoice"] });
+    if (marcada.status === "canceled" || marcada.status === "incomplete_expired") return false;
     const fatura = marcada.latest_invoice;
     faturaEmAberto = typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null;
-    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: `Contestação ${contestacaoId}` } });
+    await stripe().subscriptions.cancel(assinaturaId, { prorate: false, invoice_now: false, cancellation_details: { comment: motivo.comentario } });
   } catch (erro) {
-    throw erroSemMensagem(erro, "o cancelamento da assinatura contestada");
+    throw erroSemMensagem(erro, motivo.contexto);
   }
-  if (!faturaEmAberto) return;
+  if (!faturaEmAberto) return true;
   try {
     if ((await anularFatura(faturaEmAberto)) === "paga") {
-      console.error(`[stripe] contestação ${contestacaoId}: a cobrança em aberto da assinatura ${assinaturaId} foi PAGA no instante do cancelamento — conferir no painel da Stripe`);
-      await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `fatura:${faturaEmAberto}`, urgente: false, assinatura: assinaturaId, objeto: faturaEmAberto, detalhe: `a cobrança em aberto foi paga no instante do cancelamento pela contestação ${contestacaoId}` });
+      console.error(`[stripe] ${motivo.nome}: a cobrança em aberto da assinatura ${assinaturaId} foi PAGA no instante do cancelamento — conferir no painel da Stripe`);
+      await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `fatura:${faturaEmAberto}`, urgente: false, assinatura: assinaturaId, objeto: faturaEmAberto, detalhe: `a cobrança em aberto foi paga no instante do cancelamento ${motivo.pelo}` });
     }
   } catch (erro) {
-    console.error(`[stripe] contestação ${contestacaoId}: a assinatura ${assinaturaId} foi cancelada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
-    await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${faturaEmAberto}`, urgente: false, assinatura: assinaturaId, objeto: faturaEmAberto, detalhe: `cancelada pela contestação ${contestacaoId} e a cobrança em aberto não foi anulada` });
+    console.error(`[stripe] ${motivo.nome}: a assinatura ${assinaturaId} foi cancelada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+    await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${faturaEmAberto}`, urgente: false, assinatura: assinaturaId, objeto: faturaEmAberto, detalhe: `cancelada ${motivo.pelo} e a cobrança em aberto não foi anulada` });
   }
+  return true;
 }
 
 /**
@@ -221,6 +241,36 @@ export async function statusDaContestacao(contestacaoId: string): Promise<string
   }
 }
 
+/** A CONTESTAÇÃO lida AGORA, para as provas (4.7b, passo 5b): o status, o motivo, o valor, o prazo e quando a cobrança foi feita. */
+export type ContestacaoLida = { status: string; motivo: string; centavos: number; prazo: Date | null; cobradaEm: Date | null };
+
+/** Lê a contestação, com a cobrança dela — ou nenhuma, se a Stripe não a conhece. A recusa sobe sem a mensagem crua. */
+export async function lerContestacao(contestacaoId: string): Promise<ContestacaoLida | null> {
+  try {
+    const d = await stripe().disputes.retrieve(contestacaoId, { expand: ["charge"] });
+    const cobranca = typeof d.charge === "object" && d.charge !== null ? d.charge : null;
+    const prazo = d.evidence_details?.due_by;
+    return { status: d.status, motivo: d.reason, centavos: d.amount, prazo: prazo ? new Date(prazo * 1000) : null, cobradaEm: cobranca ? new Date(cobranca.created * 1000) : null };
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") return null;
+    throw erroSemMensagem(erro, "a leitura da contestação");
+  }
+}
+
+/**
+ * ENVIA AS PROVAS AO BANCO (o "Responder com provas" do painel, 4.7b, passo 5b — decisão do operador, P140): todos os campos de
+ * texto de uma vez, e já enviados (`submit: true`) — depois disso, não dá para mudar `[FATO — context7 /websites/stripe,
+ * 31/10/2026: com submit, as provas vão ao banco; os textos somam no máximo 150.000 caracteres]`. A chave de repetição leva a
+ * contestação e a janela de 5 minutos: o clique duplo recebe a mesma resposta. Devolve o status de depois.
+ */
+export async function enviarProvasDaContestacao(contestacaoId: string, provas: Stripe.DisputeUpdateParams.Evidence, agora: Date = new Date()): Promise<string> {
+  try {
+    return (await stripe().disputes.update(contestacaoId, { evidence: provas, submit: true }, { idempotencyKey: `provas-${contestacaoId}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}` })).status;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o envio das provas da contestação");
+  }
+}
+
 /**
  * ACEITA A CONTESTAÇÃO (o "Aceitar a perda" do painel, 4.7b, passo 5a): a escola não manda provas, e o banco a encerra como
  * perdida — o dinheiro fica com a pessoa. `[FATO — context7 /websites/stripe, 31/10/2026]` só a contestação aberta
@@ -268,7 +318,7 @@ export async function tirarMarcaDeContestacao(assinaturaId: string): Promise<"ti
 }
 
 /** Uma cobrança que o painel devolve (passo 4a): de quem é, quanto foi e quanto já voltou. */
-export type CobrancaParaDevolver = { id: string; cliente: string | null; pagamentoId: string | null; centavos: number; devolvido: number; moeda: string; paga: boolean };
+export type CobrancaParaDevolver = { id: string; cliente: string | null; pagamentoId: string | null; centavos: number; devolvido: number; moeda: string; paga: boolean; contestada?: boolean };
 
 /** A COBRANÇA, lida na Stripe agora — ou nenhuma, se a Stripe não a conhece. */
 export async function lerCobranca(cobrancaId: string): Promise<CobrancaParaDevolver | null> {
@@ -281,6 +331,7 @@ export async function lerCobranca(cobrancaId: string): Promise<CobrancaParaDevol
       centavos: c.amount,
       devolvido: c.amount_refunded,
       moeda: c.currency,
+      contestada: c.disputed,
       paga: c.paid && c.status === "succeeded",
     };
   } catch (erro) {
@@ -294,19 +345,56 @@ export async function lerCobranca(cobrancaId: string): Promise<CobrancaParaDevol
  * chave de repetição leva a cobrança, o que já tinha voltado e o valor: o clique duplo não devolve duas vezes, e a
  * segunda parte, depois da primeira, é outro pedido. A Stripe recusa devolver mais do que falta.
  */
-export async function devolverParte(cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }, agora: Date = new Date()): Promise<void> {
+export async function devolverParte(cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }, opcoes: { deNovoDo?: string; agora?: Date } = {}): Promise<string> {
   const metadata: Record<string, string> = { para: "painel", operador: dono.operador };
+  if (dono.userId) metadata.userId = dono.userId;
+  if (dono.assinaturaId) metadata.assinatura = dono.assinaturaId;
+  const janela = Math.floor((opcoes.agora ?? new Date()).getTime() / JANELA_DA_CHAVE);
+  // O "Devolver de novo" tem chave PRÓPRIA, do caso (conferência do revisor do bloco 4, 31/10/2026): com a chave da devolução
+  // de antes — o mesmo valor, o mesmo que já tinha voltado, a mesma janela —, a Stripe devolveria a resposta GUARDADA, a
+  // devolução que falhou, e nada voltaria.
+  const chave = opcoes.deNovoDo ? `painel-de-novo-${opcoes.deNovoDo}-${cobranca.devolvido}-${janela}` : `painel-devolucao-${cobranca.id}-${cobranca.devolvido}-${centavos}-${janela}`;
+  try {
+    const devolucao = await stripe().refunds.create({ charge: cobranca.id, amount: centavos, reason: "requested_by_customer", metadata }, { idempotencyKey: chave });
+    if (devolucao.status === "failed" || devolucao.status === "canceled") throw new Error(`[stripe] a devolução nasceu ${devolucao.status}`);
+    return devolucao.id;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a devolução da cobrança");
+  }
+}
+
+/** O que a devolução do aviso de fraude fez: quanto voltou, ou por que nada voltou. */
+export type DevolucaoDaFraude = { devolvidos: number; moeda: string } | { semDevolucao: "contestada" | "ja-devolvida" | "nao-paga" | "nao-encontrada" };
+
+/**
+ * DEVOLVE o que falta da cobrança do AVISO DE FRAUDE (P141 — 4.7b, passo 5c), MARCADA COMO FRAUDE — decisão do operador,
+ * 31/10/2026: a Stripe põe o cartão e o e-mail nas listas de bloqueio dela, e eles não pagam mais com cartão na escola
+ * `[FATO — context7 /websites/stripe, 31/10/2026: devolver com o motivo "fraudulent" acrescenta o e-mail e o cartão às listas de
+ * bloqueio; o aviso deixa de ser acionável com a cobrança contestada ou devolvida por inteiro]`. A cobrança é lida AGORA, não
+ * no retrato do aviso: a contestada não se devolve (o dinheiro segue pela contestação), e a já devolvida não tem o que fazer. A
+ * chave de repetição leva o aviso, o que já tinha voltado e a janela de 5 minutos, como a do reembolso: a reentrega em seguida
+ * recebe a mesma devolução, e a Stripe nunca devolve mais do que foi cobrado. A recusa sobe sem a mensagem crua.
+ */
+export async function devolverPorAvisoDeFraude(cobrancaId: string, avisoId: string, dono: { userId: string | null; assinaturaId: string | null }, agora: Date = new Date()): Promise<DevolucaoDaFraude> {
+  const cobranca = await lerCobranca(cobrancaId);
+  if (!cobranca) return { semDevolucao: "nao-encontrada" };
+  if (cobranca.contestada) return { semDevolucao: "contestada" };
+  if (!cobranca.paga) return { semDevolucao: "nao-paga" };
+  const falta = cobranca.centavos - cobranca.devolvido;
+  if (falta <= 0) return { semDevolucao: "ja-devolvida" };
+  const metadata: Record<string, string> = { para: "aviso-de-fraude", aviso: avisoId };
   if (dono.userId) metadata.userId = dono.userId;
   if (dono.assinaturaId) metadata.assinatura = dono.assinaturaId;
   try {
     const devolucao = await stripe().refunds.create(
-      { charge: cobranca.id, amount: centavos, reason: "requested_by_customer", metadata },
-      { idempotencyKey: `painel-devolucao-${cobranca.id}-${cobranca.devolvido}-${centavos}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}` },
+      { charge: cobranca.id, amount: falta, reason: "fraudulent", metadata },
+      { idempotencyKey: `fraude-${avisoId}-${cobranca.devolvido}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}` },
     );
     if (devolucao.status === "failed" || devolucao.status === "canceled") throw new Error(`[stripe] a devolução nasceu ${devolucao.status}`);
   } catch (erro) {
-    throw erroSemMensagem(erro, "a devolução da cobrança");
+    throw erroSemMensagem(erro, "a devolução do aviso de fraude");
   }
+  return { devolvidos: falta, moeda: cobranca.moeda };
 }
 
 /**

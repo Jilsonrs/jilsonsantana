@@ -1,11 +1,11 @@
 import { entrarPara, lerDocumentoFiscal, TELA_DE_PAGAR_COM_PIX, type Plano, type AcaoFeita, type ConferenciaPelaFicha, type ConsertoDoCaso, type FichaQuery, type LinkParaOAluno } from "@jilson/core";
 import { Prisma, prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 import { consertosDoCaso } from "./casos.js";
-import { AssinaturaNaoEncontrada, buscarAssinatura, buscarPrecos, DocumentoRecusado, trocarNumeroFiscal } from "./stripe.js";
+import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, DocumentoRecusado, trocarNumeroFiscal } from "./stripe.js";
 import { buscarDetalhes, pagarFatura, type CobrancaDaFatura, type DetalhesDaAssinatura } from "./stripe-assinatura.js";
 import { anularFatura, assinaturaDaFatura, soltarAgendamento } from "./stripe-plano.js";
 import { aceitarContestacao, cancelarNaHora, statusDaContestacao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
-import { criarAssinaturaPagaPorFora, listarPixDoCliente, pixConfigurado } from "./stripe-pix.js";
+import { criarAssinaturaPagaPorFora, listarPixDoCliente, operadorDaPagaPorFora, pixConfigurado, type PixPendente } from "./stripe-pix.js";
 import { enviarEmail } from "./email.js";
 import { getDict } from "./dict.js";
 import { enderecoDoSite } from "./endereco-do-site.js";
@@ -48,7 +48,9 @@ export type NaoFeita =
   | "pix-pago-esperando"
   | "pix-ja-virou-assinatura"
   | "sem-valor-da-devolucao"
-  | "outra-contestacao-nao-ganha";
+  | "outra-contestacao-nao-ganha"
+  // A conferência do revisor do bloco 4 (31/10/2026):
+  | "pix-sem-assinatura";
 export type Resultado<T> = { resultado: "ok"; feito: T } | { resultado: NaoFeita };
 
 /** Grava a ação no registro: quem fez, em quem, o valor (quando há dinheiro) e o que a Stripe respondeu (sem dado pessoal). */
@@ -327,7 +329,10 @@ export async function liberarPagoPorForaPeloOperador(contaId: string, plano: Pla
   const sincronia = await sincronizarSeLivre(criada.id);
   const ate = sincronia && "assinatura" in sincronia ? sincronia.assinatura.pagoAte : null;
   const detalhe = `${plano} pago por fora; ${await temAcessoAtivo(conta.id) ? "com acesso" : "sem acesso"} às aulas${ate ? ` até ${ate.toISOString().slice(0, 10)}` : ""}`;
-  await registrar(por, "liberar-pago-por-fora", { userId: conta.id, assinatura: criada.id, cliente: clienteId }, detalhe, preco.centavos);
+  // A nova tentativa de um pedido lento pode ter registrado no meio (`liberadaAgoraHaPouco`): uma linha só.
+  if (!(await prisma.billingLog.findFirst({ where: { action: "liberar-pago-por-fora", stripeSubscriptionId: criada.id }, select: { id: true } }))) {
+    await registrar(por, "liberar-pago-por-fora", { userId: conta.id, assinatura: criada.id, cliente: clienteId }, detalhe, preco.centavos);
+  }
   return { resultado: "ok", feito: { detalhe } };
 }
 
@@ -339,12 +344,21 @@ export async function liberarPagoPorForaPeloOperador(contaId: string, plano: Pla
  * conta; a mesma ordem do Pix (`pagarComPix`): o Pix pago antes de qualquer cancelamento.
  */
 async function outroPagamentoAberto(tx: Prisma.TransactionClient, contaId: string, clientes: string[]): Promise<"outra-assinatura-viva" | "pix-pago-esperando" | null> {
+  // Primeiro CONFERE todos os clientes, sem cancelar nada — o que recusa em um não deixa cancelados os pagamentos do outro
+  // (a conferência do revisor do bloco 4) —; só então os abertos morrem.
+  const pendentes = new Map<string, PixPendente[]>();
   for (const cliente of clientes) {
     const pix = await listarPixDoCliente(cliente);
+    pendentes.set(cliente, pix.pendentes);
     if (await pixPagoSemEspelho(tx, pix.pagos)) return "pix-pago-esperando";
+    const vivas = (await assinaturasDoCliente(cliente)).filter((a) => a.status !== "canceled" && a.status !== "incomplete_expired");
+    if (vivas.some((a) => a.status !== "incomplete")) return "outra-assinatura-viva";
+    if (vivas.some((a) => a.pixPaymentIntentId)) return "pix-pago-esperando";
+  }
+  for (const cliente of clientes) {
     const aberta = await assinaturasAbertas(cliente, `conta ${contaId}, liberar pago por fora`);
     if (aberta) return "prePaga" in aberta ? "pix-pago-esperando" : "outra-assinatura-viva";
-    if ("pago" in (await cancelarOutrosPix(cliente, pix.pendentes))) return "pix-pago-esperando";
+    if ("pago" in (await cancelarOutrosPix(cliente, pendentes.get(cliente) ?? []))) return "pix-pago-esperando";
   }
   return null;
 }
@@ -353,16 +367,21 @@ async function outroPagamentoAberto(tx: Prisma.TransactionClient, contaId: strin
  * A LIBERAÇÃO QUE JÁ VALEU e ficou sem o registro (achado P2 da revisão do bloco 4): o pedido anterior criou a assinatura paga
  * por fora e caiu antes de responder; a nova tentativa acha a conta com acesso. Se o acesso é de uma paga por fora desta conta
  * nascida nos últimos 15 minutos, e o registro não a tem, ela é registrada agora e a resposta é "liberado". Nada: o 409 de
- * sempre.
+ * sempre. Em nome de QUEM LIBEROU (a marca da Stripe), e com a trava da conta — a da liberação: o pedido que ainda está
+ * criando termina antes, e o registro não sai em dobro (a conferência do revisor do bloco 4).
  */
 async function liberadaAgoraHaPouco(contaId: string, plano: Plano, centavos: number, por: PorQuem): Promise<Resultado<AcaoFeita> | null> {
   const recente = await prisma.subscription.findFirst({ where: { ownerUserId: contaId, paidOutOfBand: true, plan: plano, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } }, orderBy: { createdAt: "desc" }, select: { stripeSubscriptionId: true, stripeCustomerId: true, currentPeriodEnd: true } });
   if (!recente) return null;
-  if (await prisma.billingLog.findFirst({ where: { action: "liberar-pago-por-fora", stripeSubscriptionId: recente.stripeSubscriptionId }, select: { id: true } })) return null;
+  const quemLiberou = (await operadorDaPagaPorFora(recente.stripeSubscriptionId)) ?? por.conta;
   const ate = recente.currentPeriodEnd;
   const detalhe = `${plano} pago por fora; com acesso às aulas${ate ? ` até ${ate.toISOString().slice(0, 10)}` : ""}`;
-  await registrar(por, "liberar-pago-por-fora", { userId: contaId, assinatura: recente.stripeSubscriptionId, cliente: recente.stripeCustomerId }, detalhe, centavos);
-  return { resultado: "ok", feito: { detalhe } };
+  return transacaoDaCobranca(async (tx): Promise<Resultado<AcaoFeita> | null> => {
+    if (!(await travarSeLivre(tx, contaId))) return { resultado: "ocupada" };
+    if (await tx.billingLog.findFirst({ where: { action: "liberar-pago-por-fora", stripeSubscriptionId: recente.stripeSubscriptionId }, select: { id: true } })) return null;
+    await tx.billingLog.create({ data: { who: por.quem, actorUserId: quemLiberou, action: "liberar-pago-por-fora", userId: contaId, stripeSubscriptionId: recente.stripeSubscriptionId, stripeCustomerId: recente.stripeCustomerId, amount: centavos, detail: detalhe } });
+    return { resultado: "ok", feito: { detalhe } };
+  });
 }
 
 /**
@@ -392,13 +411,22 @@ export async function liberarDeNovoPeloOperador(casoId: number, por: PorQuem): P
  * tirou, a assinatura cancelada no "dinheiro saiu", fica como está). O caso fecha.
  */
 export async function aceitarContestacaoPeloOperador(casoId: number, por: PorQuem): Promise<Resultado<AcaoFeita>> {
-  const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeSubscriptionId: true } });
+  const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeSubscriptionId: true, amount: true } });
   if (!caso || !caso.open || !consertosDoCaso(caso.kind, caso.key).includes("aceitar-contestacao")) return { resultado: "nao-encontrada" };
   const contestacao = caso.key.slice("du:".length);
   if ((await statusDaContestacao(contestacao)) !== "needs_response") return { resultado: "contestacao-nao-aberta" };
-  await aceitarContestacao(contestacao);
+  let depois: string;
+  try {
+    depois = await aceitarContestacao(contestacao);
+  } catch (erro) {
+    // O outro clique (outra aba) a fechou no meio: já está decidida (a conferência do revisor do bloco 4).
+    if ((await statusDaContestacao(contestacao)) !== "needs_response") return { resultado: "contestacao-nao-aberta" };
+    throw erro;
+  }
+  // Fechar é perder (`aceitarContestacao`): outra coisa é a Stripe fora do esperado — o caso fica aberto, e o erro avisa.
+  if (depois !== "lost") throw new Error(`[stripe] a contestação ${contestacao} ficou ${depois} depois de aceita — conferir no painel da Stripe`);
   const detalhe = "a escola aceitou a perda: o dinheiro fica com a pessoa";
-  await concluirCaso(casoId, por, "aceitar-contestacao", { userId: caso.userId, assinatura: caso.stripeSubscriptionId }, detalhe);
+  await concluirCaso(casoId, por, "aceitar-contestacao", { userId: caso.userId, assinatura: caso.stripeSubscriptionId }, detalhe, caso.amount);
   return { resultado: "ok", feito: { detalhe } };
 }
 

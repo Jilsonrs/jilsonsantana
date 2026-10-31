@@ -203,6 +203,20 @@ export const TIPOS_DE_CASO = [
 ] as const;
 export type TipoDeCasoDaLista = (typeof TIPOS_DE_CASO)[number];
 
+/**
+ * O TIPO DE FRAUDE que o banco deu no aviso de fraude (o `fraud_type` da Stripe), como o operador lê — no resumo do caso e no
+ * registro da cobrança (texto do admin; 4.7b, passo 5c). O que não estiver aqui aparece como veio.
+ */
+export const NOME_DO_TIPO_DE_FRAUDE: Readonly<Record<string, string>> = {
+  card_never_received: "cartão que o dono nunca recebeu",
+  fraudulent_card_application: "cartão pedido com dados falsos",
+  made_with_counterfeit_card: "cartão falsificado",
+  made_with_lost_card: "cartão perdido",
+  made_with_stolen_card: "cartão roubado",
+  misc: "fraude, sem detalhe",
+  unauthorized_use_of_card: "uso do cartão sem autorização",
+};
+
 /** O nome de cada tipo de caso — o mesmo na tela "Precisa de você" e no e-mail ao operador (texto do admin). */
 export const NOME_DO_TIPO_DE_CASO: Record<TipoDeCasoDaLista, string> = {
   PIX_EM_CONFERENCIA: "Pix pago que não virou assinatura",
@@ -270,7 +284,16 @@ export type AcaoFeita = { detalhe: string };
 export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };
 
 /** Os consertos que hoje só o painel da Stripe faz, a partir de um caso (passo 3b). */
-export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo", "aceitar-pix", "devolver-pix", "devolver-este-pagamento", "liberar-de-novo", "aceitar-contestacao"] as const;
+export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo", "aceitar-pix", "devolver-pix", "devolver-este-pagamento", "liberar-de-novo", "aceitar-contestacao", "enviar-provas"] as const;
+
+/**
+ * RESPONDER COM PROVAS (bloco 5, passo 5b — decisão do operador, 31/10/2026, P140): o que o painel MONTOU para o banco, campo a
+ * campo — o texto EXATO que vai, para o operador conferir antes de enviar. Os campos são os da Stripe; o nome de cada um, a
+ * tela diz.
+ */
+export const CAMPOS_DA_PROVA = ["customer_name", "customer_email_address", "service_date", "product_description", "access_activity_log", "refund_policy_disclosure", "uncategorized_text"] as const;
+export type CampoDaProva = (typeof CAMPOS_DA_PROVA)[number];
+export type ProvasDaContestacao = { prazo: string | null; motivo: string; centavos: number; campos: { campo: CampoDaProva; texto: string }[] };
 export type ConsertoDoCaso = (typeof CONSERTOS_DO_CASO)[number];
 export const resolverCasoSchema = z.object({ acao: z.enum(CONSERTOS_DO_CASO) });
 
