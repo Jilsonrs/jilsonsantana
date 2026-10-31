@@ -659,6 +659,43 @@ exceto o item 4, que é página pública.
     regras de e-mail (estilo escrito no elemento, tabela, imagem com endereço do site no ar) e a
     prévia estão na §2, em *O MODELO DE E-MAIL*.
 
+38. **6g — O acabamento das telas de ASSINAR** *(pedido do operador, 27/10/2026: "passar ao
+    Antigravity com um passo a passo; o Claude confere"; trazido do plano para cá em 30/10/2026 —
+    no plano, etapa 4.7, item 6g)*. **Só visual** — nada de texto, comportamento, rota ou teste.
+    É a última coisa antes do **teste final do operador com dinheiro de verdade** (cartão e Pix,
+    como um aluno faria): a tela que ele vai testar é a que sair daqui.
+    1. Da `dev`, abrir o branch `acabamento-assinar`. Ligar `npm run dev:server` e
+       `npm run dev:client` e abrir pelo Vite: `http://localhost:5173/assinar` (visitante) e
+       `http://localhost:5173/aluno/assinar` (logado com o member@). Para ver a
+       `/assinar/concluido`: no DevTools, em `sessionStorage`, gravar
+       `jilson.assinar.tentativa` = `{"tentativa":"x","email":"a@b.com"}` — aparece o
+       "Confirmando sua assinatura…".
+    2. Acabar as duas colunas (formulário à esquerda, com "O que está incluído" logo depois dos
+       planos; à direita, o resumo com o botão POR ÚLTIMO — como a Udemy; no celular, uma coluna
+       só, nesta ordem; **não mudar a ordem**) e os componentes de `client/src/components/assinar/`:
+       `FormularioDeAssinatura`, `SeusDados` (desde 30/10, com o campo **"Seu nome"** —
+       `CampoDoNome` — antes do e-mail), `CampoDoDocumento`, `DadosDoVisitante`,
+       `ResumoDaAssinatura`, `OQueEstaIncluido`, `CriarSenhaDepoisDePagar`, e a página
+       `client/src/pages/AssinaturaConcluidaSemLoginPage.tsx`.
+    3. Na página do servidor (`server/src/views/assinar.ts`) mexer só nas classes da parte do
+       título; o texto sai do dicionário e passa por `escapeHtml` (não trocar). **Atenção:** ali o
+       CSS do site (`/css/public.css`) vem DEPOIS do CSS do app e vence nas regras do `body` e dos
+       títulos — se o formulário sair com cara errada, ajustar em `client/src/public-input.css`,
+       só para `body[data-pagina-do-servidor]`, e remontar com `npm --workspace client run build:css`.
+    4. Não mudar: textos, o que é botão ou link e para onde leva, `aria-*`, a ordem dos campos.
+       **O campo do cartão e o do Pix são da Stripe** (moldura dela): o que se ajusta é a
+       `APARENCIA` em `client/src/lib/stripe-do-site.tsx` (item 34). Os quatro gates verdes
+       (`typecheck`, `lint`, `test`, `build`), conferidos pelo código de saída. Commit no branch e
+       **parar**: sem merge na `dev` nem na `main` — o Claude confere o diff e faz o merge na `dev`.
+    **Telas da MESMA FAMÍLIA que nasceram depois deste passo a passo e também estão sem acabamento**
+    *(entram na 6g só se o operador disser — a lista é para você saber que existem)*: a escolha
+    entre cartão e Pix e o QR do Pix (`EscolhaDaFormaDePagamento`, `QrDeNovo`,
+    `PagamentoComCartao`, `EscolhaDoPlano`, `CodigoPromocional`, `BotaoDeAssinar`, na mesma pasta);
+    a página de pagar com Pix a cobrança atrasada (`/aluno/pagar-com-pix`,
+    `client/src/pages/aluno/PagarComPixPage.tsx`); e as duas páginas dos links dos e-mails, "Quero
+    receber novidades" e "Descadastrar" (`server/src/views/pagina-do-link.ts`, página do servidor —
+    as mesmas regras do passo 3).
+
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
 > § 6, decisão 8).
@@ -916,6 +953,7 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
 - **O que ainda falta na sua fila de tarefas visuais (pendências de acabamento):**
   1. **Item 23 — Landing page de venda do curso (`/curso/:slug`) e mock na `design-lab/`:** acabamento da página de vendas do curso (cartão de assinar, bloco do autor, diferenciais com ✓ em duas colunas, ferramentas do curso, trilhas e outros cursos) para orientar a transposição para template rápido de servidor (Bloco C5). *(Ponto de retorno da próxima sessão com o Antigravity)*.
   2. **Item 14/15 — Polimento dos relatórios do Dashboard (`/dashboard`):** os 4 cartões de relatório hoje estão com o selo EM BREVE; recebem o acabamento visual definitivo quando as métricas agregadas chegarem.
+  3. **Item 38 — a 6g, o acabamento das telas de assinar** *(entrou em 30/10/2026; a ordem entre os itens é do operador)*: é o que vem antes do teste final dele com dinheiro de verdade — o passo a passo está no item 38, na §2.
 - **Status da sessão (12/10/2026):** O operador pausou os ajustes visuais para fechar a parte de cartões de crédito/faturamento com o Claude Code. Ao voltar, recomeçamos diretamente pelo Item 23.
 - **Vem aí no produto, e vai precisar de você** *(plano de etapas futuras)*: o **arrastar na ordem dos cursos e das perguntas** (mesma mecânica do Conteúdo), e as novas páginas públicas (a **página curta da trilha**, **Quem somos**, **Contato** e a **página de baixar material**). Elas seguem o fluxo padrão: mock na `design-lab/`, transposição para template de servidor, e acabamento no código.
 

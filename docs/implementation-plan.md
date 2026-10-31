@@ -5453,6 +5453,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                   lista de volta à direita): as duas reprovam.
             - [ ] **6g — O ACABAMENTO VISUAL das telas de assinar, pelo Antigravity** *(pedido do
                   operador, 27/10/2026: passar ao Antigravity com um passo a passo; o Claude confere)*.
+                  **Copiado para o `design-lab/GEMINI.md`, item 38 (30/10/2026, pedido do operador)** —
+                  com a lista das telas da mesma família que nasceram depois (o Pix, a página de pagar a
+                  atrasada com Pix, as páginas dos links dos e-mails), que entram só se ele disser.
                   **Só visual** — nada de texto, comportamento, rota ou teste.
                   1. Da `dev`, abrir o branch `acabamento-assinar`. Ligar `npm run dev:server` e
                      `npm run dev:client` e abrir pelo Vite: `http://localhost:5173/assinar`
