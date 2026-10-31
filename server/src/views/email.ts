@@ -41,7 +41,17 @@ export type MensagemDeEmail = {
   botao?: { texto: string; endereco: string };
   /** O que vem DEPOIS do botão — a outra saída (o Pix na cobrança atrasada: 4.9b, E14), ou um link de texto (passo 9). */
   depoisDoBotao?: DepoisDoBotao[];
+  /** O RECIBO do pagamento, num bloco próprio depois dos parágrafos (4.7b, passo 6a — decisão do operador, 31/10/2026). */
+  recibo?: ReciboDoEmail;
 };
+
+/**
+ * O recibo dentro do e-mail, já em texto — quem manda o e-mail monta (`linhasDoRecibo`), o modelo só desenha: o título e
+ * o número, a escola, o que foi pago (o plano e o período), as linhas de rótulo e valor, e a nota das dúvidas.
+ */
+export type ReciboDoEmail = { titulo: string; numero: string; escola: string[]; item: string; periodo: string | null; valores: LinhaDoRecibo[]; pagamento: LinhaDoRecibo[]; nota: string };
+/** Uma linha de uma caixa do recibo: o rótulo à esquerda e o valor à direita, como na tela. */
+export type LinhaDoRecibo = { rotulo: string; valor: string };
 
 export type EmailMontado = { assunto: string; html: string; texto: string };
 
@@ -90,6 +100,37 @@ export function montarEmail(mensagem: MensagemDeEmail, textos: Pick<Dict["app"][
       return `<p style="${margem}"><a href="${escapeHtml(item.endereco)}" style="color:${AZUL};text-decoration:underline;">${escapeHtml(item.link)}</a></p>`;
     })
     .join("\n                ");
+  // O RECIBO (4.7b, passo 6a — decisão do operador, 31/10/2026: "a mesma formatação do recibo que abre na tela do aluno"):
+  // a mesma ordem e os mesmos grupos da tela (`ReciboPage`) — o título e o número, a escola, o plano e o período, uma caixa
+  // com os valores e outra com a forma e a situação, e a nota das dúvidas. Alinhado à esquerda, como na tela; em tabela,
+  // como todo o modelo. O acabamento fino é do parceiro de design (GEMINI.md, item 39).
+  const recibo = mensagem.recibo;
+  const caixa = (linhas: LinhaDoRecibo[]) =>
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 0;border:1px solid ${LINHA};border-radius:16px;border-collapse:separate;">
+                    ${linhas
+                      .map((l, i) => {
+                        const linha = i === 0 ? "" : `border-top:1px solid ${LINHA};`;
+                        return `<tr><td style="padding:14px 20px;${linha}font-size:15px;line-height:1.4;color:${TEXTO_SUAVE};text-align:left;">${escapeHtml(l.rotulo)}</td><td align="right" style="padding:14px 20px;${linha}font-size:15px;line-height:1.4;font-weight:500;color:${TEXTO};text-align:right;">${escapeHtml(l.valor)}</td></tr>`;
+                      })
+                      .join("\n                    ")}
+                  </table>`;
+  const reciboHtml = recibo
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:32px 0 0;text-align:left;">
+                  <tr><td style="padding-top:24px;border-top:1px solid ${LINHA};font-family:${FONTE_DO_TITULO};font-size:24px;line-height:1.2;font-weight:700;color:${TEXTO};">${escapeHtml(recibo.titulo)}</td></tr>
+                  <tr><td style="padding-top:6px;font-size:14px;color:${TEXTO_SUAVE};">${escapeHtml(recibo.numero)}</td></tr>
+                  <tr><td style="padding-top:20px;font-size:15px;line-height:1.5;color:${TEXTO};">
+                    <div style="font-weight:500;">${escapeHtml(recibo.escola[0] ?? "")}</div>
+                    ${recibo.escola
+                      .slice(1)
+                      .map((l) => `<div style="font-size:14px;color:${TEXTO_SUAVE};">${escapeHtml(l)}</div>`)
+                      .join("\n                    ")}
+                  </td></tr>
+                  <tr><td style="padding-top:24px;font-size:16px;line-height:1.4;font-weight:500;color:${TEXTO};">${escapeHtml(recibo.item)}${recibo.periodo ? `<div style="font-size:14px;font-weight:400;color:${TEXTO_SUAVE};">${escapeHtml(recibo.periodo)}</div>` : ""}</td></tr>
+                  <tr><td>${caixa(recibo.valores)}</td></tr>
+                  <tr><td style="padding-top:12px;">${caixa(recibo.pagamento)}</td></tr>
+                  <tr><td style="padding-top:20px;font-size:13px;line-height:1.5;color:${TEXTO_SUAVE};">${escapeHtml(recibo.nota)}</td></tr>
+                </table>`
+    : "";
   const botaoHtml = botao
     ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:24px auto 0;">
                   <tr>
@@ -124,6 +165,7 @@ export function montarEmail(mensagem: MensagemDeEmail, textos: Pick<Dict["app"][
                 </table>
                 ${titulo}
                 ${paragrafos}
+                ${reciboHtml}
                 ${botaoHtml}
                 ${depoisDoBotao}
             </td>
@@ -150,6 +192,7 @@ export function montarEmail(mensagem: MensagemDeEmail, textos: Pick<Dict["app"][
       textos.topo,
       ...(mensagem.titulo ? [mensagem.titulo] : []),
       ...mensagem.paragrafos,
+      ...(recibo ? [[recibo.titulo, recibo.numero, ...recibo.escola, recibo.item, ...(recibo.periodo ? [recibo.periodo] : []), ...[...recibo.valores, ...recibo.pagamento].map((l) => `${l.rotulo}: ${l.valor}`), recibo.nota].join("\n")] : []),
       ...(botao ? [`${botao.texto}: ${botao.endereco}`] : []),
       ...depoisDoBotaoConferido.map((item) => (typeof item === "string" ? item : `${item.link}: ${item.endereco}`)),
       "—",

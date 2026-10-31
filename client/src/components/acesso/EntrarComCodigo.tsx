@@ -5,7 +5,7 @@ import { useIrPara } from "@/lib/versao";
 import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { VALIDADE_DO_CODIGO_EM_MINUTOS } from "@jilson/core";
-import { signIn } from "@/lib/auth-client";
+import { signIn, useSession } from "@/lib/auth-client";
 import { pedirCodigo } from "@/lib/api";
 import { CODIGO_DE_6_NUMEROS, falhaAoGastarCodigo, falhaAoPedirCodigo, useDestinoDepoisDeEntrar, type FalhaDoCodigo } from "@/lib/acesso-por-codigo";
 import { useT } from "@/lib/language";
@@ -28,6 +28,7 @@ export function EntrarComCodigo({ email, aoVoltar }: Props) {
   const irPara = useIrPara();
   const destino = useDestinoDepoisDeEntrar();
   const queryClient = useQueryClient();
+  const { refetch: recarregarSessao } = useSession();
   const [falha, setFalha] = useState<FalhaDoCodigo | null>(null);
   const [outro, setOutro] = useState<"enviando" | "enviado" | "limite" | "falha" | null>(null);
   const {
@@ -52,6 +53,10 @@ export function EntrarComCodigo({ email, aoVoltar }: Props) {
     }
     // Quem entra começa do zero (o mesmo da senha — decisão do operador, 11/10/2026).
     queryClient.clear();
+    // A SESSÃO PRONTA ANTES DE SEGUIR (achado de 31/10/2026, provado no app local): sem esperar, a tela protegida do
+    // destino ainda não via a sessão, mandava de volta à tela de entrar SEM o destino, e a pessoa caía no Início — o link
+    // "Trocar cartão" dos e-mails e o do recibo levavam ao Início. Se recarregar falhar, segue assim mesmo.
+    await recarregarSessao().catch(() => undefined);
     irPara(destino, { substituir: true });
   }
 

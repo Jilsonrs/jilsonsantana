@@ -20,7 +20,8 @@ vi.mock("../lib/email.js", async (importOriginal) => ({
 }));
 
 import { prisma } from "../lib/prisma.js";
-import { caminhoDoRecibo, linhasDoRecibo, mandarReciboDoPagamento, pagamentoDaConfirmacao } from "../lib/recibo-por-email.js";
+import { caminhoDoRecibo, mandarReciboDoPagamento, pagamentoDaConfirmacao, reciboDoEmail } from "../lib/recibo-por-email.js";
+import { montarEmail } from "../views/email.js";
 import { montarAvisoDaCobranca } from "../views/email-da-cobranca.js";
 import { SubscriptionEmailKind } from "../lib/prisma.js";
 
@@ -57,18 +58,43 @@ afterAll(async () => {
 });
 
 describe("o recibo no e-mail", () => {
-  it("as linhas: o número e a data, a escola, o plano e o período, o preço, o desconto, o total, a forma e as dúvidas — sem nome nem CPF", () => {
-    expect(linhasDoRecibo(recibo, pt.app.faturamento).map(sem)).toEqual([
-      "Recibo — Nº 81DD-3FD1-33E6-F9FB · 31/10/2026",
-      "67.633.954 JILSON RODRIGUES DE SANTANA · CNPJ 67.633.954/0001-02 · jilsonsantana.com",
-      "Assinatura Mensal — 31/10/2026 a 30/11/2026",
-      "Preço: R$ 99,90",
-      "Desconto (BLACK50): −R$ 49,95",
-      "Total pago: R$ 49,95",
-      "Forma de pagamento: Cartão Visa final 4242",
-      "Dúvidas sobre este recibo? Escreva para suporte@jilsonsantana.com.",
-    ]);
-    expect(caminhoDoRecibo(recibo)).toBe("/aluno/conta/faturamento/recibo/81dd3fd133e6f9fb");
+  it("o bloco do recibo: o número e a data, a escola, o plano e o período, o preço, o desconto, o total, a forma e as dúvidas — sem nome nem CPF", () => {
+    const bloco = reciboDoEmail(recibo, pt.app.faturamento);
+    const pares = (linhas: { rotulo: string; valor: string }[]) => linhas.map((l) => [l.rotulo, sem(l.valor)]);
+    expect({ ...bloco, valores: pares(bloco.valores), pagamento: pares(bloco.pagamento) }).toEqual({
+      titulo: "Recibo",
+      numero: "Nº 81DD-3FD1-33E6-F9FB · 31/10/2026",
+      escola: ["67.633.954 JILSON RODRIGUES DE SANTANA", "CNPJ 67.633.954/0001-02", "jilsonsantana.com"],
+      item: "Assinatura Mensal",
+      periodo: "31/10/2026 a 30/11/2026",
+      // As duas caixas da tela (`ReciboPage`): os valores, e a forma com a situação.
+      valores: [
+        ["Preço", "R$ 99,90"],
+        ["Desconto (BLACK50)", "−R$ 49,95"],
+        ["Total pago", "R$ 49,95"],
+      ],
+      pagamento: [
+        ["Forma de pagamento", "Cartão Visa final 4242"],
+        ["Situação", "Paga"],
+      ],
+      nota: "Dúvidas sobre este recibo? Escreva para suporte@jilsonsantana.com.",
+    });
+    expect(caminhoDoRecibo(recibo)).toBe("/login?depois=recibo&recibo=81dd3fd133e6f9fb");
+  });
+
+  it("o modelo desenha o bloco (escapado) e o põe também na versão de texto puro", () => {
+    const bloco = { ...reciboDoEmail(recibo, pt.app.faturamento), item: "<b>Assinatura</b>" };
+    const { html, texto } = montarEmail({ assunto: "a", paragrafos: ["p"], recibo: bloco }, pt.app.email);
+    expect(html).toContain("&lt;b&gt;Assinatura&lt;/b&gt;");
+    expect(html).not.toContain("<b>Assinatura</b>");
+    expect(html).toContain("Desconto (BLACK50)");
+    // As duas caixas da tela: a dos valores e a da forma com a situação.
+    expect(html).toContain("Cartão Visa final 4242");
+    expect(html).toContain("Situação");
+    expect(html).toContain("31/10/2026 a 30/11/2026");
+    expect(sem(texto)).toContain("Desconto (BLACK50): −R$ 49,95");
+    expect(sem(texto)).toContain("Situação: Paga");
+    expect(texto).toContain("Nº 81DD-3FD1-33E6-F9FB · 31/10/2026");
   });
 
   it("o pagamento da confirmação: o Pix de que a pré-paga nasceu, senão o da última fatura paga", () => {
@@ -85,9 +111,11 @@ describe("o recibo no e-mail", () => {
       const pedido = enviarEmail.mock.calls[0]?.[0];
       expect([pedido?.para, pedido?.tipo, pedido?.chave]).toEqual([`${conta}@teste.local`, "pagamento-recebido", "pagamento-recebido/81DD-3FD1-33E6-F9FB"]);
       expect(pedido?.mensagem.assunto).toBe("Recebemos seu pagamento");
-      expect(pedido?.mensagem.paragrafos.map(sem)).toEqual(["Recebemos o pagamento da sua assinatura. O recibo está aqui embaixo.", ...linhasDoRecibo(recibo, pt.app.faturamento).map(sem)]);
+      expect(pedido?.mensagem.paragrafos).toEqual(["Recebemos o pagamento da sua assinatura. O recibo está aqui embaixo."]);
+      expect(pedido?.mensagem.recibo).toEqual(reciboDoEmail(recibo, pt.app.faturamento));
       expect(pedido?.mensagem.botao?.texto).toBe("Ver o recibo para imprimir");
-      expect(new URL(pedido?.mensagem.botao?.endereco ?? "http://x/").pathname).toBe("/aluno/conta/faturamento/recibo/81dd3fd133e6f9fb");
+      const botao = new URL(pedido?.mensagem.botao?.endereco ?? "http://x/");
+      expect(botao.pathname + botao.search).toBe("/login?depois=recibo&recibo=81dd3fd133e6f9fb");
     }
     expect(reciboDoPagamento).toHaveBeenCalledWith(conta, "pi_renovacao");
   });
@@ -114,9 +142,10 @@ describe("o recibo no e-mail", () => {
   });
 
   it("a confirmação leva o recibo embaixo do texto, e o link para imprimir depois do botão", () => {
-    const linhas = linhasDoRecibo(recibo, pt.app.faturamento);
-    const mensagem = montarAvisoDaCobranca({ tipo: SubscriptionEmailKind.CONFIRMADA, referencia: "inicio", trancaEm: null }, { plano: "mensal", proximaTentativa: null, encerradaSemPagamento: false }, new Date(), pt.app.email, () => "https://www.jilsonsantana.com/x", false, { linhas, endereco: "https://www.jilsonsantana.com/recibo" });
-    expect(mensagem.paragrafos.slice(1)).toEqual(linhas);
+    const bloco = reciboDoEmail(recibo, pt.app.faturamento);
+    const mensagem = montarAvisoDaCobranca({ tipo: SubscriptionEmailKind.CONFIRMADA, referencia: "inicio", trancaEm: null }, { plano: "mensal", proximaTentativa: null, encerradaSemPagamento: false }, new Date(), pt.app.email, () => "https://www.jilsonsantana.com/x", false, { recibo: bloco, endereco: "https://www.jilsonsantana.com/recibo" });
+    expect(mensagem.paragrafos).toHaveLength(1);
+    expect(mensagem.recibo).toEqual(bloco);
     expect(mensagem.depoisDoBotao).toEqual([{ link: "Ver o recibo para imprimir", endereco: "https://www.jilsonsantana.com/recibo" }]);
   });
 });

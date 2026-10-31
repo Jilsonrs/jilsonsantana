@@ -5,6 +5,7 @@ import { pt } from "@jilson/core";
 import { LOGO_DO_EMAIL, montarEmail, type MensagemDeEmail } from "./views/email.js";
 import { montarAvisoDaCobranca, type EmailDevido } from "./views/email-da-cobranca.js";
 import { montarLembrete } from "./views/email-do-lembrete.js";
+import { reciboDoEmail } from "./views/recibo-no-email.js";
 
 // A PRÉVIA DO MODELO DE E-MAIL (etapa 4.7, passo 3) — para o operador e o parceiro de design
 // olharem o desenho sem mandar nada: `npm --workspace server run email:previa`, e abrir o arquivo
@@ -45,6 +46,12 @@ const trancaEm = new Date(falha.getTime() + 3 * DIA);
 const naFalha: EmailDevido = { tipo: "COBRANCA_FALHOU", referencia: falha.toISOString(), trancaEm };
 const noUltimoDia: EmailDevido = { tipo: "ANTES_DE_TRANCAR", referencia: falha.toISOString(), trancaEm };
 const fim: EmailDevido = { tipo: "CANCELADA", referencia: "fim", trancaEm: null };
+// O RECIBO DE EXEMPLO (4.7b, passo 6a): o mensal com o código BLACK50, como nas fotos.
+const reciboDeExemplo = reciboDoEmail(
+  { em: falha.toISOString(), centavos: 4995, moeda: "brl", forma: "cartao", cartao: { bandeira: "visa", final: "4242" }, situacao: "paga", devolvido: 0, numero: "81DD-3FD1-33E6-F9FB", plano: "mensal", periodo: { de: falha.toISOString(), ate: new Date(falha.getTime() + 30 * DIA).toISOString() }, detalhe: { preco: 9990, descontos: [{ codigo: "BLACK50", centavos: 4995 }], credito: 0 } },
+  pt.app.faturamento,
+);
+const comRecibo = { recibo: reciboDeExemplo, endereco: site("/aluno/conta/faturamento/recibo/81dd3fd133e6f9fb") };
 const exemplos: Array<[string, MensagemDeEmail]> = [
   // Com o Pix no ar (4.9b, E14): a frase do Pix depois do botão.
   ["previa-cobranca-falhou.html", montarAvisoDaCobranca(naFalha, { proximaTentativa: new Date(falha.getTime() + 2 * DIA) }, falha, pt.app.email, site, true)],
@@ -53,7 +60,9 @@ const exemplos: Array<[string, MensagemDeEmail]> = [
   ["previa-cancelada.html", montarAvisoDaCobranca(fim, {}, falha, pt.app.email, site)],
   ["previa-prepago-terminando.html", montarAvisoDaCobranca({ tipo: "PREPAGO_TERMINANDO", referencia: trancaEm.toISOString(), trancaEm }, {}, falha, pt.app.email, site)],
   // A confirmação de quem assinou (4.9b, E18): no cartão, mensal e anual; no Pix, com o fim do acesso.
-  ["previa-confirmada-mensal.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: null }, { plano: "mensal" }, falha, pt.app.email, site)],
+  ["previa-confirmada-mensal.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: null }, { plano: "mensal" }, falha, pt.app.email, site, false, comRecibo)],
+  // O recibo por e-mail na renovação e na troca de plano (4.7b, passo 6a).
+  ["previa-pagamento-recebido.html", { assunto: pt.app.email.pagamentoRecebido.assunto, titulo: pt.app.email.pagamentoRecebido.titulo, paragrafos: [pt.app.email.pagamentoRecebido.texto], recibo: reciboDeExemplo, botao: { texto: pt.app.email.pagamentoRecebido.botao, endereco: comRecibo.endereco } }],
   ["previa-confirmada-anual.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: null }, { plano: "anual" }, falha, pt.app.email, site)],
   ["previa-confirmada-pix.html", montarAvisoDaCobranca({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: new Date(falha.getTime() + 30 * DIA) }, { plano: "mensal" }, falha, pt.app.email, site)],
   // O lembrete de quem não terminou de assinar (etapa 4.7, passo 9): quem não marcou a caixa de novidades (o link de

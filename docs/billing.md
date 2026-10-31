@@ -2068,7 +2068,9 @@ lá, vale o texto de hoje):
   fiscal (Impostos).*
 - **O recibo por e-mail, em todo pagamento** *(decisões do operador, 31/10/2026)*: ao assinar, dentro da confirmação (ou
   das boas-vindas), embaixo do texto — um e-mail só; na renovação e na troca de plano, "Recebemos seu pagamento". O
-  número do recibo é único por recibo (o código inteiro, `81DD-3FD1-33E6-F9FB`). — `lib/recibo-por-email.ts`.
+  número do recibo é único por recibo (o código inteiro, `81DD-3FD1-33E6-F9FB`). — `lib/recibo-por-email.ts`. O link
+  "Ver o recibo" passa pela tela de entrar (`/login?depois=recibo&recibo=<chave>`): logado, vai direto; deslogado, entra
+  e cai no recibo.
 - **Os códigos promocionais pelo admin** (P142), com as regras de *Códigos promocionais* no formulário. — passo 6d, no
   código desde 31/10/2026.
 - **O aviso ao operador** (P137): na hora, só o urgente (quem pagou e está sem acesso; a contestação); o resto num

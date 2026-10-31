@@ -356,6 +356,7 @@ describe("LoginPage — para onde ir depois de entrar", () => {
         { path: "/inicio", element: <div>HOME DO ALUNO</div> },
         { path: "/aluno/assinar", element: <div>TELA DE ASSINAR</div> },
         { path: "/aluno/conta/faturamento/cartao", element: <div>TELA DE TROCAR O CARTÃO</div> },
+        { path: "/aluno/conta/faturamento/recibo/81dd3fd133e6f9fb", element: <div>O RECIBO 81DD</div> },
       ],
     });
   }
@@ -386,6 +387,43 @@ describe("LoginPage — para onde ir depois de entrar", () => {
     renderComDestinos("/login?depois=cartao");
     expect(await screen.findByText("TELA DE TROCAR O CARTÃO")).toBeTruthy();
   });
+
+  // A SESSÃO PRONTA ANTES DE SEGUIR (achado de 31/10/2026, provado no app local): sem esperar a sessão recarregar, a tela
+  // protegida do destino não a via, mandava de volta à tela de entrar sem o destino, e a pessoa caía no Início.
+  it("depois de entrar, só segue para o destino quando a sessão recarregou", async () => {
+    let soltar: () => void = () => {};
+    refetch.mockReturnValue(new Promise<void>((ok) => (soltar = ok)));
+    renderComDestinos("/login?depois=cartao");
+    preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });
+    enviar();
+    await vi.waitFor(() => expect(refetch).toHaveBeenCalled());
+    expect(screen.queryByText("TELA DE TROCAR O CARTÃO")).toBeNull();
+    soltar();
+    expect(await screen.findByText("TELA DE TROCAR O CARTÃO")).toBeTruthy();
+  });
+
+  // O LINK DO RECIBO NOS E-MAILS (4.7b, passo 6a): `/login?depois=recibo&recibo=<chave>` — a chave conferida.
+  it("com ?depois=recibo e a chave: depois de entrar, o recibo dela; já logado, direto", async () => {
+    renderComDestinos("/login?depois=recibo&recibo=81dd3fd133e6f9fb");
+    preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });
+    enviar();
+    expect(await screen.findByText("O RECIBO 81DD")).toBeTruthy();
+  });
+
+  it("já logado e com ?depois=recibo e a chave: direto para o recibo", async () => {
+    useSession.mockReturnValue({ data: { user: { id: "u1" } }, isPending: false, refetch });
+    renderComDestinos("/login?depois=recibo&recibo=81dd3fd133e6f9fb");
+    expect(await screen.findByText("O RECIBO 81DD")).toBeTruthy();
+  });
+
+  for (const recibo of ["", "81DD3FD133E6F9FB", "81dd3fd1", "../../admin", "https://outro-site.com", "81dd3fd133e6f9fb/../x"]) {
+    it(`com ?depois=recibo e a chave "${recibo}": o Início — a chave fora do formato não leva a lugar nenhum`, async () => {
+      renderComDestinos(`/login?depois=recibo&recibo=${encodeURIComponent(recibo)}`);
+      preencher({ email: "aluno@exemplo.com", senha: "minhasenha" });
+      enviar();
+      expect(await screen.findByText("HOME DO ALUNO")).toBeTruthy();
+    });
+  }
 
   for (const depois of ["https://outro-site.com", "//outro-site.com", "/admin", "assinar2", "", "constructor", "__proto__", "toString"]) {
     it(`com ?depois=${depois || "(vazio)"}: o Início — nunca outro destino`, async () => {

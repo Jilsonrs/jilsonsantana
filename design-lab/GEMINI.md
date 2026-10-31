@@ -720,6 +720,14 @@ exceto o item 4, que é página pública.
        **Ver recibo** abre (`client/src/pages/aluno/ReciboPage.tsx`): uma página **fora do menu do app**, de propósito,
        para imprimir só o recibo — o botão **Imprimir ou salvar em PDF** some na impressão (`print:hidden`, não tirar).
        Vale conferir a impressão (Cmd+P) além da tela.
+       **E o recibo nos E-MAILS** *(pedido do operador, 31/10/2026: "precisa do toque do Antigravity para dar a
+       formatação final")*: o bloco do recibo no modelo de e-mail (`server/src/views/email.ts`, o `reciboHtml` — o
+       recibo vem pronto em `mensagem.recibo`: título, número, a escola, o plano e o período, as linhas de rótulo e
+       valor, e a nota das dúvidas). Ele aparece em três e-mails: "Recebemos seu pagamento", a confirmação de quem
+       assina e as boas-vindas. Para ver: `npm --workspace server run email:previa` e abrir
+       `design-lab/email/previa-pagamento-recebido.html` e `previa-confirmada-mensal.html`. As regras de e-mail da
+       §2 valem (tabela, estilo escrito no elemento, sem classe); a versão de **texto puro** do bloco não muda. Para
+       ver num e-mail de verdade, peça ao Claude um envio de prova.
     4. Não mudar: textos, o que é botão ou link e para onde leva, `aria-*` e `role` (os avisos de erro são
        `role="alert"`, a resposta de cada ação é `role="status"`), as confirmações antes de cada ação que mexe em
        dinheiro ou acesso (elas dizem o efeito — **nunca tirar uma**), a ordem dos campos. **O "Ver recibo" abre numa aba

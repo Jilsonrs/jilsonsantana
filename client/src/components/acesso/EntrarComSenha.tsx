@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import { useIrPara } from "@/lib/versao";
 import { useQueryClient } from "@tanstack/react-query";
 import { loginSchema, type LoginInput } from "@jilson/core";
-import { signIn } from "@/lib/auth-client";
+import { signIn, useSession } from "@/lib/auth-client";
 import { pedirCodigo } from "@/lib/api";
 import { falhaAoPedirCodigo, useDestinoDepoisDeEntrar } from "@/lib/acesso-por-codigo";
 import { useT } from "@/lib/language";
@@ -26,6 +26,7 @@ export function EntrarComSenha({ emailInicial, aoEnviarCodigo }: Props) {
   const destino = useDestinoDepoisDeEntrar();
   const t = useT();
   const queryClient = useQueryClient();
+  const { refetch: recarregarSessao } = useSession();
   // O TIPO da falha, não a frase: a frase sai do dicionário.
   const [formError, setFormError] = useState<"credenciais" | "falha" | null>(null);
   const [pedido, setPedido] = useState<"enviando" | "limite" | "falha" | null>(null);
@@ -68,6 +69,10 @@ export function EntrarComSenha({ emailInicial, aoEnviarCodigo }: Props) {
     // passa por ele — sem isto, quem entrasse em seguida na mesma aba veria por instantes o que
     // era da conta anterior.
     queryClient.clear();
+    // A SESSÃO PRONTA ANTES DE SEGUIR (achado de 31/10/2026, provado no app local): sem esperar, a tela protegida do
+    // destino ainda não via a sessão, mandava de volta à tela de entrar SEM o destino, e a pessoa caía no Início — o link
+    // "Trocar cartão" dos e-mails e o do recibo levavam ao Início. Se recarregar falhar, segue assim mesmo.
+    await recarregarSessao().catch(() => undefined);
     irPara(destino, { substituir: true });
   }
 

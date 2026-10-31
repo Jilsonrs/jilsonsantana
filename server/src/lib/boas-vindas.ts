@@ -71,7 +71,7 @@ export async function mandarBoasVindasDaAssinatura(assinaturaId: string, naStrip
       tipo: "boas-vindas",
       referencia: `conta:${conta.id} ficha:${ficha.id}`,
       chave: `boas-vindas/${conta.id}`,
-      mensagem: { assunto: t.assunto, titulo, paragrafos: [t.confirmada, t.comoEntrar, ...(recibo?.linhas ?? [])], ...(entrar ? { botao: { texto: t.botao, endereco: entrar } } : {}), ...(recibo?.endereco ? { depoisDoBotao: [{ link: t.verRecibo, endereco: recibo.endereco }] } : {}) },
+      mensagem: { assunto: t.assunto, titulo, paragrafos: [t.confirmada, t.comoEntrar], ...(recibo ? { recibo: recibo.recibo } : {}), ...(entrar ? { botao: { texto: t.botao, endereco: entrar } } : {}), ...(recibo?.endereco ? { depoisDoBotao: [{ link: t.verRecibo, endereco: recibo.endereco }] } : {}) },
     });
     // Falhou: a marca volta, e o próximo aviso da Stripe tenta de novo. "Duplicado" é o outro envio,
     // com a mesma chave, saindo — a marca fica.

@@ -6894,7 +6894,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                 tela, sem o nome de quem assina e sem CPF. Sem o recibo (a Stripe não respondeu), a confirmação sai sem ele.
                 Os nomes das bandeiras foram para o `core` (`NOME_DA_BANDEIRA`). Textos: rascunho do agente. Testes:
                 `recibo-por-email.test.ts` (novo, 6) e o recibo (número). **Mutação: 8 de 8 reprovaram.**
-          - [ ] **Fotos e os e-mails de verdade** no Yahoo, para ele aprovar.
+          - [x] **Os e-mails de verdade** — os três ("Recebemos seu pagamento", a confirmação e as boas-vindas, com o
+                recibo embaixo) chegaram ao Yahoo dele em 31/10/2026; ele pediu **o acabamento do Antigravity** (GEMINI.md,
+                item 39). Para o Antigravity conseguir formatar, o recibo virou um **bloco próprio no modelo de e-mail**
+                (`recibo` na mensagem — rótulo e valor em linhas; na versão desenhada e na de texto puro), em vez de
+                parágrafos; a montagem só de texto mora em `views/recibo-no-email.ts` (a prévia `email:previa` a usa).
+                **E com a MESMA arrumação da tela** *(pedido do operador, 31/10/2026: "porque você não aplica a mesma
+                formatação do recibo que abre na tela do aluno no corpo do e-mail")*: o título e o número, a escola, o
+                plano e o período, a caixa dos valores e a da forma com a situação, e as dúvidas — sem o nome de quem
+                assina (no e-mail, o nome fica de fora). Testes: o desenho (+3). **Mutação: 4 de 4 reprovaram.**
+          - [x] **Os links dos e-mails — achado da prova, corrigido com a ordem dele (31/10/2026):** quem NÃO estava logado
+                e clicava em "Ver o recibo" ou em "Trocar cartão" (o e-mail da cobrança que falhou, já no ar) entrava e
+                caía no Início. A causa: depois de entrar, a tela protegida do destino ainda não via a sessão e devolvia à
+                tela de entrar sem o destino. Agora a tela de entrar espera a sessão recarregar (`refetch` do Better Auth —
+                Docs check (context7): Better Auth → `/better-auth/better-auth` → `useSession` devolve `refetch(): Promise`
+                e `isRefetching`) antes de seguir, na senha e no código. E o recibo entrou no "entrar e seguir", com a
+                lista ainda fechada: `/login?depois=recibo&recibo=<chave>`, a chave conferida (16 letras e números).
+                **Provado no app local** (conta descartável, cartão de teste): deslogado, o link do recibo levou ao recibo
+                `B65D-A447-12C7-ECDE` e o do cartão à tela Trocar cartão; antes da correção, os dois caíam no Início.
+                Testes: a tela de entrar (+9). **Mutação: 3 de 3 reprovaram.**
+          - [ ] **O acabamento do Antigravity** (item 39: as telas, o recibo e os e-mails do recibo).
           - [ ] **Publicar o bloco 6** (com a ordem dele).
       - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA

@@ -2,7 +2,7 @@ import { entrarPara, type DestinoDepoisDeEntrar, type Dict } from "@jilson/core"
 import { enderecoDoSite } from "../lib/endereco-do-site.js";
 import type { SubscriptionEmailKind } from "../lib/prisma.js";
 import type { AssinaturaNaStripe } from "../lib/stripe.js";
-import type { MensagemDeEmail } from "./email.js";
+import type { MensagemDeEmail, ReciboDoEmail } from "./email.js";
 
 // OS E-MAILS DA COBRANÇA, MONTADOS (Fase 4, etapa 4.7, passo 7): o texto de cada um, a partir do
 // dicionário (`app.email`). Sem banco e sem rede — a regra de QUANDO cada um sai mora em
@@ -35,7 +35,7 @@ export function montarAvisoDaCobranca(
   /** O Pix está no ar: os dois da cobrança atrasada dizem que dá para pagar com ele (4.9b, E14). */
   comPix: boolean = false,
   /** O recibo do pagamento, embaixo da confirmação (4.7b, passo 6a — decisão do operador, 31/10/2026). */
-  recibo: { linhas: string[]; endereco: string | null } | null = null,
+  recibo: { recibo: ReciboDoEmail; endereco: string | null } | null = null,
 ): MensagemDeEmail {
   const botao = (texto: string, destino: DestinoDepoisDeEntrar): Pick<MensagemDeEmail, "botao"> => {
     const endereco = enderecoDe(entrarPara(destino));
@@ -57,7 +57,7 @@ export function montarAvisoDaCobranca(
     const anual = naStripe.plano === "anual";
     const texto = devido.trancaEm ? t.pix.replace("{data}", ate) : t.cartao.replace("{plano}", anual ? t.anual : t.mensal).replace("{quando}", anual ? t.todoAno : t.todoMes);
     const inicio = enderecoDe("/inicio");
-    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [texto, ...(recibo?.linhas ?? [])], ...(inicio ? { botao: { texto: t.botao, endereco: inicio } } : {}), ...(recibo?.endereco ? { depoisDoBotao: [{ link: t.verRecibo, endereco: recibo.endereco }] } : {}) };
+    return { assunto: t.assunto, titulo: t.titulo, paragrafos: [texto], ...(recibo ? { recibo: recibo.recibo } : {}), ...(inicio ? { botao: { texto: t.botao, endereco: inicio } } : {}), ...(recibo?.endereco ? { depoisDoBotao: [{ link: t.verRecibo, endereco: recibo.endereco }] } : {}) };
   }
   if (devido.tipo === "PREPAGO_TERMINANDO") {
     // SEM botão: pagar de novo é só DEPOIS de acabar (decisão do operador, etapa 4.9) — o botão de reativar vem no "terminou".

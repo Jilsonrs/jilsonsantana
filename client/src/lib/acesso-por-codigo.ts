@@ -1,5 +1,5 @@
 import { useLocation } from "react-router";
-import { DESTINOS_DEPOIS_DE_ENTRAR as DESTINOS, entrarPara } from "@jilson/core";
+import { CHAVE_DO_RECIBO, DESTINOS_DEPOIS_DE_ENTRAR as DESTINOS, entrarPara, telaDoRecibo } from "@jilson/core";
 import { codigoDaRecusa } from "@/lib/faturamento";
 
 // O CÓDIGO NO E-MAIL nas telas de acesso (etapa 4.7, passo 5): as regras que as telas dividem.
@@ -23,7 +23,13 @@ export const ENTRAR_PARA_ASSINAR = entrarPara("assinar");
 
 /** Para onde ir depois de entrar, pela busca do endereço da tela de entrar. Função pura. */
 export function destinoDepoisDeEntrar(busca: string): string {
-  const nome = new URLSearchParams(busca).get("depois");
+  const parametros = new URLSearchParams(busca);
+  const nome = parametros.get("depois");
+  // O recibo dos e-mails (4.7b, passo 6a): o nome e a chave, conferida — sem ela no formato, o Início.
+  if (nome === "recibo") {
+    const chave = parametros.get("recibo") ?? "";
+    return CHAVE_DO_RECIBO.test(chave) ? telaDoRecibo(chave) : POS_LOGIN;
+  }
   return (nome !== null && DESTINOS_DEPOIS_DE_ENTRAR.get(nome)) || POS_LOGIN;
 }
 

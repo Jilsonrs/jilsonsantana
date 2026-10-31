@@ -165,6 +165,22 @@ export function entrarPara(destino: DestinoDepoisDeEntrar): string {
   return `/login?depois=${destino}`;
 }
 
+/** A chave de um recibo da escola: 16 letras e números (o começo do resumo do pagamento — `server/src/lib/minhas-cobrancas.ts`). */
+export const CHAVE_DO_RECIBO = /^[0-9a-f]{16}$/;
+
+/** A tela do recibo da escola (4.7b, passo 6a). */
+export function telaDoRecibo(chave: string): string {
+  return `/aluno/conta/faturamento/recibo/${chave}`;
+}
+
+/**
+ * ENTRAR E SEGUIR PARA UM RECIBO (o link dos e-mails do recibo — 4.7b, passo 6a): o nome `recibo` e a chave, que a tela de
+ * entrar confere (`CHAVE_DO_RECIBO`) antes de seguir — a lista continua fechada: nada de endereço no link.
+ */
+export function entrarParaORecibo(chave: string): string {
+  return `/login?depois=recibo&recibo=${chave}`;
+}
+
 /** O cartão guardado, como a tela o mostra: NUNCA o número — a bandeira, os 4 últimos e a validade. */
 export type CartaoDaAssinatura = { bandeira: string; final: string; mes: number; ano: number };
 
