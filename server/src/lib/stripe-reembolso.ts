@@ -315,16 +315,19 @@ export async function lerCobranca(cobrancaId: string): Promise<CobrancaParaDevol
  * chave de repetição leva a cobrança, o que já tinha voltado e o valor: o clique duplo não devolve duas vezes, e a
  * segunda parte, depois da primeira, é outro pedido. A Stripe recusa devolver mais do que falta.
  */
-export async function devolverParte(cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }, agora: Date = new Date()): Promise<void> {
+export async function devolverParte(cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }, opcoes: { deNovoDo?: string; agora?: Date } = {}): Promise<string> {
   const metadata: Record<string, string> = { para: "painel", operador: dono.operador };
   if (dono.userId) metadata.userId = dono.userId;
   if (dono.assinaturaId) metadata.assinatura = dono.assinaturaId;
+  const janela = Math.floor((opcoes.agora ?? new Date()).getTime() / JANELA_DA_CHAVE);
+  // O "Devolver de novo" tem chave PRÓPRIA, do caso (conferência do revisor do bloco 4, 31/10/2026): com a chave da devolução
+  // de antes — o mesmo valor, o mesmo que já tinha voltado, a mesma janela —, a Stripe devolveria a resposta GUARDADA, a
+  // devolução que falhou, e nada voltaria.
+  const chave = opcoes.deNovoDo ? `painel-de-novo-${opcoes.deNovoDo}-${cobranca.devolvido}-${janela}` : `painel-devolucao-${cobranca.id}-${cobranca.devolvido}-${centavos}-${janela}`;
   try {
-    const devolucao = await stripe().refunds.create(
-      { charge: cobranca.id, amount: centavos, reason: "requested_by_customer", metadata },
-      { idempotencyKey: `painel-devolucao-${cobranca.id}-${cobranca.devolvido}-${centavos}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}` },
-    );
+    const devolucao = await stripe().refunds.create({ charge: cobranca.id, amount: centavos, reason: "requested_by_customer", metadata }, { idempotencyKey: chave });
     if (devolucao.status === "failed" || devolucao.status === "canceled") throw new Error(`[stripe] a devolução nasceu ${devolucao.status}`);
+    return devolucao.id;
   } catch (erro) {
     throw erroSemMensagem(erro, "a devolução da cobrança");
   }

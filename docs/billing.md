@@ -2096,7 +2096,10 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
    fora (não renova, não cobra cartão — a tela do aluno e os e-mails a tratam como a do Pix), e fica no registro quem
    liberou. Só para a conta sem acesso **e sem outro pagamento aberto** *(revisão de segurança do bloco 4, 31/10/2026)*:
    com uma assinatura que ainda não acabou (a atrasada) ou um Pix pago esperando, o painel recusa e diz o que resolver
-   antes — liberar por cima cobraria o mesmo período duas vezes; o cartão começado e o QR à espera morrem antes. **Até ela existir, não use o painel da Stripe para isso:** a assinatura criada lá no
+   antes — liberar por cima cobraria o mesmo período duas vezes; o cartão começado e o QR à espera morrem antes.
+   **A liberação feita por engano se desfaz no painel** *(decisão do operador, 31/10/2026, P149: "Sim, com confirmação" —
+   4.7b, passo 6e)*: "Encerrar agora", na ficha, só na assinatura paga por fora — o acesso acaba na hora; o dinheiro recebido
+   por fora você devolve por fora. **Até ela existir, não use o painel da Stripe para isso:** a assinatura criada lá no
    cliente que o site criou libera o acesso quando a fatura fica paga, mas "enviar fatura por e-mail" libera
    **antes** de pagar, o link de pagamento avulso não libera nada, e quem nem chegou ao campo de pagamento não
    tem cliente — nunca foi testado.

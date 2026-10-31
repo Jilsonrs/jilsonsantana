@@ -44,8 +44,8 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: DesfechoDoAv
     const falhou = aviso.devolucaoQueFalhou ?? null;
     console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução${falhou ? ` de ${falhou.centavos} centavos` : ""} do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; devolver de novo em Precisa de você`);
     // Um caso por DEVOLUÇÃO, com a cobrança e o valor dela (achado P1 da revisão do bloco 4, 31/10/2026): o "Devolver de novo"
-    // devolve exatamente o que falhou.
-    await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: falhou ? `devolucao:${falhou.id}` : `pagamento:${aviso.pagamento ?? aviso.id}`, urgente: true, assinatura: aviso.assinatura, objeto: falhou?.cobranca ?? aviso.pagamento ?? null, centavos: falhou?.centavos ?? null, detalhe: "uma devolução falhou: o dinheiro não voltou ao aluno" });
+    // devolve exatamente o que falhou. Sem a cobrança no aviso, o caso de antes (`pagamento:`), que manda para a ficha.
+    await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: falhou?.cobranca ? `devolucao:${falhou.id}` : `pagamento:${aviso.pagamento ?? aviso.id}`, urgente: true, assinatura: aviso.assinatura, objeto: falhou?.cobranca ?? aviso.pagamento ?? null, centavos: falhou?.centavos ?? null, detalhe: "uma devolução falhou: o dinheiro não voltou ao aluno" });
   }
   // O PIX PAGO cuja assinatura terminou SEM ACESSO (achado 5 do passo 6 da etapa 4.9, 29/10/2026): o
   // dinheiro entrou e a assinatura não abre — pagante trancado, que hoje só o aluno descobriria. Uma vez

@@ -176,6 +176,15 @@ async function encerrarSeIncompleta(id: string): Promise<void> {
   }
 }
 
+/** QUEM LIBEROU a assinatura paga por fora: a conta do operador na marca dela (`METADADO_PAGO_POR_FORA`), lida agora — ou nada. */
+export async function operadorDaPagaPorFora(assinaturaId: string): Promise<string | null> {
+  try {
+    return (await stripe().subscriptions.retrieve(assinaturaId)).metadata[METADADO_PAGO_POR_FORA] || null;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura da assinatura paga por fora");
+  }
+}
+
 /** O que a fatura da pré-paga ficou: `paid`, ou o status que a Stripe diz quando não dá para pagar por fora. */
 export type FaturaDaPrePaga = { fatura: string | null; status: string };
 

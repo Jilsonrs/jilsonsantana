@@ -6694,7 +6694,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               **Em produção (só leitura, branch `production`):** nenhuma tabela sem RLS; a migration
               `20261031230000_pago_por_fora` aplicada (a coluna `paidOutOfBand` existe); nenhum caso ainda. **A conferência
               do revisor (31/10/2026, `16f1df1` e `c01f55d`): os seis P1 fechados, nenhum P0 nem P1 novo**; um P2 e cinco P3
-              novos, a fechar com teste e mutação no `dev` (sobem com a próxima publicação — o fechamento do bloco 5).
+              novos, fechados com teste e mutação no `dev` (12 de 12 reprovaram; sobem com a próxima publicação — o
+              fechamento do bloco 5): (P2) o "Devolver de novo" ganhou chave de repetição PRÓPRIA, do caso — com a da devolução
+              de antes, a Stripe podia devolver a resposta guardada, a que falhou, e nada voltaria (e a mesma devolução de
+              volta é falha); (P3) "Devolver" na ficha recusa o Pix NOSSO que ainda não virou assinatura (409
+              `PixSemAssinatura` — é pelo caso dele, com a trava do Pix); (P3) o aceite do Pix solta a pré-paga morta pela
+              sincronia, com a trava dela (o espelho tem um escritor); (P3) a liberação paga por fora confere TODOS os clientes
+              antes de cancelar qualquer pagamento aberto; (P3) o registro recuperado sai em nome de quem liberou (a marca da
+              Stripe) e com a trava da conta, sem linha em dobro; (P3) o "Aceitar a perda" trata o clique duplo como 409, só
+              fecha o caso com a contestação "perdida", e o registro leva o valor; (P3) a devolução que falhou sem a cobrança
+              no aviso abre o caso de antes (`pagamento:`), que manda para a ficha.
               **A revisão de segurança (31/10/2026, só o que mudou — `933e0ca`, `7c53789`,
               `d2cc903`, `fe97314`): nenhum P0; seis P1, corrigidos antes de publicar, e sete P2** (seis fechados com
               teste e mutação, sem nova rodada; o sétimo é tela nova e foi ao operador — P149). Os P1: (1) **"Aceitar este
@@ -6764,6 +6773,11 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               depois, pelo JilsonAI)*. O número não se reaproveita.
         - [ ] **6c — Os números do mês** (P143).
         - [ ] **6d — Os códigos promocionais no admin** (P142).
+        - [ ] **6e — "Encerrar agora" na assinatura paga por fora** (P149 — decisão do operador, 31/10/2026: "Sim, com
+              confirmação"). Só na paga por fora (a liberação do 4d), na ficha: o acesso acaba na hora (`cancelarNaHora` pela
+              operação na assinatura), sem devolver nada pela Stripe — o dinheiro recebido por fora o operador devolve por fora
+              —, com a confirmação dizendo isso e a linha no registro. É o jeito de desfazer uma liberação feita na conta ou no
+              plano errado sem ir ao painel da Stripe.
         - [ ] **Fechamento do bloco 6:** a revisão de segurança, as fotos das telas do aluno, publicar (com a ordem dele).
       - [ ] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA

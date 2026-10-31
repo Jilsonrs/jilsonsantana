@@ -476,6 +476,24 @@ describe("o aviso da Stripe — o dinheiro devolvido", () => {
     }
   });
 
+  // A conferência do revisor do bloco 4: sem a cobrança no aviso, o "Devolver de novo" não teria o que reler — o caso é o de
+  // antes (`pagamento:`), que manda para a ficha.
+  it("a devolução que falhou SEM a cobrança no aviso: o caso é o do pagamento, que manda para a ficha", async () => {
+    assinaturaDoPagamento.mockReset().mockResolvedValue(null);
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const registro = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      const aviso = avisoDaDevolucao("refund.failed", "failed", "pi_sem_cobranca");
+      delete aviso.data.object.charge;
+      expect((await enviar(aviso)).status).toBe(200);
+      expect(await prisma.billingCase.findMany({ where: { kind: "DEVOLUCAO_FALHOU", key: "pagamento:pi_sem_cobranca" }, select: { amount: true, stripeObjectId: true } })).toEqual([{ amount: 9990, stripeObjectId: "pi_sem_cobranca" }]);
+      await prisma.billingCase.deleteMany({ where: { key: "pagamento:pi_sem_cobranca" } });
+    } finally {
+      erro.mockRestore();
+      registro.mockRestore();
+    }
+  });
+
   // Se o processamento falhar, o aviso não fica marcado e a Stripe entrega de novo: o alerta sai
   // nessa segunda vez, e não se perde.
   it("a devolução falhou e a Stripe não respondeu de quem é o pagamento: 500 — e o alerta sai na reentrega", async () => {

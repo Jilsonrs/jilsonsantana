@@ -27,7 +27,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 
 import { AssinaturaNaoEncontrada, buscarAssinatura } from "./stripe.js";
 import { cobrancaDoPagamento, faturaDevolvida, periodoDevolvido, pixDevolvido } from "./stripe-devolucao.js";
-import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorAvisoDeFraude, cancelarPorContestacao, chaveDaDevolucao, devolver, devolverPorAvisoDeFraude, encerrarParaOPix, idsDaMarca, juntarNaMarca, paraPedidoDeDevolucao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorAvisoDeFraude, cancelarPorContestacao, chaveDaDevolucao, devolver, devolverParte, devolverPorAvisoDeFraude, encerrarParaOPix, idsDaMarca, juntarNaMarca, paraPedidoDeDevolucao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
 
 const DONO = { userId: "u-1", assinaturaId: "sub_1" };
 const recusa = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
@@ -189,6 +189,22 @@ describe("cancelar a assinatura contestada", () => {
     await expect(cancelarPorContestacao("sub_1", "dp_2")).resolves.toBeUndefined();
     expect(erro.mock.calls.flat().join(" ")).toContain("a cobrança em aberto NÃO foi anulada");
     erro.mockRestore();
+  });
+});
+
+// A conferência do revisor do bloco 4: o "Devolver de novo" com a chave do caso — com a da devolução de antes, a Stripe
+// devolveria a resposta guardada (a que falhou), e nada voltaria.
+describe("devolver uma parte pelo painel", () => {
+  const cobranca = { id: "ch_1", cliente: "cus_1", pagamentoId: "pi_1", centavos: 9990, devolvido: 0, moeda: "brl", paga: true };
+  const dono = { userId: "u-1", assinaturaId: "sub_1", operador: "admin-1" };
+  const agora = new Date("2026-11-02T12:00:00Z");
+  const janela = Math.floor(agora.getTime() / (5 * 60 * 1000));
+
+  it("a chave: a da cobrança e do valor; a do 'de novo', a do caso — e devolve o id da devolução", async () => {
+    falsa.refunds.create.mockResolvedValue({ id: "re_9", status: "pending" });
+    expect(await devolverParte(cobranca, 2000, dono, { agora })).toBe("re_9");
+    expect(await devolverParte(cobranca, 2000, dono, { deNovoDo: "devolucao:re_1", agora })).toBe("re_9");
+    expect(falsa.refunds.create.mock.calls.map(([, opcoes]) => (opcoes as { idempotencyKey: string }).idempotencyKey)).toEqual([`painel-devolucao-ch_1-0-2000-${janela}`, `painel-de-novo-devolucao:re_1-0-${janela}`]);
   });
 });
 

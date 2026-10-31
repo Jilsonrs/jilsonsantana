@@ -3,7 +3,9 @@ import request from "supertest";
 
 // A CONTESTAÇÃO SEM O PAINEL DA STRIPE (etapa 4.7b, bloco 5). Só a rede da Stripe vira dublê; os casos e o registro rodam de
 // verdade. O que protege (passo 5a): "Aceitar a perda" só na contestação ABERTA, lida na Stripe agora (o inquérito se
-// resolve devolvendo; a decidida não muda); aceita, o caso fecha com quem fez; o caso traz os dois consertos.
+// resolve devolvendo; a decidida não muda); aceita, o caso fecha com quem fez — e o registro leva o valor perdido; o caso traz
+// os dois consertos. A conferência do revisor do bloco 4: o clique duplo (a outra aba fechou no meio) é 409, não 500; e o
+// que a Stripe devolve fora do "perdida" não fecha o caso.
 const statusDaContestacao = vi.fn<(id: string) => Promise<string | null>>();
 const aceitarContestacao = vi.fn<(id: string) => Promise<string>>();
 vi.mock("../lib/stripe-reembolso.js", async (importOriginal) => ({
@@ -54,7 +56,23 @@ describe("aceitar a perda (passo 5a)", () => {
     expect([res.status, res.body]).toEqual([200, { detalhe: "a escola aceitou a perda: o dinheiro fica com a pessoa" }]);
     expect(aceitarContestacao.mock.calls).toEqual([[contestacao]]);
     expect(await prisma.billingCase.findUniqueOrThrow({ where: { id } })).toMatchObject({ open: false, closedBy: "OPERADOR", closedByUserId: adminId });
-    expect(await prisma.billingLog.findFirst({ where: { action: "aceitar-contestacao", actorUserId: adminId }, orderBy: { id: "desc" } })).toMatchObject({ who: "OPERADOR", stripeSubscriptionId: `sub_${S}_contestada` });
+    expect(await prisma.billingLog.findFirst({ where: { action: "aceitar-contestacao", actorUserId: adminId }, orderBy: { id: "desc" } })).toMatchObject({ who: "OPERADOR", stripeSubscriptionId: `sub_${S}_contestada`, amount: 9990 });
+  });
+
+  it("o clique duplo: a outra aba fechou no meio (a Stripe recusa o segundo fechamento) — 409, e nada mais", async () => {
+    const { id } = await casoDe();
+    statusDaContestacao.mockResolvedValueOnce("needs_response").mockResolvedValueOnce("lost");
+    aceitarContestacao.mockRejectedValueOnce(new Error("[stripe] o aceite da contestação falhou: invalid_request_error, status 400"));
+    expect((await resolver(id, "aceitar-contestacao")).body).toEqual({ error: "ContestacaoNaoAberta" });
+  });
+
+  it("a Stripe devolve outra coisa que não 'perdida': o caso fica aberto, e é erro (o alerta avisa)", async () => {
+    const { id } = await casoDe();
+    aceitarContestacao.mockResolvedValueOnce("won");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await resolver(id, "aceitar-contestacao")).status).toBe(500);
+    expect((await prisma.billingCase.findUniqueOrThrow({ where: { id } })).open).toBe(true);
+    vi.restoreAllMocks();
   });
 
   it("o inquérito, a já decidida e a que a Stripe não conhece: 409 — nada é aceito, e o caso fica", async () => {

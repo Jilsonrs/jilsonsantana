@@ -93,6 +93,7 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "pix-ja-virou-assinatura": [409, "PixJaVirouAssinatura"],
   "sem-valor-da-devolucao": [409, "SemValorDaDevolucao"],
   "outra-contestacao-nao-ganha": [409, "OutraContestacaoNaoGanha"],
+  "pix-sem-assinatura": [409, "PixSemAssinatura"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {

@@ -429,8 +429,14 @@ export async function aceitarPixEmConferencia(pagamentoId: string): Promise<PixA
     if (!assinaturaId) {
       const preco = (await buscarPrecos()).find((p) => p.plano === pagamento.plano);
       if (!preco) return { resultado: "sem-preco" };
-      // Nenhuma linha deste Pix valeu (conferido acima): a da morta solta a coluna, e a nova grava nela.
-      await tx.subscription.updateMany({ where: { pixPaymentIntentId: pagamento.id }, data: { pixPaymentIntentId: null } });
+      // Nenhuma linha deste Pix valeu (conferido acima): a da MORTA passa pela sincronia de sempre, com a trava dela — que a
+      // grava sem o Pix, porque ela não o usou —, e só então a nova nasce e grava nele (o espelho tem UM escritor — a
+      // conferência do revisor do bloco 4).
+      const morta = await tx.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { stripeSubscriptionId: true } });
+      if (morta) {
+        if (!(await travarChave(tx, morta.stripeSubscriptionId, false))) return { resultado: "ocupada" };
+        await sincronizar(tx, morta.stripeSubscriptionId);
+      }
       const criada = await criarAssinaturaPrePaga({ ...pagamento, precoId: preco.precoId }, "operador");
       if (!criada.faturaPaga) return { resultado: "fatura-nao-paga" };
       assinaturaId = criada.id;

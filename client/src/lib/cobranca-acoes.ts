@@ -46,6 +46,8 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
       return "Este Pix já virou uma assinatura que vale: use \"Cancelar e devolver o dinheiro\" na ficha, que encerra e devolve.";
     case "SemValorDaDevolucao":
       return "Este caso não diz quanto falhou: devolva pelo \"Devolver\" da cobrança, na ficha da pessoa.";
+    case "PixSemAssinatura":
+      return "Este Pix ainda não virou assinatura: devolva pelo caso dele, em Precisa de você (\"Devolver o Pix\").";
     case "OutraContestacaoNaoGanha":
       return "Esta assinatura tem outra contestação que a escola não ganhou: nada foi liberado.";
     case "ContaDeAdmin":
