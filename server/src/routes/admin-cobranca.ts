@@ -4,13 +4,13 @@ import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
-import { cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
+import { aceitarPixPeloOperador, cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { limiteDoCodigoDoEmailNovo } from "../lib/limite-de-tentativas.js";
 import { QuemFez } from "../lib/prisma.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
 import { corrigirEmailComCodigo, pedirCodigoDoEmailNovo, type NaoCorrigido } from "../lib/correcao-de-email.js";
-import { devolverDeNovoPeloOperador, devolverPagamentoPeloOperador, devolverTudoPeloOperador, previaDeDevolverTudo } from "../lib/devolucoes-do-painel.js";
+import { devolverDeNovoPeloOperador, devolverEstePagamentoPeloOperador, devolverPagamentoPeloOperador, devolverPixPeloOperador, devolverTudoPeloOperador, previaDeDevolverTudo } from "../lib/devolucoes-do-painel.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 
 // O PAINEL DA COBRANÇA — A FICHA DO ALUNO E O "ACHAR PELO CÓDIGO" (Fase 4, etapa 4.7b, passo 1c). Só admin, só
@@ -83,6 +83,7 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "valor-mudou": [409, "ValorMudou"],
   "valor-acima": [409, "ValorAcimaDoQueFalta"],
   "devolucao-falhou": [502, "DevolucaoFalhou"],
+  "pix-nao-aceito": [409, "PixNaoAceito"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {
@@ -162,8 +163,20 @@ router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res)
   if (id === null) return;
   const corpo = validate(resolverCasoSchema, req.body, res);
   if (corpo === null) return;
-  // "Devolver de novo" mexe com dinheiro: mora com as devoluções (passo 4a).
-  responder(res, corpo.acao === "devolver-de-novo" ? await devolverDeNovoPeloOperador(id, por) : await resolverCasoPeloOperador(id, corpo.acao, por));
+  // Os consertos que mexem com dinheiro moram com as devoluções (passos 4a e 4c); o "Aceitar este Pix", com as ações.
+  const acao = corpo.acao;
+  responder(
+    res,
+    acao === "devolver-de-novo"
+      ? await devolverDeNovoPeloOperador(id, por)
+      : acao === "devolver-pix"
+        ? await devolverPixPeloOperador(id, por)
+        : acao === "devolver-este-pagamento"
+          ? await devolverEstePagamentoPeloOperador(id, por)
+          : acao === "aceitar-pix"
+            ? await aceitarPixPeloOperador(id, por)
+            : await resolverCasoPeloOperador(id, acao, por),
+  );
 });
 
 // AS DEVOLUÇÕES (bloco 4, passo 4a — P114 e P139).

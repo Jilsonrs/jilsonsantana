@@ -10,6 +10,9 @@ const DO_CONSERTO: Record<Conserto, { rotulo: string; efeito: string }> = {
   "soltar-agendamento": { rotulo: "Soltar o agendamento", efeito: "A troca de plano que ficou pela metade é desfeita; a assinatura segue como está." },
   "encerrar-na-hora": { rotulo: "Encerrar agora, sem devolver", efeito: "A assinatura termina agora e a pessoa perde o acesso. Nada é devolvido." },
   "devolver-de-novo": { rotulo: "Devolver de novo", efeito: "Tenta devolver de novo o que falta voltar. Se falhar outra vez, o caso continua aberto." },
+  "aceitar-pix": { rotulo: "Aceitar este Pix", efeito: "O Pix que a pessoa pagou vira a assinatura pré-paga, no preço de hoje do plano: as aulas abrem agora." },
+  "devolver-pix": { rotulo: "Devolver o Pix", efeito: "O Pix volta inteiro para a pessoa, e ela pode pagar de novo pela tela." },
+  "devolver-este-pagamento": { rotulo: "Devolver este pagamento", efeito: "O dinheiro que entrou volta inteiro para a pessoa." },
 };
 
 /** O conserto de um caso (etapa 4.7b, passo 3b): o botão, a confirmação dizendo o efeito, e o que a Stripe respondeu. */

@@ -5,7 +5,7 @@ import { assinaturaDaAcesso, cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } 
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, cancelarIncompleta, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
 import { assinaturaDoPagamento, cancelarPorContestacao } from "./stripe-reembolso.js";
 import { pixDevolvido } from "./stripe-devolucao.js";
-import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
+import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, tirarDeConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
 import { alertarNoMaximoACada15Min } from "./alerta-de-configuracao.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
 
@@ -356,6 +356,48 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
     const motivo = erro instanceof Error ? erro.message : String(erro);
     throw new Error(`[stripe] ${marcar ? `aviso ${marcar.id} (pagamento pré-pago ${pagamento.id})` : `o Pix pago ${pagamento.id}`} falhou: ${motivo}`, { cause: erro });
   }
+}
+
+/** O que "Aceitar este Pix" fez (o painel da cobrança, etapa 4.7b, passo 4c). */
+export type PixAceito = { resultado: "aceito"; sincronia: Sincronia } | { resultado: "nao-pago" | "devolvido" | "ja-virou-assinatura" | "sem-preco" | "fatura-nao-paga" | "ocupada" };
+
+/**
+ * ACEITAR ESTE PIX (o painel da cobrança, etapa 4.7b, passo 4c — decisão do operador, 29/10/2026, P117): o Pix PAGO que ficou
+ * EM CONFERÊNCIA (o valor não bateu com o preço, a pré-paga dele morreu sem ser paga, a fatura dela não se pagava por fora)
+ * vira a assinatura pré-paga NO PREÇO DE AGORA do plano — o operador aceitou o dinheiro —, com a primeira fatura paga por fora,
+ * e a marca de conferência sai. Com a trava do Pix (a mesma do aviso, sem esperar): a pré-paga que JÁ VALE é só sincronizada;
+ * a incompleta, paga por fora — ou encerrada, se não der —; e a nova nasce com uma chave de repetição PRÓPRIA (a do aviso
+ * devolveria, na janela, a que morreu). A sincronia de sempre grava o espelho (e faz a conta do visitante nascer). O Pix
+ * devolvido não se aceita, e o que já virou assinatura não vira outra.
+ */
+export async function aceitarPixEmConferencia(pagamentoId: string): Promise<PixAceito> {
+  const lido = await lerPagamentoPix(pagamentoId);
+  if (lido.status !== "succeeded" || !lido.pagamento) return { resultado: "nao-pago" };
+  const pagamento = lido.pagamento;
+  return transacaoDaCobranca(async (tx): Promise<PixAceito> => {
+    if (!(await travarChave(tx, `pix:${pagamento.id}`, false))) return { resultado: "ocupada" };
+    const noEspelho = await tx.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { status: true } });
+    if (noEspelho && pixConsumido(noEspelho.status)) return { resultado: "ja-virou-assinatura" };
+    if (await pixDevolvido(pagamento.id)) return { resultado: "devolvido" };
+    const escolhida = escolherPrePaga(await assinaturasDoPix(pagamento.clienteId, pagamento.id));
+    let assinaturaId: string | null = null;
+    if (escolhida && "valendo" in escolhida) {
+      assinaturaId = escolhida.valendo;
+    } else if (escolhida && "aPagar" in escolhida) {
+      if ((await garantirFaturaPaga(escolhida.aPagar)).status === "paid") assinaturaId = escolhida.aPagar;
+      else await cancelarIncompleta(escolhida.aPagar);
+    }
+    if (!assinaturaId) {
+      const preco = (await buscarPrecos()).find((p) => p.plano === pagamento.plano);
+      if (!preco) return { resultado: "sem-preco" };
+      const criada = await criarAssinaturaPrePaga({ ...pagamento, precoId: preco.precoId }, "operador");
+      if (!criada.faturaPaga) return { resultado: "fatura-nao-paga" };
+      assinaturaId = criada.id;
+    }
+    await tirarDeConferencia(pagamento.id);
+    if (!(await travarChave(tx, assinaturaId, false))) return { resultado: "ocupada" };
+    return { resultado: "aceito", sincronia: await sincronizar(tx, assinaturaId) };
+  }, TEMPO_DO_PIX);
 }
 
 /**

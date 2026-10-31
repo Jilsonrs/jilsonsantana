@@ -36,6 +36,7 @@ const caso = (extra: Partial<CasoDaLista> = {}): CasoDaLista => ({
   fechadoEm: null,
   fechadoPor: null,
   nota: null,
+  consertos: [],
   conserto: null,
   ...extra,
 });
@@ -135,9 +136,9 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     adminResolverCaso.mockReset().mockResolvedValue({ detalhe: "a cobrança em aberto foi anulada" });
     adminListarCasos.mockResolvedValue(
       lista([
-        caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, conserto: "anular-cobranca" }),
-        caso({ id: 12, tipo: "TROCA_DE_PLANO", urgente: false, conserto: "soltar-agendamento" }),
-        caso({ id: 13, tipo: "ATIVA_SEM_PERIODO_PAGO", urgente: false, conserto: "encerrar-na-hora" }),
+        caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, consertos: ["anular-cobranca"] }),
+        caso({ id: 12, tipo: "TROCA_DE_PLANO", urgente: false, consertos: ["soltar-agendamento"] }),
+        caso({ id: 13, tipo: "ATIVA_SEM_PERIODO_PAGO", urgente: false, consertos: ["encerrar-na-hora"] }),
         caso({ id: 14, tipo: "CONTESTACAO" }),
       ]),
     );
@@ -156,7 +157,7 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
 
   it("a devolução que falhou (passo 4a): 'Devolver de novo', com o efeito — e a falha de novo diz que não saiu", async () => {
     adminResolverCaso.mockReset().mockResolvedValueOnce({ detalhe: "R$ 99,90 devolvidos de novo" }).mockRejectedValueOnce({ response: { data: { error: "DevolucaoFalhou" } } });
-    adminListarCasos.mockResolvedValue(lista([caso({ id: 12, tipo: "DEVOLUCAO_FALHOU", urgente: true, conserto: "devolver-de-novo" })]));
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 12, tipo: "DEVOLUCAO_FALHOU", urgente: true, consertos: ["devolver-de-novo"] })]));
     renderWithProviders(<CobrancaPrecisaDeVocePage />);
     fireEvent.click(await screen.findByRole("button", { name: "Devolver de novo" }));
     expect(screen.getByText("Tenta devolver de novo o que falta voltar. Se falhar outra vez, o caso continua aberto.")).toBeTruthy();
@@ -168,9 +169,31 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("A devolução não saiu.");
   });
 
+  it("o Pix em conferência (passo 4c): 'Aceitar este Pix' e 'Devolver o Pix', cada um com o efeito; aceitar manda o conserto certo", async () => {
+    adminResolverCaso.mockReset().mockResolvedValue({ detalhe: "o Pix virou a assinatura pré-paga; com acesso às aulas" });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 15, tipo: "PIX_EM_CONFERENCIA", urgente: true, consertos: ["aceitar-pix", "devolver-pix"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    expect(await screen.findByRole("button", { name: "Devolver o Pix" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Aceitar este Pix" }));
+    expect(screen.getByText("O Pix que a pessoa pagou vira a assinatura pré-paga, no preço de hoje do plano: as aulas abrem agora.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect(await screen.findByText("Feito: o Pix virou a assinatura pré-paga; com acesso às aulas.")).toBeTruthy();
+    expect(adminResolverCaso.mock.calls).toEqual([[15, "aceitar-pix"]]);
+  });
+
+  it("o dinheiro sem assinatura (passo 4c): 'Devolver este pagamento'; o Pix que não se aceita diz o caminho", async () => {
+    adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "PixNaoAceito" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 16, tipo: "PAGO_SEM_ASSINATURA", urgente: true, consertos: ["devolver-este-pagamento"] }), caso({ id: 17, tipo: "PIX_EM_CONFERENCIA", consertos: ["aceitar-pix", "devolver-pix"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    expect(await screen.findByRole("button", { name: "Devolver este pagamento" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Aceitar este Pix" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Não deu para aceitar este Pix: o plano não está à venda, ou a fatura não se pagou por fora. Devolva o Pix.");
+  });
+
   it("a assinatura ainda viva: diz por que não anula", async () => {
     adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "AssinaturaViva" } } });
-    adminListarCasos.mockResolvedValue(lista([caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, conserto: "anular-cobranca" })]));
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, consertos: ["anular-cobranca"] })]));
     renderWithProviders(<CobrancaPrecisaDeVocePage />);
     fireEvent.click(await screen.findByRole("button", { name: "Anular a cobrança em aberto" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));

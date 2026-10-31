@@ -2,12 +2,13 @@ import type { AcaoFeita, PreviaDaDevolucao } from "@jilson/core";
 import { prisma, TipoDeCaso } from "./prisma.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
 import { buscarDetalhes } from "./stripe-assinatura.js";
-import { aDevolver, assinaturaDoPagamento, cancelarNaHora, devolver, devolverParte, lerCobranca } from "./stripe-reembolso.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, cancelarNaHora, devolver, devolverParte, lerCobranca, oQueFoiPagoNaFatura, type Pagamento } from "./stripe-reembolso.js";
 import { cobrancaDoPagamento } from "./stripe-devolucao.js";
 import { oQueFoiPago, reembolsarAssinaturaDe } from "./minha-assinatura.js";
 import { operarNaAssinatura } from "./assinaturas.js";
 import { encerradaDeVez, temAcessoAtivo } from "./acesso.js";
 import { clientesDe, concluirCaso, naStripe, registrar, type PorQuem, type Resultado } from "./acoes-da-cobranca.js";
+import { consertosDoCaso } from "./casos.js";
 
 // AS DEVOLUÇÕES DO PAINEL DA COBRANÇA (Fase 4, etapa 4.7b, bloco 4, passo 4a — decisões do operador: P114, 29/10/2026, "um
 // clique reembolso já resolver tudo", e P139, 31/10/2026, "inteiro ou uma parte"). Três ações, todas pelas MESMAS operações
@@ -158,5 +159,69 @@ export async function devolverDeNovoPeloOperador(casoId: number, por: PorQuem): 
   }
   const detalhe = `${emReais(falta, "brl")} devolvidos de novo`;
   await concluirCaso(casoId, por, "devolver-de-novo", alvo, detalhe, falta);
+  return { resultado: "ok", feito: { detalhe } };
+}
+
+/** Devolve o que falta de cada pagamento — com a trava e a sincronia da assinatura, quando há uma (a regra do "pago até"). */
+async function devolverPagamentos(pagamentos: Pagamento[], dono: { userId: string | null; assinatura: string | null }): Promise<"ok" | "ocupada"> {
+  const devolverTodos = async () => {
+    for (const pagamento of pagamentos) await devolver(pagamento, { userId: dono.userId ?? "sem-conta", assinaturaId: dono.assinatura ?? "sem-assinatura" });
+  };
+  if (!dono.assinatura) {
+    await devolverTodos();
+    return "ok";
+  }
+  return (await operarNaAssinatura(dono.assinatura, devolverTodos)) ? "ok" : "ocupada";
+}
+
+/**
+ * DEVOLVER O PIX (o conserto do caso "Pix em conferência", passo 4c — P117): o Pix volta INTEIRO para a pessoa, e ela pode
+ * pagar de novo pela tela (a pré-paga que tenha ficado incompleta expira sozinha). O caso fecha, com o valor.
+ */
+export async function devolverPixPeloOperador(casoId: number, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true } });
+  if (!caso || !caso.open || !consertosDoCaso(caso.kind, caso.key).includes("devolver-pix")) return { resultado: "nao-encontrada" };
+  const pagamentoId = caso.key.slice("pix:".length);
+  const { centavos, devolvido } = await cobrancaDoPagamento(pagamentoId);
+  const falta = centavos - devolvido;
+  const alvo = { userId: caso.userId, assinatura: null };
+  if (falta > 0) {
+    try {
+      await devolver({ pagamentoId, centavos, devolvido }, { userId: caso.userId ?? "sem-conta", assinaturaId: "sem-assinatura" });
+    } catch (erro) {
+      console.warn(`[stripe] painel: a devolução do Pix ${pagamentoId} não saiu: ${erro instanceof Error ? erro.message : String(erro)}`);
+      return { resultado: "devolucao-falhou" };
+    }
+  }
+  const detalhe = falta > 0 ? `${emReais(falta, "brl")} devolvidos; o Pix voltou para a pessoa` : "o Pix já tinha voltado para a pessoa";
+  await concluirCaso(casoId, por, "devolver-pix", alvo, detalhe, falta > 0 ? falta : null);
+  return { resultado: "ok", feito: { detalhe } };
+}
+
+/**
+ * DEVOLVER ESTE PAGAMENTO (o conserto do caso "dinheiro recebido sem assinatura", passo 4c): o que entrou volta INTEIRO — o da
+ * tentativa cancelada já paga (`sub:`, todas as faturas pagas dela) ou o da cobrança em aberto paga no instante de cancelar
+ * (`fatura:in_…`). Com a trava e a sincronia da assinatura: o período que ela pagou deixa de contar. O caso fecha, com o valor.
+ */
+export async function devolverEstePagamentoPeloOperador(casoId: number, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeSubscriptionId: true } });
+  if (!caso || !caso.open || !consertosDoCaso(caso.kind, caso.key).includes("devolver-este-pagamento")) return { resultado: "nao-encontrada" };
+  const daAssinatura = caso.key.startsWith("sub:") ? caso.key.slice("sub:".length) : null;
+  const pago = daAssinatura ? await buscarOQueFoiPago(daAssinatura) : await oQueFoiPagoNaFatura(caso.key.slice("fatura:".length));
+  const falta = aDevolver(pago);
+  const assinatura = daAssinatura ?? caso.stripeSubscriptionId;
+  const alvo = { userId: caso.userId, assinatura };
+  if (falta <= 0) {
+    await concluirCaso(casoId, por, "devolver-este-pagamento", alvo, "nada faltava devolver");
+    return { resultado: "ok", feito: { detalhe: "nada faltava devolver" } };
+  }
+  try {
+    if ((await devolverPagamentos(pago.pagamentos, { userId: caso.userId, assinatura })) === "ocupada") return { resultado: "ocupada" };
+  } catch (erro) {
+    console.warn(`[stripe] painel: a devolução do caso ${casoId} não saiu: ${erro instanceof Error ? erro.message : String(erro)}`);
+    return { resultado: "devolucao-falhou" };
+  }
+  const detalhe = `${emReais(falta, pago.moeda)} devolvidos`;
+  await concluirCaso(casoId, por, "devolver-este-pagamento", alvo, detalhe, falta);
   return { resultado: "ok", feito: { detalhe } };
 }

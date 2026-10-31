@@ -1,6 +1,6 @@
 import { entrarPara, lerDocumentoFiscal, TELA_DE_PAGAR_COM_PIX, type AcaoFeita, type ConferenciaPelaFicha, type ConsertoDoCaso, type FichaQuery, type LinkParaOAluno } from "@jilson/core";
 import { prisma, QuemFez, TipoDeCaso } from "./prisma.js";
-import { consertoDoCaso } from "./casos.js";
+import { consertosDoCaso } from "./casos.js";
 import { AssinaturaNaoEncontrada, buscarAssinatura, DocumentoRecusado, trocarNumeroFiscal } from "./stripe.js";
 import { buscarDetalhes, pagarFatura, type CobrancaDaFatura, type DetalhesDaAssinatura } from "./stripe-assinatura.js";
 import { anularFatura, assinaturaDaFatura, soltarAgendamento } from "./stripe-plano.js";
@@ -10,7 +10,7 @@ import { enviarEmail } from "./email.js";
 import { getDict } from "./dict.js";
 import { enderecoDoSite } from "./endereco-do-site.js";
 import { manterAssinaturaDe, pararRenovacaoDe } from "./minha-assinatura.js";
-import { operarNaAssinatura, sincronizarAssinatura, sincronizarConta, sincronizarPedido, type Conferida } from "./assinaturas.js";
+import { aceitarPixEmConferencia, operarNaAssinatura, sincronizarAssinatura, sincronizarConta, sincronizarPedido, type Conferida } from "./assinaturas.js";
 import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
@@ -25,7 +25,7 @@ import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 export type PorQuem = { quem: typeof QuemFez.OPERADOR | typeof QuemFez.JILSONAI; conta: string };
 
 /** O que não deu para fazer — cada um vira um status na rota. */
-export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer" | "stripe-nao-conhece" | "assinatura-viva" | "valor-mudou" | "valor-acima" | "devolucao-falhou";
+export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer" | "stripe-nao-conhece" | "assinatura-viva" | "valor-mudou" | "valor-acima" | "devolucao-falhou" | "pix-nao-aceito";
 export type Resultado<T> = { resultado: "ok"; feito: T } | { resultado: NaoFeita };
 
 /** Grava a ação no registro: quem fez, em quem, o valor (quando há dinheiro) e o que a Stripe respondeu (sem dado pessoal). */
@@ -188,11 +188,11 @@ const ENCERRADA = new Set(["canceled", "incomplete_expired"]);
  *   - ENCERRAR NA HORA, SEM DEVOLVER (caso "ativa sem período pago"): `cancelarNaHora` (sem crédito nem fatura), pela
  *     operação na assinatura — a sincronia corta o acesso.
  */
-export async function resolverCasoPeloOperador(casoId: number, acao: Exclude<ConsertoDoCaso, "devolver-de-novo">, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+export async function resolverCasoPeloOperador(casoId: number, acao: "anular-cobranca" | "soltar-agendamento" | "encerrar-na-hora", por: PorQuem): Promise<Resultado<AcaoFeita>> {
   const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeSubscriptionId: true, stripeObjectId: true } });
   // O conserto tem de ser O DO CASO (o tipo e a chave): o "soltar" de um caso de troca sem agendamento na chave soltaria o
   // que a Stripe tiver agora — talvez a troca que o próprio aluno marcou (revisão de segurança do bloco 3).
-  if (!caso || !caso.open || consertoDoCaso(caso.kind, caso.key) !== acao || !caso.stripeSubscriptionId) return { resultado: "nao-encontrada" };
+  if (!caso || !caso.open || !consertosDoCaso(caso.kind, caso.key).includes(acao) || !caso.stripeSubscriptionId) return { resultado: "nao-encontrada" };
   const id = caso.stripeSubscriptionId;
   const alvo = { userId: caso.userId, assinatura: id };
   let detalhes: DetalhesDaAssinatura;
@@ -237,6 +237,34 @@ export async function resolverCasoPeloOperador(casoId: number, acao: Exclude<Con
   if (operacao.feito === "nada") return { resultado: "nada-a-fazer" };
   const detalhe = "encerrada agora, sem devolver";
   await concluirCaso(casoId, por, "encerrar-na-hora", alvo, detalhe);
+  return { resultado: "ok", feito: { detalhe } };
+}
+
+/**
+ * ACEITAR ESTE PIX (o conserto do caso "Pix em conferência", passo 4c — P117): o Pix pago vira a assinatura pré-paga no preço
+ * de agora (`aceitarPixEmConferencia`, com a trava do Pix). Valeu: o caso fecha, e as boas-vindas saem se a conta nasceu
+ * agora (a do visitante). O Pix que já voltou, ou que já virou assinatura: o caso fecha também — a situação acabou. O plano
+ * fora de venda, ou a fatura que não se paga por fora: 409, e o caminho é devolver.
+ */
+export async function aceitarPixPeloOperador(casoId: number, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeCustomerId: true } });
+  if (!caso || !caso.open || !consertosDoCaso(caso.kind, caso.key).includes("aceitar-pix")) return { resultado: "nao-encontrada" };
+  const feito = await aceitarPixEmConferencia(caso.key.slice("pix:".length));
+  if (feito.resultado !== "aceito") {
+    if (feito.resultado === "ocupada") return { resultado: "ocupada" };
+    if (feito.resultado === "devolvido" || feito.resultado === "ja-virou-assinatura") {
+      const detalhe = feito.resultado === "devolvido" ? "o Pix já tinha voltado para a pessoa" : "o Pix já tinha virado assinatura";
+      await concluirCaso(casoId, por, "aceitar-pix", { userId: caso.userId, assinatura: null }, detalhe);
+      return { resultado: "ok", feito: { detalhe } };
+    }
+    return { resultado: "pix-nao-aceito" };
+  }
+  const assinatura = "assinatura" in feito.sincronia ? feito.sincronia.assinatura : null;
+  if (assinatura) await mandarBoasVindasDaAssinatura(assinatura.id);
+  const dono = assinatura?.userId ?? caso.userId;
+  const comAcesso = dono ? await temAcessoAtivo(dono) : false;
+  const detalhe = `o Pix virou a assinatura pré-paga; ${comAcesso ? "com acesso" : "sem acesso"} às aulas`;
+  await concluirCaso(casoId, por, "aceitar-pix", { userId: dono, assinatura: assinatura?.id ?? null }, detalhe);
   return { resultado: "ok", feito: { detalhe } };
 }
 

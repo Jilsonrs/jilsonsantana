@@ -38,7 +38,7 @@ const JANELA_DA_CHAVE = 5 * 60 * 1000;
  * logo depois da virada cai noutra chave — por isso, antes de criar, a lista CONSISTENTE das assinaturas do
  * cliente (`assinaturasDoPix`) acha a que já nasceu. Função pura.
  */
-export function chaveDoPrePago(oQue: "criar" | "fatura", id: string, agora: Date = new Date()): string {
+export function chaveDoPrePago(oQue: "criar" | "fatura" | "aceitar", id: string, agora: Date = new Date()): string {
   return `prepago-${oQue}:${id}:${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}`;
 }
 
@@ -115,10 +115,11 @@ export function paraPedidoDeAssinaturaPrePaga(pagamento: PagamentoPrePago): Stri
  * `chaveDoPrePago`) e garante a primeira fatura paga por fora. Devolve o id e se a fatura ficou PAGA — quem
  * chama não grava espelho de uma assinatura que não valeu (achado 3 da segunda revisão).
  */
-export async function criarAssinaturaPrePaga(pagamento: PagamentoPrePago): Promise<{ id: string; faturaPaga: boolean }> {
+export async function criarAssinaturaPrePaga(pagamento: PagamentoPrePago, quem: "aviso" | "operador" = "aviso"): Promise<{ id: string; faturaPaga: boolean }> {
   let assinatura: Stripe.Subscription;
   try {
-    assinatura = await stripe().subscriptions.create(paraPedidoDeAssinaturaPrePaga(pagamento), { idempotencyKey: chaveDoPrePago("criar", pagamento.id) });
+    // A do OPERADOR ("Aceitar este Pix", 4.7b, passo 4c) tem a chave própria: a do aviso devolveria, na janela, a pré-paga que morreu.
+    assinatura = await stripe().subscriptions.create(paraPedidoDeAssinaturaPrePaga(pagamento), { idempotencyKey: chaveDoPrePago(quem === "operador" ? "aceitar" : "criar", pagamento.id) });
   } catch (erro) {
     throw erroSemMensagem(erro, "a assinatura pré-paga do Pix");
   }
@@ -249,6 +250,15 @@ export async function marcarEmConferencia(pagamentoId: string, motivo: string): 
     return true;
   } catch (erro) {
     throw erroSemMensagem(erro, "a marca de conferência do Pix");
+  }
+}
+
+/** TIRA o Pix de conferência (o "Aceitar este Pix" do painel, 4.7b, passo 4c): a marca sai dos metadados dele. */
+export async function tirarDeConferencia(pagamentoId: string): Promise<void> {
+  try {
+    await stripe().paymentIntents.update(pagamentoId, { metadata: { [METADADO_EM_CONFERENCIA]: "" } });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a saída do Pix da conferência");
   }
 }
 

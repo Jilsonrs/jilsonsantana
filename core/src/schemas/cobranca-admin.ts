@@ -235,7 +235,12 @@ export type CasoDaLista = {
   fechadoEm: string | null;
   fechadoPor: QuemFezNoRegistro | null;
   nota: string | null;
-  /** O conserto que o painel já faz para este caso (passo 3b) — ou nenhum ainda. */
+  /** Os consertos que o painel faz para este caso (passos 3b, 4a e 4c) — nenhum, um ou mais (o Pix em conferência: aceitar ou devolver). */
+  consertos: ConsertoDoCaso[];
+  /**
+   * O primeiro dos consertos. API aditiva (CLAUDE.md → *Rendering Boundary*): fica para a aba do admin aberta antes da
+   * publicação do passo 4c, que ainda lê este campo; sai na publicação seguinte.
+   */
   conserto: ConsertoDoCaso | null;
 };
 
@@ -265,7 +270,7 @@ export type AcaoFeita = { detalhe: string };
 export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };
 
 /** Os consertos que hoje só o painel da Stripe faz, a partir de um caso (passo 3b). */
-export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo"] as const;
+export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo", "aceitar-pix", "devolver-pix", "devolver-este-pagamento"] as const;
 export type ConsertoDoCaso = (typeof CONSERTOS_DO_CASO)[number];
 export const resolverCasoSchema = z.object({ acao: z.enum(CONSERTOS_DO_CASO) });
 

@@ -188,6 +188,23 @@ export async function devolver(pagamento: Pagamento, dono: DonoDaDevolucao): Pro
   }
 }
 
+/**
+ * O que foi PAGO numa fatura (o "Devolver este pagamento" do dinheiro sem assinatura, 4.7b, passo 4c): os pagamentos dela, com
+ * o que cada um já devolveu. A fatura que não está paga não tem o que devolver.
+ */
+export async function oQueFoiPagoNaFatura(faturaId: string): Promise<OQueFoiPago> {
+  let fatura: Stripe.Invoice;
+  try {
+    fatura = await stripe().invoices.retrieve(faturaId, { expand: ["payments"] });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura da fatura");
+  }
+  if (fatura.status !== "paid" || fatura.amount_paid <= 0) return { moeda: null, pagamentos: [] };
+  const pagamentos: Pagamento[] = [];
+  for (const pagamentoId of pagamentosDaFatura(fatura)) pagamentos.push({ pagamentoId, ...(await cobrancaDoPagamento(pagamentoId)) });
+  return { moeda: fatura.currency, pagamentos };
+}
+
 /** Uma cobrança que o painel devolve (passo 4a): de quem é, quanto foi e quanto já voltou. */
 export type CobrancaParaDevolver = { id: string; cliente: string | null; pagamentoId: string | null; centavos: number; devolvido: number; moeda: string; paga: boolean };
 

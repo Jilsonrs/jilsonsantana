@@ -28,6 +28,8 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
       return "O valor passa do que falta voltar desta cobrança.";
     case "DevolucaoFalhou":
       return "A devolução não saiu. Tente de novo; no \"Cancelar e devolver\", a assinatura já acabou e o caso está em Precisa de você.";
+    case "PixNaoAceito":
+      return "Não deu para aceitar este Pix: o plano não está à venda, ou a fatura não se pagou por fora. Devolva o Pix.";
     case "ContaDeAdmin":
       return "A conta de um admin não se corrige por aqui.";
     case "MesmoEmail":

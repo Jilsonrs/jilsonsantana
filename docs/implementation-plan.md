@@ -6643,7 +6643,26 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               ruim: recusada, sem aulas; com o cartão bom no lugar: a fatura paga, a assinatura `active`, as aulas de volta;
               na que está em dia: 409; o retrato do banco igual antes e depois. *Docs check (context7): não disparado — a ida à
               Stripe é a de sempre (`pagarFatura`).*
-        - [ ] **4c — O Pix em conferência** (aceitar, devolver) e **o dinheiro sem assinatura** (devolver, liberar).
+        - [x] **4c — O Pix em conferência** (aceitar, devolver) e **o dinheiro sem assinatura** (devolver, liberar). **FEITO
+              (31/10/2026)** — o "liberar" é o do 4d (a mesma ação, "Liberar acesso pago por fora"), e entra nesse caso
+              quando ele existir. **O caso passa a ter uma LISTA de consertos** (`consertos`; o campo `conserto`, o primeiro
+              deles, fica para a aba do admin aberta antes desta publicação, e sai na seguinte — API aditiva). **"Aceitar este
+              Pix"** (P117 — `aceitarPixEmConferencia`, em `assinaturas.ts`, com a trava do Pix): a pré-paga que já vale é só
+              sincronizada; a incompleta é paga por fora, ou encerrada se não der; e a nova nasce NO PREÇO DE AGORA do plano,
+              com uma chave de repetição própria (`chaveDoPrePago("aceitar")` — a do aviso devolveria, na janela, a pré-paga
+              que morreu); a marca de conferência sai (`tirarDeConferencia`) e a sincronia grava o espelho (a conta do
+              visitante nasce, com as boas-vindas). O Pix que já voltou, ou que já virou assinatura, fecha o caso sem criar
+              nada; o plano fora de venda ou a fatura que não se paga por fora: 409 `PixNaoAceito` ("devolva o Pix").
+              **"Devolver o Pix"**: inteiro, e o caso fecha com o valor. **"Devolver este pagamento"** (o dinheiro sem
+              assinatura): o da tentativa cancelada já paga (`sub:` — todas as faturas pagas dela) ou o da cobrança paga no
+              instante de cancelar (`fatura:in_…` — `oQueFoiPagoNaFatura`), com a trava e a sincronia da assinatura: o período
+              pago deixa de contar. Testes: `admin-cobranca-pix-em-conferencia.test.ts` (novo, 9) e "Precisa de você" (+2).
+              **Mutação: 10 de 10 reprovaram.** **Prova pela rota** (servidor local, banco de dev, três alunos descartáveis,
+              Pix e cartão de verdade na área de teste): um Pix pago posto em conferência — o "Conferir" o deixa para o
+              operador; "Aceitar" criou a pré-paga (acaba no fim do período, a fatura paga, a marca fora), o espelho com o Pix,
+              as aulas abertas, o caso fechado; "Devolver o Pix", 9990 devolvidos e o caso fechado; uma assinatura paga e
+              cancelada na Stripe, "Devolver este pagamento": 9990 devolvidos, o acesso cortado, o caso fechado; o retrato do
+              banco igual antes e depois. *Docs check (context7): não disparado — as idas à Stripe são as de sempre.*
         - [ ] **4d — Liberar acesso pago por fora** e **liberar de novo depois da contestação ganha**.
         - [ ] **Fechamento do bloco 4.**
       - [ ] **BLOCO 5 — CONTESTAÇÃO E FRAUDE SEM O PAINEL DA STRIPE**

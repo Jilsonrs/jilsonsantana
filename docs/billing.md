@@ -2066,8 +2066,8 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
 3. **Pagou e continua sem acesso:**
    - **Pix "em conferência":** devolva o Pix no painel e peça que pague de novo pela tela. **Não** crie a
      assinatura à mão no painel: a marca fica no Pix, e a pessoa nunca mais consegue pagar pelo site. *(Decisão
-     do operador, 29/10/2026, P117: o admin ganha "Aceitar este Pix" e "Devolver" no painel de assinaturas — a
-     etapa 4.7b.)*
+     do operador, 29/10/2026, P117: o admin ganha "Aceitar este Pix" e "Devolver" — no painel desde 31/10/2026, no
+     caso "Pix em conferência" de *Precisa de você* (4.7b, passo 4c).)*
    - **E-mail digitado errado, ou o alerta "SEM CONTA":** devolva no painel; ela assina de novo, com o e-mail certo
      ou logada. *(Decisão do operador, 29/10/2026, P121: o e-mail digitado errado passa a ser corrigido pelo admin,
      sem devolver — a etapa 4.7b.)*
