@@ -6913,7 +6913,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                 **Provado no app local** (conta descartável, cartão de teste): deslogado, o link do recibo levou ao recibo
                 `B65D-A447-12C7-ECDE` e o do cartão à tela Trocar cartão; antes da correção, os dois caíam no Início.
                 Testes: a tela de entrar (+9). **Mutação: 3 de 3 reprovaram.**
-          - [ ] **O acabamento do Antigravity** (item 39: as telas, o recibo e os e-mails do recibo).
+          - [x] **A segunda revisão de segurança** (sobre `6c9e305..dev`, 31/10/2026): nenhum P0 nem P1. O P3 — o código
+                promocional com `$&` deformava a linha do desconto no e-mail — fechado (troca por função; teste +1). O P2 fica
+                como dívida: cada recibo aberto faz várias leituras na Stripe dentro do limite comum de leituras. *Reabre se o
+                limite das leituras começar a recusar alunos, ou a conta da Stripe reclamar de volume: aí um limite próprio
+                para o recibo, ou guardar a lista de cobranças por 1 minuto.*
+          - [ ] **O acabamento do Antigravity** (item 39: as telas, o recibo e os e-mails do recibo) — depois da
+                publicação, por ordem do operador ("pode continuar e depois publicar", 31/10/2026).
           - [ ] **Publicar o bloco 6** (com a ordem dele).
       - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA

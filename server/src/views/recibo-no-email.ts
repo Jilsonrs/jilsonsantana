@@ -12,25 +12,29 @@ export function reciboDoEmail(recibo: ReciboDaEscola, t: Dict["app"]["faturament
   const r = t.recibo;
   const c = t.cobrancas;
   const valor = (centavos: number) => dinheiro(centavos, recibo.moeda);
-  const abatido = (centavos: number) => r.abatimento.replace("{valor}", valor(centavos));
+  const abatido = (centavos: number) => r.abatimento.replace("{valor}", () => valor(centavos));
   const item = recibo.plano === "mensal" ? r.planoMensal : recibo.plano === "anual" ? r.planoAnual : r.semPlano;
   const periodo = recibo.periodo ? r.periodo.replace("{de}", diaNoEmail(new Date(recibo.periodo.de))).replace("{ate}", diaNoEmail(new Date(recibo.periodo.ate))) : null;
   const bandeira = recibo.cartao ? NOME_DA_BANDEIRA[recibo.cartao.bandeira] : undefined;
-  const forma = recibo.forma === "pix" ? c.pix : recibo.cartao ? (bandeira ? c.cartao.replace("{bandeira}", bandeira) : c.cartaoSemBandeira).replace("{final}", recibo.cartao.final) : c.outra;
+  const final = recibo.cartao?.final ?? "";
+  const forma = recibo.forma === "pix" ? c.pix : recibo.cartao ? (bandeira ? c.cartao.replace("{bandeira}", () => bandeira) : c.cartaoSemBandeira).replace("{final}", () => final) : c.outra;
   // As duas caixas da tela: os valores (o preço e o que saiu dele, quando a conta fecha, e o total) e o pagamento.
   const valores: ReciboDoEmail["valores"] = [];
   if (recibo.detalhe) {
     valores.push({ rotulo: r.preco, valor: valor(recibo.detalhe.preco) });
-    for (const d of recibo.detalhe.descontos) valores.push({ rotulo: d.codigo ? r.desconto.replace("{codigo}", d.codigo) : r.descontoSemCodigo, valor: abatido(d.centavos) });
+    for (const d of recibo.detalhe.descontos) {
+      const codigo = d.codigo;
+      valores.push({ rotulo: codigo ? r.desconto.replace("{codigo}", () => codigo) : r.descontoSemCodigo, valor: abatido(d.centavos) });
+    }
     if (recibo.detalhe.credito > 0) valores.push({ rotulo: r.credito, valor: abatido(recibo.detalhe.credito) });
   }
   valores.push({ rotulo: r.total, valor: valor(recibo.centavos) });
-  const situacao = recibo.situacao === "devolvida" ? c.devolvida : recibo.situacao === "devolvida-em-parte" ? c.devolvidaEmParte.replace("{valor}", valor(recibo.devolvido)) : recibo.situacao === "contestada" ? c.contestada : c.paga;
+  const situacao = recibo.situacao === "devolvida" ? c.devolvida : recibo.situacao === "devolvida-em-parte" ? c.devolvidaEmParte.replace("{valor}", () => valor(recibo.devolvido)) : recibo.situacao === "contestada" ? c.contestada : c.paga;
   const pagamento = [
     { rotulo: r.forma, valor: forma },
     { rotulo: r.situacao, valor: situacao },
   ];
-  return { titulo: r.titulo, numero: r.numero.replace("{numero}", recibo.numero).replace("{data}", diaNoEmail(new Date(recibo.em))), escola: [r.emitente, r.cnpj, r.site], item, periodo, valores, pagamento, nota: r.duvidas };
+  return { titulo: r.titulo, numero: r.numero.replace("{numero}", () => recibo.numero).replace("{data}", diaNoEmail(new Date(recibo.em))), escola: [r.emitente, r.cnpj, r.site], item, periodo, valores, pagamento, nota: r.duvidas };
 }
 
 /** O endereço do recibo na escola, pelo número (que é a chave em maiúsculas, em grupos). Função pura. */

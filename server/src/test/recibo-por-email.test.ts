@@ -97,6 +97,11 @@ describe("o recibo no e-mail", () => {
     expect(texto).toContain("Nº 81DD-3FD1-33E6-F9FB · 31/10/2026");
   });
 
+  it("o código com $ não deforma a linha do desconto", () => {
+    const bloco = reciboDoEmail({ ...recibo, detalhe: { preco: 9990, descontos: [{ codigo: "A$&B", centavos: 4995 }], credito: 0 } }, pt.app.faturamento);
+    expect(bloco.valores[1]?.rotulo).toBe("Desconto (A$&B)");
+  });
+
   it("o pagamento da confirmação: o Pix de que a pré-paga nasceu, senão o da última fatura paga", () => {
     expect(pagamentoDaConfirmacao({ pixPaymentIntentId: "pi_pix", ultimaFaturaPaga: { fatura: "in_1", pagamento: "pi_cartao" } })).toBe("pi_pix");
     expect(pagamentoDaConfirmacao({ pixPaymentIntentId: null, ultimaFaturaPaga: { fatura: "in_1", pagamento: "pi_cartao" } })).toBe("pi_cartao");
