@@ -17,7 +17,7 @@ import { CobrancaFichaPage } from "./CobrancaFichaPage";
 // o CPF escondido e os e-mails que saíram e os que não saíram.
 
 const ROTA = "/admin/cobranca/assinaturas/ficha";
-const assinatura: AssinaturaDaLista = { id: 7, aluno: { id: "u-1", nome: "Ana Souza", email: "ana@exemplo.com" }, plano: "mensal", prePaga: false, situacao: "ativa", status: "active", pagoAte: "2026-11-20T15:00:00.000Z", acabaEm: null, codigo: null, deTeste: false, criadaEm: "2026-10-20T15:00:00.000Z" };
+const assinatura: AssinaturaDaLista = { id: 7, aluno: { id: "u-1", nome: "Ana Souza", email: "ana@exemplo.com" }, plano: "mensal", prePaga: false, situacao: "ativa", status: "active", pagoAte: "2026-11-20T15:00:00.000Z", acabaEm: null, daAcesso: true, codigo: null, deTeste: false, criadaEm: "2026-10-20T15:00:00.000Z" };
 const cobranca = (extra: Partial<CobrancaDaFicha>): CobrancaDaFicha => ({ id: "ch_1", em: "2026-11-20T15:00:00.000Z", centavos: 9990, moeda: "brl", forma: "cartao", cartao: { bandeira: "visa", final: "4242" }, situacao: "paga", devolvido: 0, motivoDaFalha: null, recibo: null, contestacao: null, ...extra });
 const ficha = (extra: Partial<FichaDaCobranca> = {}): FichaDaCobranca => ({
   conta: { id: "u-1", nome: "Ana Souza", email: "ana@exemplo.com", criadaEm: "2026-10-01T15:00:00.000Z" },

@@ -66,9 +66,11 @@ describe("a cobrança na ficha", () => {
 
 describe("o CPF e o cartão do cliente na ficha", () => {
   const cliente = (extra: Record<string, unknown>) => extra as unknown as Stripe.Customer;
-  it("o CPF e o CNPJ saem com o meio escondido; sem número fiscal, nenhum", () => {
-    expect(documentoEscondido(cliente({ tax_ids: { data: [{ type: "br_cpf", value: "529.982.247-25" }] } }))).toBe("CPF 529••••••25");
-    expect(documentoEscondido(cliente({ tax_ids: { data: [{ type: "br_cnpj", value: "12.ABC.345/01DE-35" }] } }))).toBe("CNPJ 12A•••••••••35");
+  it("o CPF e o CNPJ saem no padrão público de máscara; formato estranho ou sem número fiscal, nenhum", () => {
+    // O padrão público: só o meio — nunca o começo nem os verificadores.
+    expect(documentoEscondido(cliente({ tax_ids: { data: [{ type: "br_cpf", value: "529.982.247-25" }] } }))).toBe("CPF ***.982.247-**");
+    expect(documentoEscondido(cliente({ tax_ids: { data: [{ type: "br_cnpj", value: "12.ABC.345/01DE-35" }] } }))).toBe("CNPJ **.ABC.345/****-**");
+    expect(documentoEscondido(cliente({ tax_ids: { data: [{ type: "br_cpf", value: "123" }] } }))).toBeNull();
     expect(documentoEscondido(cliente({ tax_ids: { data: [] } }))).toBeNull();
     expect(documentoEscondido(null)).toBeNull();
   });

@@ -29,8 +29,8 @@ async function entrar(email?: string, senha?: string): Promise<string[]> {
   expect(cookies.length).toBeGreaterThan(0);
   return cookies;
 }
-const lista = (consulta: Record<string, string>, cookies: string[] = admin) => request(servidor).get("/api/admin/assinaturas").query(consulta).set("Cookie", cookies);
-async function pegar(consulta: Record<string, string>): Promise<ListaDeAssinaturas> {
+const lista = (consulta: Record<string, string | number>, cookies: string[] = admin) => request(servidor).post("/api/admin/assinaturas/lista").set("Cookie", cookies).send(consulta);
+async function pegar(consulta: Record<string, string | number>): Promise<ListaDeAssinaturas> {
   const res = await lista(consulta);
   expect(res.status).toBe(200);
   return res.body as ListaDeAssinaturas;
@@ -88,7 +88,7 @@ describe("a lista da Cobrança — quem entra", () => {
 
   it("filtro, página ou busca fora do formato: 400", async () => {
     expect((await lista({ filtro: "todas-mesmo" })).status).toBe(400);
-    expect((await lista({ pagina: "0" })).status).toBe(400);
+    expect((await lista({ pagina: 0 })).status).toBe(400);
     expect((await lista({ busca: "x".repeat(121) })).status).toBe(400);
   });
 });
@@ -123,6 +123,9 @@ describe("a lista da Cobrança — os filtros e a contagem", () => {
     expect(porId.get(ids.pix ?? -1)).toMatchObject({ situacao: "pre-paga", prePaga: true, aluno: { id: carla, nome: null } });
     expect(porId.get(ids.atrasada ?? -1)?.situacao).toBe("atrasada");
     expect(porId.get(ids.cancelada ?? -1)?.situacao).toBe("cancelada");
+    // "Dá acesso" é a regra do gate, calculada no servidor: a cancelada com dias pagos dá.
+    expect(porId.get(ids.cancelada ?? -1)?.daAcesso).toBe(true);
+    expect(porId.get(ids.aguardando ?? -1)?.daAcesso).toBe(false);
     expect(porId.get(ids.aguardando ?? -1)?.situacao).toBe("aguardando");
   });
 });
@@ -146,7 +149,8 @@ describe("a lista da Cobrança — a busca", () => {
 
   it("a assinatura sem conta aparece sem aluno", async () => {
     const [sem] = (await pegar({ busca: `cus_${S}_sem` })).assinaturas;
-    expect(sem).toMatchObject({ aluno: null, situacao: "ativa" });
+    // Ativa na Stripe, mas sem conta: não dá acesso a ninguém (a tela não escreve "acesso até").
+    expect(sem).toMatchObject({ aluno: null, situacao: "ativa", daAcesso: false });
   });
 });
 
@@ -155,7 +159,7 @@ describe("a lista da Cobrança — as páginas e o que vai ao navegador", () => 
     const primeira = await pegar({ busca: paginas });
     expect(primeira.assinaturas).toHaveLength(50);
     expect(primeira.temMais).toBe(true);
-    const segunda = await pegar({ busca: paginas, pagina: "2" });
+    const segunda = await pegar({ busca: paginas, pagina: 2 });
     expect(segunda.assinaturas).toHaveLength(1);
     expect(segunda.temMais).toBe(false);
   });

@@ -108,7 +108,7 @@ describe("a ficha de uma conta", () => {
     expect(corpo.cobrancas[0]?.motivoDaFalha).toBe("insufficient_funds");
     expect(corpo.maisCobrancas).toBe(true);
     expect(corpo.cartao).toEqual({ bandeira: "visa", final: "4242", mes: 1, ano: 2031 });
-    expect(corpo.documento).toBe("CPF 529••••••25");
+    expect(corpo.documento).toBe("CPF ***.982.247-**");
     expect(JSON.stringify(corpo)).not.toContain("52998224725");
     expect(corpo.stripeIndisponivel).toBe(false);
     expect(lerClienteNaStripe.mock.calls.map(([id]) => id).sort()).toEqual([CLIENTE_LOGADO, CLIENTE_VISITANTE].sort());

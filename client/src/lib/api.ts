@@ -1212,7 +1212,8 @@ export async function desistirDaTroca(): Promise<TrocaDesfeita> {
  */
 /** A lista do painel da Cobrança (etapa 4.7b, passo 1b): uma página, com a contagem de cada filtro. */
 export async function adminListarAssinaturas(consulta: { filtro: FiltroDasAssinaturas; busca?: string; pagina: number }): Promise<ListaDeAssinaturas> {
-  const { data } = await client.get<ListaDeAssinaturas>("/admin/assinaturas", { params: consulta });
+  // No corpo, nunca no endereço: a busca é o e-mail ou o nome de um aluno, e o endereço vai inteiro para o registro.
+  const { data } = await client.post<ListaDeAssinaturas>("/admin/assinaturas/lista", consulta);
   return data;
 }
 

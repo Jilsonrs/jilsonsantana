@@ -1,5 +1,6 @@
 import { ASSINATURAS_POR_PAGINA, type AssinaturaDaLista, type ContagemDasAssinaturas, type FiltroDasAssinaturas, type ListaDeAssinaturas, type ListaDeAssinaturasQuery, type SituacaoNaLista } from "@jilson/core";
 import { Prisma, prisma } from "./prisma.js";
+import { assinaturaDaAcesso } from "./acesso.js";
 
 // O PAINEL DA COBRANÇA — A LISTA DAS ASSINATURAS (Fase 4, etapa 4.7b, passo 1b — decisões do operador, 31/10/2026).
 // Só LEITURA, e só do ESPELHO (o nosso banco): abrir a lista nunca vai à Stripe — o plano, o fim marcado e o código
@@ -80,6 +81,8 @@ export function paraAssinaturaDaLista(linha: LinhaDoEspelho): AssinaturaDaLista 
     status: linha.status,
     pagoAte: linha.currentPeriodEnd?.toISOString() ?? null,
     acabaEm: linha.cancelAt?.toISOString() ?? null,
+    // A MESMA regra do gate, e só com conta: a assinatura sem conta não dá acesso a ninguém.
+    daAcesso: linha.ownerUserId !== null && assinaturaDaAcesso({ status: linha.status, currentPeriodEnd: linha.currentPeriodEnd }),
     codigo: linha.promotionCode,
     deTeste: !linha.livemode,
     criadaEm: linha.createdAt.toISOString(),
