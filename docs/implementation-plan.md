@@ -217,8 +217,9 @@
 > de pagamento de aluno se resolve no admin, sem ir à Stripe; ele acompanha tudo e só é chamado quando precisa (a caixa
 > *Precisa de você*); e fica pronta para automatizar depois (o JilsonAI ou outra ferramenta). O mapa e os passos — 6
 > blocos, um passo por sessão, uma revisão de segurança por bloco — estão na etapa 4.7b. **A tela dos leads fica fora**
-> (decisão dele, 31/10). **Antes do passo 1a:** a resposta da **P146** (o que entra antes da abertura) e o plano curto do
-> 1a aprovado por ele. As decisões de cada passo (P137 a P145) se perguntam quando o passo abrir, uma por vez. Isso muda
+> (decisão dele, 31/10). **Os 6 blocos entram ANTES da abertura** (decisão dele, 31/10/2026, à P146 — entre isso, os
+> blocos 1 a 4, que o agente recomendou, e só os blocos 1 e 2). **O próximo passo: o plano curto do 1a, aprovado por ele
+> antes do código.** As decisões de cada passo (P137 a P145) se perguntam quando o passo abrir, uma por vez. Isso muda
 > *O PLANO DE LANÇAMENTO*: a 4.7b deixa de ser "depois da abertura".
 > **O DIA 30/10/2026 FECHOU A PARTE DE VENDA, menos o teste com dinheiro de verdade** — que o operador decidiu fazer **por
 > último, como um aluno de verdade, depois da 6g do Antigravity** (*"Eu nunca testei com meu cartão de verdade; iria testar
@@ -231,8 +232,8 @@
 > (`cf14dc3`, no `dev`, ainda não publicado: só código de teste). **A abertura ao público é no mês que vem** (operador,
 > 30/10/2026).
 > **O QUE FALTA PARA ABRIR AO PÚBLICO** — o roteiro é a tabela *A ordem* (neste plano: "A ordem — aprovada pelo operador em
-> 28/10/2026"); o Pix (o bloco 1) está feito. Faltam: (1b) o painel da cobrança (4.7b — a parte que a P146 puser antes
-> da abertura); (2) o JilsonAI (Fase 6 — a P84: o cartão de preço promete o JilsonAI; o plano espera o limite do Fable — o
+> 28/10/2026"); o Pix (o bloco 1) está feito. Faltam: (1b) o painel da cobrança (4.7b — os 6 blocos, decisão do
+> operador de 31/10/2026); (2) o JilsonAI (Fase 6 — a P84: o cartão de preço promete o JilsonAI; o plano espera o limite do Fable — o
 > item 5, abaixo);
 > (3) a tela de montar trilhas no admin (6b); (4) os certificados (6.5); (5) a home lendo os cursos do banco (C4, depois da
 > P16); (6) as páginas — Termos (com a cláusula da P61), Privacidade (com a resposta da P135), Contato e Quem somos (P30) e
@@ -865,8 +866,8 @@
 > **as trilhas** (a tela de montar no admin, Bloco 6b, e a Trilha 1) e **a página Quem somos**
 > (simples, com o texto e a foto dele). **Depois da abertura:** ~~o painel de assinaturas (4.7b)~~, os E2E
 > da cobrança (4.10) e a vitrine fora do React (C5). **(30/10/2026: o operador trouxe o painel de assinaturas, a 4.7b,
-> para ANTES da abertura e antes do JilsonAI — o *PARA CONTINUAR*. 31/10/2026: remapeada a pedido dele — 24 passos; o que
-> entra antes da abertura é a P146.)**
+> para ANTES da abertura e antes do JilsonAI — o *PARA CONTINUAR*. 31/10/2026: remapeada a pedido dele — 24 passos, e
+> os 6 blocos entram antes da abertura, decisão dele à P146.)**
 > **O risco, dito sem rodeio:** com o JilsonAI na abertura, o mês fica apertado — é o maior bloco e o
 > mais incerto (vem logo depois do Pix — a ordem do operador, abaixo). *Proposta do agente, a
 > confirmar pelo operador: um ponto de checagem em 11/11/2026 — se o JilsonAI não estiver respondendo
@@ -6310,8 +6311,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - [ ] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA
             CONTINUAR*.
-      **O que entra antes da abertura: P146** (perguntada em 31/10/2026). *A conta, dita sem rodeio:* são 24 passos
-      (4 deles só se o operador quiser) e 5 revisões de segurança — e o JilsonAI vem depois.
+      **OS 6 BLOCOS ENTRAM ANTES DA ABERTURA** *(decisão do operador, 31/10/2026, à pergunta P146 — entre isso, os
+      blocos 1 a 4 antes e o 5 e o 6 logo depois, que o agente recomendou, e só os blocos 1 e 2 antes)*. No bloco 6,
+      cada passo continua dependendo da resposta dele à sua pendência (P142 a P144, e a P138): o que ele disser que
+      não entra, sai. *A conta, dita sem rodeio:* são 24 passos (4 deles dependendo dessas respostas) e 5 revisões de
+      segurança — e o JilsonAI vem depois. *Reabre se o ponto de checagem da abertura (O PLANO DE LANÇAMENTO) mostrar
+      que o mês não fecha: aí ele escolhe o que vai para depois.*
       Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026, para o mapa (1 consulta): a contestação se
       responde inteira pela API — `POST /v1/disputes/{id}` com as provas (`evidence`: texto, até 150.000 caracteres no
       total, e arquivos enviados com `purpose=dispute_evidence`) e `submit`; `POST /v1/disputes/{id}/close` aceita, e

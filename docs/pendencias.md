@@ -28,11 +28,10 @@
 ## A. Agora, em sequência *(nascidas da configuração do Bunny, 25/09/2026)*
 
 *Item novo que precise de resposta rápida entra aqui, com o próximo número livre.*
-*Ficou vazia em 30/10/2026 (a P93, a P102 e a P126 resolvidas — o registro está no plano); a P146 entrou em 31/10/2026.*
+*Vazia desde 31/10/2026: a P146 (o que do painel da cobrança entra antes da abertura) foi resolvida no mesmo dia — o registro está no plano, etapa 4.7b; antes, a P93, a P102 e a P126 (30/10/2026).*
 
 | # | O que falta | Onde registrar |
 |---|---|---|
-| P146 | **Qual parte do painel da cobrança entra antes da abertura** (a etapa 4.7b, remapeada em 31/10/2026 a seu pedido): são 6 blocos — 1 ver tudo, 2 *Precisa de você* (os casos e o aviso), 3 as ações sem dinheiro, 4 as ações com dinheiro, 5 a contestação e a fraude, 6 o que o aluno resolve sozinho e o opcional —, 24 passos, um por sessão, e o JilsonAI vem depois. Sugestão do agente: os blocos 1 a 4 antes da abertura; o 5 e o 6 logo depois (a primeira contestação só chega semanas depois das primeiras cobranças de verdade, e até lá o roteiro do `billing.md` é o plano B) | o plano → etapa 4.7b e *O PLANO DE LANÇAMENTO* |
 
 ## B. Conteúdo e cadastro *(tarefas suas, sem ordem fixa)*
 
