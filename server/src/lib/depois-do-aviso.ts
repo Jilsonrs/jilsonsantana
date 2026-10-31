@@ -4,6 +4,8 @@ import { assinaturaDaAcesso } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 import { registrarAviso } from "./registro-da-cobranca.js";
+import { abrirCaso, TipoDeCaso } from "./casos.js";
+import { avisarUrgentes } from "./avisos-ao-operador.js";
 
 // O QUE VEM DEPOIS DE PROCESSAR UM AVISO DA STRIPE — os alertas, o registro, as boas-vindas e os e-mails da cobrança.
 // Mora aqui, e não na rota (estava em `routes/stripe-webhook.ts` até a 4.9b), porque são DOIS os caminhos de um aviso:
@@ -18,7 +20,10 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // Precisa de gente: a devolução que falhou é dinheiro que NÃO voltou. Uma vez por aviso — o
   // repetido (a reentrega) não alerta de novo; e se o processamento falhar, a Stripe entrega de
   // novo e o alerta sai então.
-  if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
+  if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") {
+    console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
+    await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `pagamento:${aviso.pagamento ?? aviso.id}`, urgente: true, assinatura: aviso.assinatura, objeto: aviso.pagamento ?? null, detalhe: "uma devolução falhou: o dinheiro não voltou ao aluno" });
+  }
   // O PIX PAGO cuja assinatura terminou SEM ACESSO (achado 5 do passo 6 da etapa 4.9, 29/10/2026): o
   // dinheiro entrou e a assinatura não abre — pagante trancado, que hoje só o aluno descobriria. Uma vez
   // por aviso. O Pix que nem virou assinatura já alertou na rotina (em conferência, uma vez só) ou foi
@@ -31,6 +36,8 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // DINHEIRO SAI, o alerta diz como ficou a assinatura e se a conta perdeu o acesso (pode ter outra assinatura).
   if (aviso.contestacao && desfecho.resultado !== "repetido") {
     const { id, motivo, centavos, prazo, pagamento, fase } = aviso.contestacao;
+    // O caso (4.7b, bloco 2): um por contestação, urgente (tem prazo); a fase seguinte atualiza o mesmo.
+    await abrirCaso({ tipo: TipoDeCaso.CONTESTACAO, chave: `du:${id}`, urgente: true, assinatura: "assinatura" in desfecho ? desfecho.assinatura.id : aviso.assinatura, objeto: id, centavos, detalhe: `${fase} · ${motivo}${prazo ? ` · prazo ${prazo.toISOString().slice(0, 10)}` : ""}` });
     const valor = `R$ ${(centavos / 100).toFixed(2).replace(".", ",")}`;
     const responder = `responder no painel da Stripe${prazo ? ` até ${prazo.toISOString().slice(0, 10)}` : ""}`;
     if (fase === "inquerito") {
@@ -48,6 +55,7 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // O AVISO DE FRAUDE (E7 — P122: só alerta, o acesso fica). Devolver o dinheiro agora evita a contestação, e a taxa dela.
   if (aviso.avisoDeFraude && desfecho.resultado !== "repetido") {
     const { id, cobranca, pagamento, tipo } = aviso.avisoDeFraude;
+    await abrirCaso({ tipo: TipoDeCaso.AVISO_DE_FRAUDE, chave: `fraude:${id}`, urgente: false, assinatura: aviso.assinatura, objeto: cobranca, detalhe: `${tipo} · cobrança ${cobranca}` });
     console.error(`[stripe] aviso de fraude ${id}: a cobrança ${cobranca} (pagamento ${pagamento ?? "?"}) recebeu um aviso de fraude do banco (${tipo}) — conferir no painel da Stripe; devolver o dinheiro agora evita a contestação`);
   }
   if (desfecho.resultado === "sem-conta") {
@@ -55,7 +63,10 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
     // fora (achado P1 da revisão) — o force-sync (etapa 4.4) conserta depois que a conta existir.
     const { id, clienteId, status, pagoAte } = desfecho.assinatura;
     const linha = `[stripe] aviso ${aviso.id} (${aviso.tipo}): assinatura ${id} do cliente ${clienteId} (${status}) SEM CONTA — ${desfecho.motivo}`;
-    if (assinaturaDaAcesso({ status, currentPeriodEnd: pagoAte })) console.error(`${linha}; ela dá acesso: o assinante está trancado fora`);
+    if (assinaturaDaAcesso({ status, currentPeriodEnd: pagoAte })) {
+      console.error(`${linha}; ela dá acesso: o assinante está trancado fora`);
+      await abrirCaso({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `sub:${id}`, urgente: true, assinatura: id, cliente: clienteId, detalhe: `sem conta (${desfecho.motivo}) e dá acesso` });
+    }
     // A tentativa do visitante que ainda não foi paga (etapa 4.7, passo 4): o normal de toda
     // assinatura dele até o pagamento passar — a conta nasce no aviso seguinte. Não é aviso.
     else if (desfecho.motivo === "aguardando o pagamento") console.info(linha);
@@ -77,4 +88,7 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // assinatura que terminou — com o que a Stripe acabou de dizer, DEPOIS do commit, uma vez cada. O
   // aviso repetido não traz a assinatura de agora: o que ficar para trás, a rodada do agendador manda.
   if (desfecho.resultado === "atualizada") await avisarSobreAAssinatura(desfecho.assinatura);
+  // O caso URGENTE que este aviso (ou outro antes) abriu: o e-mail ao operador sai agora, fora de qualquer transação
+  // (4.7b, passo 2d — P137). Nunca lança.
+  await avisarUrgentes();
 }

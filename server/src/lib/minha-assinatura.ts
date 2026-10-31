@@ -1,5 +1,6 @@
 import { PRAZO_DO_REEMBOLSO_EM_DIAS, SituacaoDoFaturamento, type CartaoTrocado, type MinhaAssinatura, type ReembolsoFeito, type RenovacaoParada } from "@jilson/core";
 import { prisma } from "./prisma.js";
+import { abrirCaso, TipoDeCaso } from "./casos.js";
 import { assinaturaDaAcesso, aulasAbertasAte, cobrancaAtrasada, encerradaDeVez, passouDoPrimeiroPagamento, temAcessoAtivo } from "./acesso.js";
 import { operarNaAssinatura, sincronizarSeLivre } from "./assinaturas.js";
 import { AssinaturaNaoEncontrada } from "./stripe.js";
@@ -191,6 +192,7 @@ export async function assinaturaDaConta(userId: string): Promise<{ resultado: "o
     // revisão de segurança, 11/10/2026). Precisa de gente: é erro, com etiqueta.
     if (detalhes.userId !== null && detalhes.userId !== userId) {
       console.error(`[stripe] minha assinatura: o espelho diz que a assinatura ${detalhes.id} é da conta ${userId}, e a Stripe diz que é da conta ${detalhes.userId}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `dono:${detalhes.id}`, urgente: false, conta: userId, assinatura: detalhes.id, detalhe: "o site e a Stripe dizem donos diferentes — investigar" });
       continue;
     }
     return { resultado: "ok", detalhes };
@@ -238,6 +240,7 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
       console.info(`[stripe] minha assinatura: o espelho da assinatura ${detalhes.id} (conta ${userId}) dava acesso e a Stripe diz que acabou; sincronizada`);
     } catch (erro) {
       console.error(`[stripe] minha assinatura: a conta ${userId} segue com acesso pelo espelho da assinatura ${detalhes.id}, que a Stripe diz que acabou, e a sincronia falhou: ${erro instanceof Error ? erro.message : String(erro)}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${detalhes.id}`, urgente: false, conta: userId, assinatura: detalhes.id, detalhe: "com acesso no site e acabada na Stripe; a sincronia falhou" });
     }
   } else if (assinatura.situacao === SituacaoDoFaturamento.ATRASADA) {
     // Quem diz se as aulas estão trancadas é o GATE (o espelho), não a data que a Stripe diz
@@ -255,6 +258,7 @@ export async function lerMinhaAssinatura(userId: string): Promise<Leitura> {
       console.info(`[stripe] minha assinatura: o espelho da assinatura ${detalhes.id} (conta ${userId}) não dava acesso e a Stripe diz que dá; sincronizada`);
     } catch (erro) {
       console.error(`[stripe] minha assinatura: a conta ${userId} está sem acesso pelo espelho da assinatura ${detalhes.id}, que a Stripe diz que dá acesso, e a sincronia falhou — o assinante está trancado fora: ${erro instanceof Error ? erro.message : String(erro)}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${detalhes.id}`, urgente: true, conta: userId, assinatura: detalhes.id, detalhe: "pagou e está sem acesso no site; a sincronia falhou" });
     }
   }
   return { resultado: "ok", assinatura };
@@ -366,6 +370,7 @@ export async function aplicarCartaoNovo(userId: string): Promise<Troca> {
     // (Trava ocupada não entra aqui: quem a tem — o aviso do próprio pagamento — está acertando.)
     if (pagou && semSincronia && !(await temAcessoAtivo(userId))) {
       console.error(`[stripe] trocar cartão: a conta ${userId} pagou a fatura em aberto da assinatura ${detalhes.id}, a sincronia falhou e ela segue sem acesso — o assinante está trancado fora até o aviso da Stripe chegar`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${detalhes.id}`, urgente: true, conta: userId, assinatura: detalhes.id, detalhe: "trocou o cartão e pagou a atrasada; a sincronia falhou e está sem acesso" });
     }
   }
   console.info(`[stripe] trocar cartão: conta ${userId}, assinatura ${detalhes.id}${detalhes.faturaEmAbertoId && cobrancaAtrasada(detalhes) ? (pagou ? ", a fatura em aberto foi paga" : ", a fatura em aberto continua em aberto") : ""}`);
@@ -405,10 +410,19 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
+  return pararRenovacaoDe(achada.detalhes, userId, dado);
+}
+
+/**
+ * A MESMA operação de cancelar, numa assinatura JÁ ACHADA — a da conta do aluno logado (acima) ou a que o admin
+ * escolheu na ficha (o painel da cobrança, etapa 4.7b, passo 3a: "o painel e o JilsonAI chamam as mesmas"). `userId`:
+ * a dona, para o registro e para os casos.
+ */
+export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: string, dado: MotivoDado): Promise<Parada> {
   // A pré-paga (etapa 4.9) já termina no fim do período: não há renovação a parar — e o reembolso é outra porta.
-  if (prePaga(achada.detalhes)) return { resultado: "pre-paga" };
-  const { id } = achada.detalhes;
-  if (oQueCancelarFaz(achada.detalhes) === "nada") return { resultado: "sem-assinatura" };
+  if (prePaga(detalhes)) return { resultado: "pre-paga" };
+  const { id } = detalhes;
+  if (oQueCancelarFaz(detalhes) === "nada") return { resultado: "sem-assinatura" };
   const operacao = await operarNaAssinatura(
     id,
     async (): Promise<Cancelada> => {
@@ -429,9 +443,13 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
         // diz o que o servidor ler (com o período pago, o acesso vai até o fim dele).
         if (agora.faturaEmAbertoId) {
           try {
-            if ((await anularFatura(agora.faturaEmAbertoId)) === "paga") console.error(`[stripe] cancelar: a cobrança em aberto da assinatura ${id} (conta ${userId}) foi PAGA no instante do cancelamento — a pessoa pagou um período que quis cancelar; conferir e devolver pelo painel da Stripe`);
+            if ((await anularFatura(agora.faturaEmAbertoId)) === "paga") {
+              console.error(`[stripe] cancelar: a cobrança em aberto da assinatura ${id} (conta ${userId}) foi PAGA no instante do cancelamento — a pessoa pagou um período que quis cancelar; conferir e devolver pelo painel da Stripe`);
+              await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: true, conta: userId, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a cobrança em aberto foi paga no instante do cancelamento" });
+            }
           } catch (erro) {
             console.error(`[stripe] cancelar: a assinatura ${id} (conta ${userId}) foi encerrada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+            await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${agora.faturaEmAbertoId}`, urgente: false, conta: userId, assinatura: id, objeto: agora.faturaEmAbertoId, detalhe: "a assinatura foi encerrada e a cobrança em aberto não foi anulada" });
           }
         }
         return { resultado: "ok", terminou: true };
@@ -467,7 +485,11 @@ export async function manterMinhaAssinatura(userId: string): Promise<Mantida> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
-  const { detalhes } = achada;
+  return manterAssinaturaDe(achada.detalhes, userId);
+}
+
+/** A MESMA operação de voltar atrás no cancelamento, numa assinatura já achada (a do aluno, ou a que o admin escolheu). */
+export async function manterAssinaturaDe(detalhes: DetalhesDaAssinatura, userId: string): Promise<Mantida> {
   if (prePaga(detalhes)) return { resultado: "pre-paga" };
   const { id } = detalhes;
   // Já renova: não há o que desfazer (o segundo clique, ou a segunda aba).
@@ -537,6 +559,7 @@ async function assinaturaParaReembolso(userId: string): Promise<{ resultado: "ok
     }
     if (detalhes.userId !== null && detalhes.userId !== userId) {
       console.error(`[stripe] reembolso: o espelho diz que a assinatura ${detalhes.id} é da conta ${userId}, e a Stripe diz que é da conta ${detalhes.userId}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `dono:${detalhes.id}`, urgente: false, conta: userId, assinatura: detalhes.id, detalhe: "o site e a Stripe dizem donos diferentes — investigar" });
       continue;
     }
     if (noPrazoDoReembolso(detalhes)) return { resultado: "ok", detalhes };
@@ -576,6 +599,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
         for (const pagamento of pago.pagamentos) await devolver(pagamento, { userId, assinaturaId: id });
       } catch (erro) {
         console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — conferir e devolver pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+        await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `sub:${id}`, urgente: true, conta: userId, assinatura: id, centavos, detalhe: "o reembolso encerrou a assinatura e a devolução falhou" });
         return { resultado: "devolucao-falhou" };
       }
       return { resultado: "ok", centavos, moeda: pago.moeda };
@@ -599,6 +623,7 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
       await sincronizarSeLivre(id, { manterSessao: true });
     } catch (erro) {
       console.error(`[stripe] reembolso: a conta ${userId} recebeu o dinheiro de volta e o espelho da assinatura ${id} NÃO foi acertado — ela pode seguir com acesso; conferir em Admin → Assinaturas: ${erro instanceof Error ? erro.message : String(erro)}`);
+      await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${id}`, urgente: false, conta: userId, assinatura: id, detalhe: "recebeu o reembolso e o site não foi acertado" });
     }
   }
   return feito;

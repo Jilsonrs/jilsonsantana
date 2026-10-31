@@ -180,6 +180,9 @@ model User {
   // 31/10/2026 (etapa 4.7b, passo 1f): o registro da cobrança desta pessoa. Mesma DEBT — REAPLICAR após cada
   // `npm run auth:generate`.
   billingLogs    BillingLog[]
+  // 31/10/2026 (etapa 4.7b, passo 3c): o pedido de correção do e-mail desta conta, à espera do código. Mesma DEBT —
+  // REAPLICAR após cada `npm run auth:generate`.
+  emailCorrection EmailCorrection?
 
   birthday            String?
   marketingConsent    Boolean?  @default(false)
@@ -820,6 +823,78 @@ model BillingLog {
   @@index([stripeSubscriptionId, createdAt])
   @@index([createdAt])
   @@map("billing_log")
+}
+
+// A CORREÇÃO DO E-MAIL pedida pelo admin (etapa 4.7b, passo 3c — decisão do operador, 29/10/2026, P121: "com o código
+// no e-mail novo"): o código vai ao e-mail NOVO, e a troca só vale com ele (`lib/correcao-de-email.ts`). Um pedido por
+// conta — o novo substitui o anterior —, apagado quando a troca vale ou quando as tentativas acabam. Guardado só o
+// resumo do código, nunca o número.
+model EmailCorrection {
+  userId      String   @id
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // O e-mail novo, em minúsculas.
+  newEmail    String
+  codeHash    String
+  attempts    Int      @default(0)
+  expiresAt   DateTime
+  // A conta do admin que pediu.
+  requestedBy String
+  createdAt   DateTime @default(now())
+
+  @@map("email_correction")
+}
+
+// OS CASOS — "PRECISA DE VOCÊ" (etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026): cada situação da
+// cobrança que precisa do operador (hoje um alerta que pede o painel da Stripe) vira UM caso — um por situação (`kind` +
+// `key`), sem repetir; se a situação volta depois de resolvida, o mesmo caso REABRE. Fecha sozinho quando a situação se
+// resolve, ou pelo operador, com uma nota. É o que o operador (e, no futuro, o JilsonAI) atende. Nada aqui decide acesso.
+// `userId` SEM chave estrangeira, de propósito: o caso é aberto DENTRO das transações da cobrança, e nada ali pode falhar
+// por causa dele (`lib/casos.ts` grava num comando só, que não falha se o caso já existe).
+model BillingCase {
+  id                   Int        @id @default(autoincrement())
+  kind                 TipoDeCaso
+  // O que identifica a situação: `pix:<pi_…>`, `sub:<sub_…>`, `ficha:<id>`…
+  key                  String
+  open                 Boolean    @default(true)
+  // O que pede o aviso na hora (P137): quem pagou e está sem acesso, e a contestação (tem prazo).
+  urgent               Boolean    @default(false)
+  userId               String?
+  stripeSubscriptionId String?
+  stripeCustomerId     String?
+  // O objeto da Stripe em questão (o Pix, a cobrança, a contestação…).
+  stripeObjectId       String?
+  amount               Int?
+  // O resumo em poucas palavras, sem dado pessoal.
+  detail               String?
+  openedAt             DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  closedAt             DateTime?
+  closedBy             QuemFez?
+  closedByUserId       String?
+  // A nota de quem fechou.
+  note                 String?
+  // Quando o operador foi avisado por e-mail (passo 2d); vazio = ainda não.
+  notifiedAt           DateTime?
+
+  @@unique([kind, key])
+  @@index([open, openedAt])
+  @@map("billing_case")
+}
+
+// O TIPO DE CASO (etapa 4.7b, bloco 2 — a lista B do mapa).
+enum TipoDeCaso {
+  PIX_EM_CONFERENCIA
+  PAGO_SEM_ASSINATURA
+  PAGOU_SEM_CONTA
+  DIVERGENCIA
+  ATIVA_SEM_PERIODO_PAGO
+  COBRANCA_EM_ABERTO
+  DEVOLUCAO_FALHOU
+  TROCA_DE_PLANO
+  CONTESTACAO
+  AVISO_DE_FRAUDE
+  EMAIL_NAO_SAIU
+  PEDIDO_DE_REEMBOLSO
 }
 
 // QUEM FEZ o que está no registro da cobrança (etapa 4.7b, passo 1f).

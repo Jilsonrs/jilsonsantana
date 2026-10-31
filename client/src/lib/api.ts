@@ -46,6 +46,13 @@ import type {
   OndeLeva,
   ListaDeTentativas,
   OQueAconteceu,
+  ListaDeCasos,
+  AcaoFeita,
+  ConferenciaPelaFicha,
+  ConsertoDoCaso,
+  LinkParaOAluno,
+  CodigoDoEmailEnviado,
+  EmailCorrigido,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1221,6 +1228,59 @@ export async function adminListarAssinaturas(consulta: { filtro: FiltroDasAssina
 export async function adminFichaDaCobranca(quem: { conta: string } | { assinatura: number } | { visitante: string }): Promise<FichaDaCobranca> {
   const { data } = await client.get<FichaDaCobranca>("/admin/cobranca/ficha", { params: quem });
   return data;
+}
+
+/** AS AÇÕES DO PAINEL (etapa 4.7b, passo 3a): a assinatura pelo id do espelho. */
+export async function adminConferir(quem: { conta: string } | { assinatura: number } | { visitante: string }): Promise<ConferenciaPelaFicha> {
+  const { data } = await client.post<ConferenciaPelaFicha>("/admin/cobranca/acoes/conferir", quem);
+  return data;
+}
+export async function adminCancelar(assinatura: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cancelar", { assinatura });
+  return data;
+}
+export async function adminDesfazerCancelamento(assinatura: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/desfazer-cancelamento", { assinatura });
+  return data;
+}
+export async function adminReenviarEmail(casoId: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>(`/admin/cobranca/casos/${casoId}/reenviar`);
+  return data;
+}
+
+/** Os consertos do passo 3b: o do caso, o CPF ou CNPJ, e o link por e-mail. */
+export async function adminResolverCaso(casoId: number, acao: ConsertoDoCaso): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>(`/admin/cobranca/casos/${casoId}/resolver`, { acao });
+  return data;
+}
+export async function adminCorrigirDocumento(quem: { conta: string } | { visitante: string }, documento: string): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/corrigir-documento", { ...quem, documento });
+  return data;
+}
+export async function adminEnviarLink(conta: string, link: LinkParaOAluno): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/enviar-link", { conta, link });
+  return data;
+}
+
+/** Corrigir o e-mail (passo 3c — P121): o código vai ao e-mail certo, e a troca só vale com ele. */
+export async function adminPedirCodigoDoEmail(conta: string, email: string): Promise<CodigoDoEmailEnviado> {
+  const { data } = await client.post<CodigoDoEmailEnviado>("/admin/cobranca/acoes/corrigir-email/codigo", { conta, email });
+  return data;
+}
+export async function adminCorrigirEmail(conta: string, email: string, codigo: string): Promise<EmailCorrigido> {
+  const { data } = await client.post<EmailCorrigido>("/admin/cobranca/acoes/corrigir-email", { conta, email, codigo });
+  return data;
+}
+
+/** "Precisa de você": os casos abertos ou os fechados (etapa 4.7b, passo 2c). */
+export async function adminListarCasos(consulta: { situacao: "abertos" | "fechados"; pagina: number }): Promise<ListaDeCasos> {
+  const { data } = await client.get<ListaDeCasos>("/admin/cobranca/casos", { params: consulta });
+  return data;
+}
+
+/** O operador fecha um caso, com uma nota opcional. */
+export async function adminFecharCaso(id: number, nota: string): Promise<void> {
+  await client.post(`/admin/cobranca/casos/${id}/fechar`, { nota });
 }
 
 /** O que aconteceu na cobrança da escola, e os motivos de cancelamento contados (etapa 4.7b, passo 1f). */

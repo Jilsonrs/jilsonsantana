@@ -17,6 +17,9 @@ import { prisma } from "../lib/prisma.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
 import { conferirAtivasVencidas, ehHoraDaConferenciaDasAtivas, FOLGA_DA_ATIVA_VENCIDA_EM_MS } from "../lib/ativas-vencidas.js";
+import { sincronizarAssinatura } from "../lib/assinaturas.js";
+
+const casoDe = (kind: "ATIVA_SEM_PERIODO_PAGO" | "DIVERGENCIA", id: string) => prisma.billingCase.findUnique({ where: { kind_key: { kind, key: `sub:${id}` } } });
 
 const S = `${Date.now()}`;
 const DIA = 24 * 60 * 60 * 1000;
@@ -60,6 +63,11 @@ describe("a conferência diária das assinaturas ativas vencidas", () => {
     expect(alertasDe(erro, id)).toHaveLength(1);
     expect(alertasDe(erro, id)[0]).toContain("sem período pago");
     expect(await espelho(id)).toMatchObject({ status: "active", currentPeriodEnd: new Date(AGORA.getTime() - 20 * DIA) });
+    // O caso (4.7b, bloco 2): aberto; e fecha sozinho quando a sincronia mostra a assinatura cancelada.
+    expect(await casoDe("ATIVA_SEM_PERIODO_PAGO", id)).toMatchObject({ open: true, urgent: false, stripeSubscriptionId: id });
+    buscarAssinatura.mockImplementation(async (pedido) => naStripe(pedido, { status: "canceled", pagoAte: new Date(AGORA.getTime() - 20 * DIA) }));
+    await sincronizarAssinatura(id);
+    expect(await casoDe("ATIVA_SEM_PERIODO_PAGO", id)).toMatchObject({ open: false, closedBy: "STRIPE" });
   });
 
   it("a Stripe diz cancelada (o aviso do fim se perdeu): ALERTA, o espelho fica cancelado e as aulas fecham", async () => {
@@ -108,6 +116,7 @@ describe("a conferência diária das assinaturas ativas vencidas", () => {
     expect(r.desconhecidas).toBe(1);
     expect(alertasDe(erro, id)).toHaveLength(1);
     expect(alertasDe(erro, id)[0]).toContain("não conhece");
+    expect(await casoDe("DIVERGENCIA", id)).toMatchObject({ open: true, urgent: false });
   });
 
   it("a Stripe não respondeu: a falha conta, fica no registro e há UM alerta no fim — o espelho não muda", async () => {

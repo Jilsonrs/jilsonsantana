@@ -458,12 +458,32 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando a Stripe falha
       expect([res.status, res.body]).toEqual([502, { error: "DevolucaoFalhou" }]);
       const registro = erro.mock.calls.flat().join(" ");
       expect(registro).toContain(`[stripe] reembolso: a assinatura ${SUB} (conta ${memberId}) foi ENCERRADA e a devolução falhou`);
+      // O caso (4.7b, bloco 2): a devolução que falhou, URGENTE, com o valor.
+      expect(await prisma.billingCase.findUnique({ where: { kind_key: { kind: "DEVOLUCAO_FALHOU", key: `sub:${SUB}` } } })).toMatchObject({ open: true, urgent: true, userId: memberId, amount: 9990 });
+      await prisma.billingCase.deleteMany({ where: { key: `sub:${SUB}` } });
     } finally {
       erro.mockRestore();
     }
     // Encerrada, paga e NÃO devolvida: o período continua contando — e ninguém foi deslogado.
     expect([(await espelho()).status, (await espelho()).currentPeriodEnd?.getTime()]).toEqual(["canceled", EM_28_DIAS.getTime()]);
     expect((await situacao()).body).toMatchObject({ temAcesso: true });
+  });
+
+  // A REVISÃO DE SEGURANÇA DO BLOCO 2 DA 4.7b (31/10/2026): o caso era aberto DENTRO da transação da operação — e,
+  // com a sincronia falhando depois, a transação desfeita o levava junto. A devolução continuava sem sair, e ninguém via.
+  it("encerrou, a devolução falhou E a sincronia falhou: o caso URGENTE fica de pé", async () => {
+    devolver.mockRejectedValue(new Error("[stripe] a devolução do pagamento falhou: StripeAPIError"));
+    buscarAssinatura.mockRejectedValue(new Error("[stripe] a busca da assinatura falhou: StripeConnectionError"));
+    const [erro, aviso] = [vi.spyOn(console, "error").mockImplementation(() => {}), vi.spyOn(console, "warn").mockImplementation(() => {})];
+    try {
+      expect((await reembolsar(member, {})).body).toEqual({ error: "DevolucaoFalhou" });
+      expect(aviso.mock.calls.flat().join(" ")).toContain(`a operação na assinatura ${SUB} valeu na Stripe, e a sincronia ficou para o aviso`);
+      expect(await prisma.billingCase.findUnique({ where: { kind_key: { kind: "DEVOLUCAO_FALHOU", key: `sub:${SUB}` } } })).toMatchObject({ open: true, urgent: true, userId: memberId, amount: 9990 });
+      await prisma.billingCase.deleteMany({ where: { key: `sub:${SUB}` } });
+    } finally {
+      erro.mockRestore();
+      aviso.mockRestore();
+    }
   });
 
   // Achado da revisão de segurança (segunda passada, 11/10/2026): se, encerrada, a assinatura

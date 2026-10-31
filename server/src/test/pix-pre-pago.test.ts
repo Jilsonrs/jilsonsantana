@@ -346,6 +346,8 @@ describe("o Pix pago que NÃO pode virar assinatura sozinho — EM CONFERÊNCIA 
     expect(marcas.get(pi)).toContain("custa 99500");
     expect(await prisma.stripeEvent.findUnique({ where: { id: aviso.id } })).not.toBeNull();
     expect(alertasDo(alertas, pi, "EM CONFERÊNCIA")).toHaveLength(1);
+    // O caso "Pix em conferência" (4.7b, passo 2a): um só, urgente, da conta que pagou.
+    expect(await prisma.billingCase.findMany({ where: { key: `pix:${pi}` }, select: { kind: true, open: true, urgent: true, userId: true, amount: true } })).toEqual([{ kind: "PIX_EM_CONFERENCIA", open: true, urgent: true, userId: conta.id, amount: 9990 }]);
 
     // O MESMO aviso de novo: repetido. OUTRO aviso do mesmo Pix: a marca já existe — nenhum alerta novo.
     alertas.mockClear();
@@ -353,6 +355,7 @@ describe("o Pix pago que NÃO pode virar assinatura sozinho — EM CONFERÊNCIA 
     expect((await enviar(pixCaiu(pi, { prepago: "anual", precoId: "price_anual", userId: conta.id }, { amount: 9990 }))).status).toBe(200);
     expect(alertas).not.toHaveBeenCalled();
     expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
+    expect(await prisma.billingCase.count({ where: { key: `pix:${pi}` } })).toBe(1);
   });
 
   // E11 da revisão ampla (30/10/2026): vale o preço de AGORA do plano — o id gravado no Pix pode ter saído de venda (um

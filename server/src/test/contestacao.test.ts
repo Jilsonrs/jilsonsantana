@@ -87,8 +87,10 @@ describe("a contestação de um pagamento", () => {
     await assinanteComSessao();
     const pagamento = novoId("pi");
     assinaturaDoPagamento.mockResolvedValue(novoId("sub"));
+    const contestacoes: string[] = [];
     for (const status of ["warning_needs_response", "needs_response"]) {
       const evento = daContestacao(pagamento, "charge.dispute.created", status);
+      contestacoes.push((evento.data.object as { id: string }).id);
       const aviso = paraAviso(evento);
       const desfecho = await processarAviso(aviso);
       await depoisDoAviso(aviso, desfecho);
@@ -103,6 +105,12 @@ describe("a contestação de um pagamento", () => {
     expect(alertas(erro)[0]).toMatch(/^\[stripe\] inquérito .*o acesso continua.*devolver o dinheiro agora, sem taxa/);
     expect(alertas(erro)[0]).toContain(`pagamento ${pagamento}`);
     expect(alertas(erro)[1]).toMatch(/^\[stripe\] contestação .*quando o dinheiro sair da conta/);
+    // O caso (4.7b, bloco 2): um por contestação, urgente, com o valor e a fase.
+    const casos = await prisma.billingCase.findMany({ where: { kind: "CONTESTACAO", key: { in: contestacoes.map((id) => `du:${id}`) } }, orderBy: { id: "asc" } });
+    expect(casos.map((c) => [c.open, c.urgent, c.amount, c.detail?.split(" · ")[0]])).toEqual([
+      [true, true, 9990, "inquerito"],
+      [true, true, 9990, "aberta"],
+    ]);
   });
 
   it("o DINHEIRO SAIU: cancela a assinatura na Stripe ANTES da sincronia, corta o acesso, derruba as sessões e alerta com o prazo — e a reentrega não faz nada de novo", async () => {
@@ -194,6 +202,7 @@ describe("o aviso de fraude", () => {
     const desfecho = await processarAviso(aviso);
     await depoisDoAviso(aviso, desfecho);
     expect(desfecho).toEqual({ resultado: "sem-assinatura" });
+    expect(await prisma.billingCase.findUnique({ where: { kind_key: { kind: "AVISO_DE_FRAUDE", key: `fraude:${(evento.data.object as { id: string }).id}` } } })).toMatchObject({ open: true, urgent: false });
     expect(cancelarPorContestacao).not.toHaveBeenCalled();
     expect(buscarAssinatura).not.toHaveBeenCalled();
     expect(await temAcessoAtivo(dono)).toBe(true);

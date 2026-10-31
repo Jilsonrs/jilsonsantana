@@ -40,6 +40,7 @@ import { CobrancaAssinaturasPage } from "@/pages/admin/cobranca/CobrancaAssinatu
 import { CobrancaFichaPage } from "@/pages/admin/cobranca/CobrancaFichaPage";
 import { CobrancaTentativasPage } from "@/pages/admin/cobranca/CobrancaTentativasPage";
 import { CobrancaOQueAconteceuPage } from "@/pages/admin/cobranca/CobrancaOQueAconteceuPage";
+import { CobrancaPrecisaDeVocePage } from "@/pages/admin/cobranca/CobrancaPrecisaDeVocePage";
 import { AvisosPage } from "@/pages/admin/comunicacao/AvisosPage";
 import { AvisoEditorPage } from "@/pages/admin/comunicacao/AvisoEditorPage";
 import { MensagensAutomaticasPage } from "@/pages/admin/comunicacao/MensagensAutomaticasPage";
@@ -143,8 +144,9 @@ export default function App() {
           <Route path="/admin/comunicacao/notificacoes/:id" element={<AvisoEditorPage />} />
           <Route path="/admin/comunicacao/mensagens-automaticas" element={<MensagensAutomaticasPage />} />
           {/* COBRANÇA (etapa 4.7b — o nome e o submenu decididos pelo operador, 31/10/2026). O link do menu é
-              /admin/cobranca, que leva à primeira tela pronta; "Precisa de você" passa a ser ela no bloco 2. */}
-          <Route path="/admin/cobranca" element={<Navigate to="/admin/cobranca/assinaturas" replace />} />
+              /admin/cobranca, que leva à primeira tela: "Precisa de você" (passo 2c). */}
+          <Route path="/admin/cobranca" element={<Navigate to="/admin/cobranca/precisa-de-voce" replace />} />
+          <Route path="/admin/cobranca/precisa-de-voce" element={<CobrancaPrecisaDeVocePage />} />
           <Route path="/admin/cobranca/assinaturas" element={<CobrancaAssinaturasPage />} />
           {/* A ficha do aluno (passo 1d): debaixo de "Assinaturas", que fica aceso no submenu. */}
           <Route path="/admin/cobranca/assinaturas/ficha" element={<CobrancaFichaPage />} />

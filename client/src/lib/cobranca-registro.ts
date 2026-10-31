@@ -1,6 +1,7 @@
 import type { LinhaDoRegistro, QuemFezNoRegistro } from "@jilson/core";
 import { pt } from "@jilson/core";
 import { dinheiro } from "@/lib/cobranca-ficha";
+import { TIPO_DO_CASO } from "@/lib/cobranca-casos";
 
 // O REGISTRO DA COBRANÇA NO ADMIN (Fase 4, etapa 4.7b, passo 1f). Admin fica em português, com o texto aqui (decisão
 // do operador, 23/09/2026); o operador confere usando (31/10/2026). Os motivos de cancelamento são os MESMOS que o
@@ -20,6 +21,7 @@ const ACAO: Partial<Record<string, string>> = {
   "charge.dispute.created": "Contestação no banco",
   "charge.dispute.funds_withdrawn": "Contestação: o dinheiro saiu",
   "radar.early_fraud_warning.created": "Aviso de fraude do banco",
+  "caso-fechado": "Caso fechado",
 };
 
 const PEDACO: Partial<Record<string, string>> = {
@@ -53,7 +55,7 @@ export function textoDaLinha(linha: LinhaDoRegistro): string {
   const pedacos = (linha.detalhe ?? "")
     .split(" · ")
     .filter(Boolean)
-    .map((pedaco) => (pedaco.startsWith("motivo:") ? `motivo: ${textoDoMotivoDeCancelamento(pedaco.slice("motivo:".length))}` : (PEDACO[pedaco] ?? pedaco)));
+    .map((pedaco) => (pedaco.startsWith("motivo:") ? `motivo: ${textoDoMotivoDeCancelamento(pedaco.slice("motivo:".length))}` : (PEDACO[pedaco] ?? (TIPO_DO_CASO as Record<string, string>)[pedaco] ?? pedaco)));
   const valor = linha.centavos !== null ? dinheiro(linha.centavos, "brl") : null;
   return [acao, ...pedacos, valor].filter((parte): parte is string => parte !== null).join(" · ");
 }

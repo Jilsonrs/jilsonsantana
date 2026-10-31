@@ -1,5 +1,6 @@
 import type { PixInput, PixSemLoginInput } from "@jilson/core";
-import { prisma } from "./prisma.js";
+import { prisma, type Prisma } from "./prisma.js";
+import { abrirCaso, TipoDeCaso, transacaoDaCobranca } from "./casos.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { clienteDaConta, pixPagoDaConta, sincronizarAViva as sincronizarAVivaDaConta, travarSeLivre, type Conta } from "./checkout.js";
 import { dadosDaTentativa, desfechoDaFicha, emConferenciaSoParaQuemPagou, ENCERRADAS, fichaDoEmail, pixPagoDoEmail, sincronizarAViva as sincronizarAVivaDoEmail, temConta, travarSeLivre as travarEmailSeLivre, type OpcoesDoVisitante } from "./checkout-do-visitante.js";
@@ -82,6 +83,7 @@ async function assinaturasAbertas(clienteId: string, quem: string): Promise<{ vi
     const ficou = await cancelarIncompleta(incompleta.id);
     if (ficou !== "incomplete_expired") {
       console.error(`[stripe] pix: a assinatura ${incompleta.id} (${quem}) foi cancelada já PAGA (ficou ${ficou}) — conferir no painel`);
+      await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `sub:${incompleta.id}`, urgente: true, assinatura: incompleta.id, cliente: clienteId, detalhe: `a tentativa foi cancelada já paga (ficou ${ficou})` });
       return { pagaNoMeio: incompleta.id };
     }
   }
@@ -103,7 +105,7 @@ export async function pagarComPix(conta: Conta, pedido: PixInput): Promise<Desfe
   if (clienteId === null) return { resultado: "ocupada" };
   let decisao: DesfechoDoPix | VivaNaStripe;
   try {
-    decisao = await prisma.$transaction(async (tx): Promise<DesfechoDoPix | VivaNaStripe> => {
+    decisao = await transacaoDaCobranca(async (tx): Promise<DesfechoDoPix | VivaNaStripe> => {
       if (!(await travarSeLivre(tx, conta.id))) return { resultado: "ocupada" };
       // De novo, com a trava, e pela MESMA ligação: o aviso da Stripe pode ter chegado no meio.
       if (await temAcessoAtivo(conta.id, tx)) return { resultado: "ja-assinante" };
@@ -155,7 +157,7 @@ export async function pagarComPixSemLogin(pedido: PixSemLoginInput, opcoes: Opco
     const ficha = await fichaDoEmail(email, pedido, opcoes);
     if (ficha === "ocupada" || ficha === "ja-tem-conta") return { resultado: ficha };
     if ("espera" in ficha) return { resultado: "muitos-emails-novos", segundos: ficha.espera };
-    decisao = await prisma.$transaction(async (tx): Promise<DesfechoDoPixSemLogin | VivaNaStripe> => {
+    decisao = await transacaoDaCobranca(async (tx): Promise<DesfechoDoPixSemLogin | VivaNaStripe> => {
       if (!(await travarEmailSeLivre(tx, email))) return { resultado: "ocupada" };
       // Com a trava: a conta pode ter nascido no meio — ou a ficha ter sido apagada pela limpeza dos 7 dias (passo 9).
       if (await temConta(tx, email)) return { resultado: "ja-tem-conta" };

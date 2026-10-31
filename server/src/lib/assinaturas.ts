@@ -1,5 +1,6 @@
 import { Prisma } from "./prisma.js";
 import { prisma } from "./prisma.js";
+import { abrirCaso, resolvidoSozinho, TipoDeCaso, transacaoDaCobranca } from "./casos.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, cancelarIncompleta, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
 import { assinaturaDoPagamento, cancelarPorContestacao } from "./stripe-reembolso.js";
@@ -122,6 +123,15 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, {
 
   if (espelho) await tx.subscription.update({ where: { id: espelho.id }, data: dados });
   else await tx.subscription.create({ data: { ...dados, stripeSubscriptionId: agora.id, ownerUserId: dono } });
+  // A sincronia valeu: o "site e Stripe discordam" desta assinatura se resolveu; e a ativa sem período pago, quando ela
+  // acabou ou voltou a ter período pago (4.7b, bloco 2).
+  await resolvidoSozinho({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${agora.id}` }, tx);
+  if (agora.status === "canceled" || (agora.pagoAte !== null && agora.pagoAte > new Date())) await resolvidoSozinho({ tipo: TipoDeCaso.ATIVA_SEM_PERIODO_PAGO, chave: `sub:${agora.id}` }, tx);
+  // A conta nasceu do pagamento: o "pagou e está sem conta" desta assinatura e da ficha dela se resolveu sozinho (4.7b, bloco 2).
+  if (contaNova) {
+    await resolvidoSozinho({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `sub:${agora.id}` }, tx);
+    if (agora.pedido) await resolvidoSozinho({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `ficha:${agora.pedido}` }, tx);
+  }
 
   // O acesso de depois se lê pela TRANSAÇÃO (a gravação acima ainda não está no banco para mais
   // ninguém), e pela conta inteira: outra assinatura dela que ainda dê acesso segura a sessão.
@@ -181,7 +191,7 @@ export async function processarAviso(aviso: AvisoDaStripe): Promise<Desfecho> {
   }
 
   try {
-    return await prisma.$transaction(async (tx): Promise<Desfecho> => {
+    return await transacaoDaCobranca(async (tx): Promise<Desfecho> => {
       await travar(tx, assinaturaId);
       // Com a trava: o mesmo aviso que esperava na fila já foi processado por quem veio antes.
       if (await tx.stripeEvent.findUnique({ where: { id: aviso.id }, select: { id: true } })) return { resultado: "repetido" };
@@ -285,7 +295,7 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
   const marcar = aviso ? { id: aviso.id, type: aviso.tipo } : null;
   const quem = marcar ? `aviso ${marcar.id}` : "pix pago sem aviso";
   try {
-    return await prisma.$transaction(async (tx): Promise<Desfecho> => {
+    return await transacaoDaCobranca(async (tx): Promise<Desfecho> => {
       if (!(await travarChave(tx, `pix:${pagamento.id}`, marcar !== null))) return { resultado: "ocupada" };
       if (marcar && (await tx.stripeEvent.findUnique({ where: { id: marcar.id }, select: { id: true } }))) return { resultado: "repetido" };
       const marcarAviso = async () => {
@@ -295,6 +305,8 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
         if (await marcarEmConferencia(pagamento.id, motivo)) {
           console.error(`[stripe] ${quem}: o Pix ${pagamento.id} foi PAGO e não virou assinatura (${motivo}) — EM CONFERÊNCIA: a pessoa vê o aviso e não paga de novo; liberar o acesso ou devolver o Pix pelo painel da Stripe`);
         }
+        // O caso (4.7b, bloco 2): gravado quando a transação terminar (`transacaoDaCobranca`).
+        await abrirCaso({ tipo: TipoDeCaso.PIX_EM_CONFERENCIA, chave: `pix:${pagamento.id}`, urgente: true, conta: pagamento.userId, cliente: pagamento.clienteId, objeto: pagamento.id, centavos: pagamento.centavos, detalhe: motivo });
         await marcarAviso();
         return { resultado: "em-conferencia" };
       };
@@ -309,6 +321,7 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
         } else if (await pixDevolvido(pagamento.id)) {
           if (escolhida && "aPagar" in escolhida) await cancelarIncompleta(escolhida.aPagar);
           console.warn(`[stripe] ${quem}: o Pix ${pagamento.id} foi devolvido antes de virar assinatura — nada criado`);
+          await resolvidoSozinho({ tipo: TipoDeCaso.PIX_EM_CONFERENCIA, chave: `pix:${pagamento.id}` }, tx);
           await marcarAviso();
           return { resultado: "sem-assinatura" };
         } else if (escolhida && "aPagar" in escolhida) {
@@ -332,6 +345,10 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
       }
       if (!(await travarChave(tx, assinaturaId, marcar !== null))) return { resultado: "ocupada" };
       const sincronia = await sincronizar(tx, assinaturaId);
+      // O Pix virou assinatura com acesso: o caso de conferência dele (se houver) se resolveu sozinho.
+      if (sincronia.resultado === "atualizada" && assinaturaDaAcesso({ status: sincronia.assinatura.status, currentPeriodEnd: sincronia.assinatura.pagoAte })) {
+        await resolvidoSozinho({ tipo: TipoDeCaso.PIX_EM_CONFERENCIA, chave: `pix:${pagamento.id}` }, tx);
+      }
       await marcarAviso();
       return sincronia;
     }, TEMPO_DO_PIX);
@@ -411,7 +428,7 @@ async function processarPixPagosSemEspelho(clienteId: string): Promise<void> {
  */
 export async function sincronizarAssinatura(assinaturaId: string): Promise<Sincronia> {
   try {
-    return await prisma.$transaction(async (tx): Promise<Sincronia> => {
+    return await transacaoDaCobranca(async (tx): Promise<Sincronia> => {
       await travar(tx, assinaturaId);
       return sincronizar(tx, assinaturaId);
     }, TEMPO_DA_TRANSACAO);
@@ -431,7 +448,7 @@ export async function sincronizarAssinatura(assinaturaId: string): Promise<Sincr
  */
 export async function sincronizarSeLivre(assinaturaId: string, opcoes: { manterSessao?: boolean } = {}): Promise<Sincronia | null> {
   try {
-    return await prisma.$transaction(async (tx): Promise<Sincronia | null> => {
+    return await transacaoDaCobranca(async (tx): Promise<Sincronia | null> => {
       const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${assinaturaId})) AS livre`;
       if (!trava?.livre) return null;
       return sincronizar(tx, assinaturaId, opcoes);
@@ -461,9 +478,10 @@ export type Operacao<T> = { feito: T; sincronia: Sincronia | null };
 export async function operarNaAssinatura<T>(assinaturaId: string, naStripe: () => Promise<T>, opcoes: { manterSessao?: (feito: T) => boolean } = {}): Promise<Operacao<T> | null> {
   const feita: { valor?: T; foi: boolean } = { foi: false };
   try {
-    return await prisma.$transaction(async (tx): Promise<Operacao<T> | null> => {
+    return await transacaoDaCobranca(async (tx): Promise<Operacao<T> | null> => {
       const [trava] = await tx.$queryRaw<{ livre: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${assinaturaId})) AS livre`;
       if (!trava?.livre) return null;
+      // O caso que a operação abrir (4.7b) é gravado quando a transação terminar — também se a sincronia falhar.
       const feito = await naStripe();
       feita.valor = feito;
       feita.foi = true;

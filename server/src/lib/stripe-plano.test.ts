@@ -20,6 +20,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   stripe: () => falsa,
 }));
 
+import { prisma } from "./prisma.js";
 import { MARCA_DA_TROCA, agendarTroca, anularFatura, calcularTroca, chaveDaTroca, paraFasesDaTroca, paraPedidoDeCobrar, paraPedidoDeTroca, segredoDaFatura, situacaoDoPagamento, soltarAgendamento, trocarAgora } from "./stripe-plano.js";
 
 const TROCA = { assinaturaId: "sub_1", itemId: "si_1", precoId: "price_anual" };
@@ -184,8 +185,11 @@ describe("trocar o plano na hora", () => {
     try {
       expect(await trocarAgora(TROCA, 89510)).toEqual({ estado: "trocado" });
       expect(erro.mock.calls.flat().join(" ")).toContain("[stripe] mudar de plano: a assinatura sub_1 foi cobrada em 89511 centavos, e o valor mostrado era 89510");
+      // O caso (4.7b, bloco 2): a troca de plano com defeito, com a diferença cobrada a mais.
+      expect(await prisma.billingCase.findUnique({ where: { kind_key: { kind: "TROCA_DE_PLANO", key: "sub:sub_1" } } })).toMatchObject({ open: true, urgent: false, amount: 1 });
     } finally {
       erro.mockRestore();
+      await prisma.billingCase.deleteMany({ where: { kind: "TROCA_DE_PLANO", key: "sub:sub_1" } });
     }
   });
 

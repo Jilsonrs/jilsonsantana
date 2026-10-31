@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { TENTATIVAS_NA_LISTA, type CobrancaDaFicha, type EmailDaFicha, type FichaDaCobranca, type FichaQuery, type ListaDeTentativas, type OndeLeva, type TentativaDaLista, type VisitanteDaFicha } from "@jilson/core";
+import { entrarPara, TELA_DE_PAGAR_COM_PIX, TENTATIVAS_NA_LISTA, type CobrancaDaFicha, type EmailDaFicha, type FichaDaCobranca, type FichaQuery, type ListaDeTentativas, type OndeLeva, type TentativaDaLista, type VisitanteDaFicha } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { paraCartao } from "./stripe-assinatura.js";
@@ -7,6 +7,8 @@ import { clienteDoCodigo, lerClienteNaStripe, type ClienteNaStripe } from "./str
 import { paraAssinaturaDaLista } from "./painel-da-cobranca.js";
 import { PRAZO_DA_FICHA_EM_MS } from "./quem-nao-terminou.js";
 import { registroDaPessoa } from "./registro-da-cobranca.js";
+import { enderecoDoSite } from "./endereco-do-site.js";
+import { pixConfigurado } from "./stripe-pix.js";
 
 // A FICHA DO ALUNO NO PAINEL DA COBRANÇA (Fase 4, etapa 4.7b, passo 1c — o mapa aprovado pelo operador, 31/10/2026).
 // A conta, as assinaturas e os e-mails vêm do NOSSO banco; as cobranças (cartão e Pix), o cartão em uso e o CPF ou
@@ -134,6 +136,8 @@ export async function montarFicha(quem: FichaQuery): Promise<FichaDaCobranca | n
 
   const ficha: FichaDaCobranca = {
     registro,
+    // Os links para o aluno (passo 3a): os mesmos dos e-mails da cobrança — entrar e seguir para a tela certa.
+    links: { trocarCartao: enderecoDoSite(entrarPara("cartao")), reativar: enderecoDoSite(entrarPara("assinar")), pagarComPix: pixConfigurado() ? enderecoDoSite(TELA_DE_PAGAR_COM_PIX) : null },
     conta: conta ? { id: conta.id, nome: conta.name, email: conta.email, criadaEm: conta.createdAt.toISOString() } : null,
     visitante,
     pixEsperando: [],

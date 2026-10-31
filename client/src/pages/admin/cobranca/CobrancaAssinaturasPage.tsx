@@ -8,7 +8,6 @@ import { codigoDoErro } from "@/lib/course-form";
 import { useIrPara } from "@/lib/versao";
 import { FiltrosDasAssinaturas } from "@/components/admin/cobranca/FiltrosDasAssinaturas";
 import { ListaDasAssinaturas } from "@/components/admin/cobranca/ListaDasAssinaturas";
-import { ConferirNaStripe } from "@/components/admin/cobranca/ConferirNaStripe";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,12 +112,6 @@ export function CobrancaAssinaturasPage() {
           </div>
         </PageSection>
 
-        <PageSection
-          title="Conferir na Stripe"
-          description="Use quando alguém pagou e continua sem acesso, ou quando a assinatura acabou e a pessoa continua com acesso. O site busca na Stripe o que vale agora e acerta a conta."
-        >
-          <ConferirNaStripe />
-        </PageSection>
       </div>
     </PageContainer>
   );

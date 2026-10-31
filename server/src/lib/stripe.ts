@@ -408,6 +408,43 @@ function recusouODocumento(erro: unknown): boolean {
   return erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "tax_id_invalid";
 }
 
+/**
+ * TROCA o CPF ou CNPJ do cliente (o painel da cobrança, etapa 4.7b, passo 3b): cria o novo e só então apaga os antigos
+ * — `[FATO — context7 /websites/stripe, 31/10/2026]` "to update a tax ID, delete the old ID and create another one"; na
+ * ordem inversa, uma recusa deixaria o cliente sem número nenhum. O que a Stripe recusa (`tax_id_invalid`):
+ * `DocumentoRecusado`. Nenhum número sai daqui para o registro.
+ */
+export async function trocarNumeroFiscal(clienteId: string, documento: DocumentoFiscal): Promise<void> {
+  let novo: string;
+  try {
+    novo = (await stripe().customers.createTaxId(clienteId, paraNumeroFiscal(documento))).id;
+  } catch (erro) {
+    if (recusouODocumento(erro)) throw new DocumentoRecusado(documento.tipo);
+    throw erroSemMensagem(erro, "a criação do número fiscal");
+  }
+  try {
+    const antigos = await stripe().customers.listTaxIds(clienteId, { limit: 100 });
+    for (const antigo of antigos.data) {
+      if (antigo.id !== novo && (antigo.type === "br_cpf" || antigo.type === "br_cnpj")) await stripe().customers.deleteTaxId(clienteId, antigo.id);
+    }
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a remoção do número fiscal antigo");
+  }
+}
+
+/**
+ * TROCA o e-mail do cliente na Stripe (a correção do e-mail pelo admin, etapa 4.7b, passo 3c). `[FATO — context7
+ * /websites/stripe, 31/10/2026]` a fatura já finalizada guarda o e-mail de quando foi finalizada; as próximas levam o
+ * novo. Repetir dá no mesmo. O e-mail nunca vai para o registro.
+ */
+export async function trocarEmailDoCliente(clienteId: string, email: string): Promise<void> {
+  try {
+    await stripe().customers.update(clienteId, { email });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a troca do e-mail do cliente");
+  }
+}
+
 /** Um cliente novo na Stripe para a ficha do visitante, com o e-mail e o número fiscal. */
 export async function criarClienteDoVisitante(cliente: ClienteDoVisitante): Promise<{ id: string; livemode: boolean }> {
   try {

@@ -1,12 +1,24 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import type { AssinaturaDaLista, CobrancaDaFicha, FichaDaCobranca } from "@jilson/core";
 
 type Quem = { conta: string } | { assinatura: number } | { visitante: string };
 const adminFichaDaCobranca = vi.fn<(quem: Quem) => Promise<FichaDaCobranca>>();
-vi.mock("@/lib/api", () => ({ adminFichaDaCobranca: (quem: Quem) => adminFichaDaCobranca(quem) }));
+const adminConferir = vi.fn<(quem: Quem) => Promise<{ temAcesso: boolean; detalhe: string }>>();
+const adminCancelar = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
+const adminDesfazerCancelamento = vi.fn<(assinatura: number) => Promise<{ detalhe: string }>>();
+const adminCorrigirDocumento = vi.fn<(quem: Quem, documento: string) => Promise<{ detalhe: string }>>();
+const adminEnviarLink = vi.fn<(conta: string, link: string) => Promise<{ detalhe: string }>>();
+vi.mock("@/lib/api", () => ({
+  adminCorrigirDocumento: (quem: Quem, documento: string) => adminCorrigirDocumento(quem, documento),
+  adminEnviarLink: (conta: string, link: string) => adminEnviarLink(conta, link),
+  adminFichaDaCobranca: (quem: Quem) => adminFichaDaCobranca(quem),
+  adminConferir: (quem: Quem) => adminConferir(quem),
+  adminCancelar: (assinatura: number) => adminCancelar(assinatura),
+  adminDesfazerCancelamento: (assinatura: number) => adminDesfazerCancelamento(assinatura),
+}));
 
 import { CobrancaFichaPage } from "./CobrancaFichaPage";
 
@@ -32,12 +44,16 @@ const ficha = (extra: Partial<FichaDaCobranca> = {}): FichaDaCobranca => ({
   emails: [],
   stripeIndisponivel: false,
   registro: [],
+  links: { trocarCartao: "https://escola.test/login?depois=cartao", reativar: "https://escola.test/login?depois=assinar", pagarComPix: null },
   ...extra,
 });
 const abrir = (consulta = "?conta=u-1") => renderWithProviders(<CobrancaFichaPage />, { route: `${ROTA}${consulta}`, path: ROTA });
 
 beforeEach(() => {
   adminFichaDaCobranca.mockReset().mockResolvedValue(ficha());
+  adminConferir.mockReset().mockResolvedValue({ temAcesso: true, detalhe: "active; com acesso" });
+  adminCancelar.mockReset().mockResolvedValue({ detalhe: "não renova; acesso até 2026-11-20" });
+  adminDesfazerCancelamento.mockReset().mockResolvedValue({ detalhe: "volta a renovar" });
 });
 
 describe("a ficha — quem e os estados", () => {
@@ -171,5 +187,107 @@ describe("a ficha — o que aconteceu (passo 1f)", () => {
     abrir();
     expect(await screen.findByText("Cobrança recusada · pagamento atrasado")).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Ana Souza" })).toBeNull();
+  });
+});
+
+describe("a ficha — as ações (passo 3a)", () => {
+  it("em dia: 'Cancelar no fim do período' pede confirmação dizendo o efeito, faz, mostra o que a Stripe respondeu e relê a ficha", async () => {
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Cancelar no fim do período" }));
+    expect(screen.getByText("Ana Souza continua com acesso até 20/11/2026, e a assinatura não renova.")).toBeTruthy();
+    expect(adminCancelar).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findAllByRole("status")).map((s) => s.textContent)).toContain("Feito: não renova; acesso até 2026-11-20.");
+    expect(adminCancelar.mock.calls).toEqual([[7]]);
+    await waitFor(() => expect(adminFichaDaCobranca.mock.calls.length).toBeGreaterThan(1));
+  });
+
+  it("'Voltar' desiste sem fazer nada", async () => {
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Cancelar no fim do período" }));
+    fireEvent.click(screen.getByRole("button", { name: "Voltar" }));
+    expect(screen.getByRole("button", { name: "Cancelar no fim do período" })).toBeTruthy();
+    expect(adminCancelar).not.toHaveBeenCalled();
+  });
+
+  it("atrasada: 'Cancelar agora', com o efeito de terminar na hora; marcada para acabar: 'Desfazer o cancelamento'", async () => {
+    adminFichaDaCobranca.mockResolvedValue(ficha({ assinaturas: [{ ...assinatura, situacao: "atrasada" }, { ...assinatura, id: 8, situacao: "vai-cancelar", acabaEm: "2026-11-20T15:00:00.000Z" }] }));
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Cancelar agora" }));
+    expect(screen.getByText("A cobrança está atrasada: a assinatura termina agora, sem acesso, e a cobrança em aberto não é mais tentada.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Desfazer o cancelamento" }));
+    const confirmar = screen.getAllByRole("button", { name: "Confirmar" });
+    fireEvent.click(confirmar[1] as HTMLElement);
+    await waitFor(() => expect(adminDesfazerCancelamento.mock.calls).toEqual([[8]]));
+  });
+
+  it("a ação que não deu: diz por quê; a cancelada e a pré-paga não têm botão", async () => {
+    adminCancelar.mockRejectedValue({ response: { data: { error: "Ocupada" } } });
+    adminFichaDaCobranca.mockResolvedValue(ficha({ assinaturas: [assinatura, { ...assinatura, id: 9, situacao: "cancelada" }, { ...assinatura, id: 10, situacao: "pre-paga", prePaga: true }] }));
+    abrir();
+    // Só a ativa tem botão: a cancelada e a pré-paga, não.
+    expect(await screen.findAllByRole("button", { name: /Cancelar|Desfazer/ })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar no fim do período" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("A assinatura está sendo atualizada agora. Tente de novo em instantes.");
+  });
+
+  it("'Conferir na Stripe' confere quem a ficha mostra, e diz como ficou", async () => {
+    abrir();
+    fireEvent.click(await screen.findByRole("button", { name: "Conferir na Stripe" }));
+    expect((await screen.findAllByRole("status")).map((s) => s.textContent)).toContain("Conferido: active; com acesso.");
+    expect(adminConferir.mock.calls).toEqual([[{ conta: "u-1" }]]);
+  });
+
+  it("os links: copiar põe o link na área de transferência; o que não está no ar não aparece", async () => {
+    const writeText = vi.fn<(texto: string) => Promise<void>>().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    abrir();
+    expect(await screen.findByText("Trocar o cartão (paga a cobrança atrasada)")).toBeTruthy();
+    expect(screen.queryByText("Pagar a cobrança atrasada com Pix")).toBeNull();
+    fireEvent.click(screen.getAllByRole("button", { name: "Copiar" })[0] as HTMLElement);
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("https://escola.test/login?depois=cartao"));
+    expect(await screen.findByRole("button", { name: "Copiado" })).toBeTruthy();
+  });
+});
+
+describe("a ficha — o CPF e o link por e-mail (passo 3b)", () => {
+  it("corrigir o CPF: manda o número aparado para quem a ficha mostra, e diz o que foi feito; o inválido diz isso", async () => {
+    adminCorrigirDocumento.mockReset().mockResolvedValueOnce({ detalhe: "CPF corrigido" }).mockRejectedValueOnce({ response: { data: { error: "DocumentoInvalido" } } });
+    abrir();
+    fireEvent.change(await screen.findByLabelText("Corrigir o CPF ou CNPJ"), { target: { value: " 529.982.247-25 " } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect(await screen.findByText("Feito: CPF corrigido.")).toBeTruthy();
+    expect(adminCorrigirDocumento.mock.calls).toEqual([[{ conta: "u-1" }, "529.982.247-25"]]);
+    fireEvent.change(screen.getByLabelText("Corrigir o CPF ou CNPJ"), { target: { value: "111" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Este CPF ou CNPJ não é válido.");
+  });
+
+  it("a ficha aberta por uma assinatura sem conta não tem o campo do CPF; a do visitante tem", async () => {
+    adminFichaDaCobranca.mockResolvedValue(ficha({ conta: null, temAcesso: false }));
+    abrir("?assinatura=7");
+    await screen.findByRole("heading", { name: "Assinatura sem conta" });
+    expect(screen.queryByLabelText("Corrigir o CPF ou CNPJ")).toBeNull();
+  });
+
+  it("com a conta, a ficha tem 'Corrigir o e-mail' (passo 3c)", async () => {
+    abrir();
+    expect(await screen.findByRole("button", { name: "Corrigir o e-mail" })).toBeTruthy();
+  });
+
+  it("a ficha da assinatura sem conta não tem 'Corrigir o e-mail'", async () => {
+    adminFichaDaCobranca.mockResolvedValue(ficha({ conta: null, temAcesso: false }));
+    abrir("?assinatura=7");
+    await screen.findByRole("heading", { name: "Assinatura sem conta" });
+    expect(screen.queryByRole("button", { name: "Corrigir o e-mail" })).toBeNull();
+  });
+
+  it("enviar o link por e-mail (só com conta): manda a conta e o link, e diz o que foi feito", async () => {
+    adminEnviarLink.mockReset().mockResolvedValue({ detalhe: "o link (trocarCartao) foi enviado" });
+    abrir();
+    fireEvent.click((await screen.findAllByRole("button", { name: "Enviar por e-mail" }))[0] as HTMLElement);
+    expect(await screen.findByText("Feito: o link (trocarCartao) foi enviado.")).toBeTruthy();
+    expect(adminEnviarLink.mock.calls).toEqual([["u-1", "trocarCartao"]]);
   });
 });

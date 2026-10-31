@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Prisma } from "./prisma.js";
 import { DuracaoDoDesconto, type AssinarSemLoginInput } from "@jilson/core";
 import { prisma } from "./prisma.js";
+import { abrirCaso, TipoDeCaso, transacaoDaCobranca } from "./casos.js";
 import { cancelarOutrosPix, pixDaPrePagaIncompleta, pixPagoSemEspelho, processarPixPago, sincronizarSeLivre } from "./assinaturas.js";
 import { listarPixDoCliente, marcarEmConferencia } from "./stripe-pix.js";
 import { temAcessoAtivo } from "./acesso.js";
@@ -164,6 +165,7 @@ export async function sincronizarAViva(email: string, assinaturaId: string): Pro
   }
   // Viva e sem conta com acesso depois da sincronia: há alguém que pagou e não entra. Precisa de gente.
   console.error(`[stripe] visitante: a assinatura ${assinaturaId} (${sincronia.assinatura.status}) está viva na Stripe e segue sem conta com acesso depois da sincronia (${sincronia.resultado}${sincronia.resultado === "sem-conta" ? `: ${sincronia.motivo}` : ""}) — conferir no painel`);
+  await abrirCaso({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `sub:${assinaturaId}`, urgente: true, assinatura: assinaturaId, cliente: sincronia.assinatura.clienteId, detalhe: `viva na Stripe e sem conta com acesso (${sincronia.resultado})` });
   return { resultado: "ja-tem-conta" };
 }
 
@@ -207,12 +209,13 @@ export async function pixPagoDoEmail(email: string, pagamento: PagamentoPrePago)
   if (await marcarEmConferencia(pagamento.id, `processado (${desfecho.resultado}), e o e-mail segue sem conta com acesso`)) {
     console.error(`[stripe] visitante: o Pix ${pagamento.id} está PAGO e segue sem conta com acesso depois de processá-lo (${desfecho.resultado}) — EM CONFERÊNCIA; liberar o acesso ou devolver o Pix pelo painel da Stripe`);
   }
+  await abrirCaso({ tipo: TipoDeCaso.PIX_EM_CONFERENCIA, chave: `pix:${pagamento.id}`, urgente: true, cliente: pagamento.clienteId, objeto: pagamento.id, centavos: pagamento.centavos, detalhe: `processado (${desfecho.resultado}) e o e-mail segue sem conta com acesso` });
   return { resultado: "em-conferencia" };
 }
 
 /** A decisão, COM a trava do e-mail: o que a Stripe diz do cliente, o número fiscal, e a tentativa. */
 async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha, precoId: string, codigoId: string | null, acaba: boolean): Promise<NaTrava> {
-  return prisma.$transaction(async (tx): Promise<NaTrava> => {
+  return transacaoDaCobranca(async (tx): Promise<NaTrava> => {
     if (!(await travarSeLivre(tx, email))) return { resultado: "ocupada" };
     // De novo, com a trava e pela MESMA ligação: a conta pode ter nascido no meio — ou a ficha ter sido
     // apagada pela limpeza dos 7 dias (passo 9), e com ela o cliente da Stripe.
@@ -270,6 +273,7 @@ async function decidir(email: string, pedido: AssinarSemLoginInput, ficha: Ficha
         // Ela foi PAGA entre a lista e o cancelamento (outra aba, no mesmo instante): o
         // cancelamento encerrou uma assinatura paga. Precisa de gente: reembolso ou reativação.
         console.error(`[stripe] visitante: a assinatura ${incompleta.id} da ficha ${ficha.id} foi cancelada já PAGA (ficou ${ficou}) — conferir no painel`);
+        await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `sub:${incompleta.id}`, urgente: true, assinatura: incompleta.id, cliente: ficha.stripeCustomerId, detalhe: `a tentativa foi cancelada já paga (ficou ${ficou})` });
         return { resultado: "ja-tem-conta" };
       }
     }

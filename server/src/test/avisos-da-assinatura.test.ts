@@ -78,7 +78,8 @@ const atrasada = (id: string, userId: string, falha: Date, proxima: Date | null 
 
 const doTipo = (tipo: PedidoDeEmail["tipo"]) => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo === tipo);
 /** Os e-mails da COBRANÇA enviados — a confirmação de quem assinou (E18) tem os testes dela, em "a confirmação". */
-const todos = () => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo !== "assinatura-confirmada");
+// Os e-mails AO ALUNO: o aviso ao operador (4.7b, passo 2d) é outra função, com teste próprio.
+const todos = () => enviarEmail.mock.calls.map(([p]) => p).filter((p) => p.tipo !== "assinatura-confirmada" && p.tipo !== "casos-urgentes" && p.tipo !== "resumo-dos-casos");
 const marcas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true }, orderBy: { id: "asc" } });
 /** As marcas com a confirmação do envio (`sentAt`): vazio = pendente. */
 const marcasCompletas = async (sub: string) => prisma.subscriptionEmail.findMany({ where: { subscription: { stripeSubscriptionId: sub } }, select: { kind: true, reference: true, sentAt: true }, orderBy: { id: "asc" } });
@@ -398,9 +399,14 @@ describe("uma vez cada", () => {
     enviarEmail.mockResolvedValueOnce({ enviado: false, motivo: "falhou" });
     await enviar(avisoDaAssinatura(sub, "invoice.payment_failed"));
     expect(await marcas(sub)).toEqual([]);
+    // O caso "e-mail que não saiu" (4.7b, bloco 2): abre na falha…
+    const casoDoEmail = () => prisma.billingCase.findUnique({ where: { kind_key: { kind: "EMAIL_NAO_SAIU", key: `email:COBRANCA_FALHOU:${sub}` } } });
+    expect(await casoDoEmail()).toMatchObject({ open: true, urgent: false, userId: conta.id });
     await enviar(avisoDaAssinatura(sub));
     expect(doTipo("cobranca-falhou")).toHaveLength(2);
     expect(await marcas(sub)).toHaveLength(1);
+    // …e fecha sozinho quando a vez seguinte o manda.
+    expect(await casoDoEmail()).toMatchObject({ open: false, closedBy: "STRIPE" });
 
     const outra = novoId("sub");
     buscarAssinatura.mockResolvedValue(atrasada(outra, conta.id, new Date(Date.now() - 60_000)));

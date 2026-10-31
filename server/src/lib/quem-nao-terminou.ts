@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { OrigemDoLead, prisma, type Prisma } from "./prisma.js";
+import { abrirCaso, TipoDeCaso, transacaoDaCobranca } from "./casos.js";
 import { travarSeLivre, temConta } from "./checkout-do-visitante.js";
 import { modoDaChave } from "./conferencia-da-cobranca.js";
 import { getDict } from "./dict.js";
@@ -235,18 +236,44 @@ async function lembrar(daLista: FichaDaRodada, agora: Date): Promise<"lembrete" 
   return "ocupada";
 }
 
+/** A ficha é do modo da chave da Stripe (teste ou de verdade)? Sem ser, a chave não alcança o cliente dela. */
+function doModoDaChave(ficha: Pick<FichaDaRodada, "livemode">): boolean {
+  const modo = modoDaChave(process.env.STRIPE_SECRET_KEY, ["sk", "rk"]);
+  if (modo === null) throw new Error("[stripe] limpeza: sem uma chave secreta da Stripe com a forma de chave");
+  return ficha.livemode === (modo === "live");
+}
+
+/**
+ * O CLIENTE DA STRIPE de uma ficha sem conta, APAGADO pela regra da limpeza — com a trava do e-mail na mão (quem chama a
+ * toma): só o que nunca pagou nada (`podeApagar`); os pagamentos abertos são cancelados antes; o que a Stripe não conhece
+ * mais conta como apagado. A exclusão só começa dentro do prazo da transação (`PRAZO_PARA_APAGAR_EM_MS`): passou, adiada.
+ */
+async function apagarClienteDaFicha(tx: Prisma.TransactionClient, ficha: Pick<FichaDaRodada, "id" | "stripeCustomerId">, inicio: number): Promise<"apagado" | "adiada" | { pagou: string }> {
+  const naStripe = await lerClienteNaStripe(ficha.stripeCustomerId);
+  if (naStripe === "nao-existe") return "apagado";
+  const decisao = podeApagar(naStripe);
+  if (!decisao.pode) return { pagou: decisao.motivo };
+  for (const pagamento of decisao.aCancelar) await cancelarPagamentoAberto(pagamento);
+  // Antes de apagar: a transação (e com ela a trava) ainda vale, e sobra tempo para a exclusão — senão, fica para depois.
+  await tx.$queryRaw`SELECT 1`;
+  if (Date.now() - inicio > PRAZO_PARA_APAGAR_EM_MS) {
+    console.warn(`[stripe] limpeza: a ficha ${ficha.id} passou do prazo antes de apagar o cliente — fica para a próxima hora`);
+    return "adiada";
+  }
+  await apagarClienteNaStripe(ficha.stripeCustomerId);
+  return "apagado";
+}
+
 /** A LIMPEZA desta ficha, 7 dias depois da última tentativa. */
 async function apagar(ficha: FichaDaRodada, agora: Date): Promise<"apagada" | "com-pagamento" | "outro-modo" | "ocupada" | "adiada" | "nada"> {
   const inicio = Date.now();
-  const modo = modoDaChave(process.env.STRIPE_SECRET_KEY, ["sk", "rk"]);
-  if (modo === null) throw new Error("[stripe] limpeza: sem uma chave secreta da Stripe com a forma de chave");
-  if (ficha.livemode !== (modo === "live")) {
+  if (!doModoDaChave(ficha)) {
     // A ficha de outro modo (teste com a chave de verdade, ou o contrário): esta chave não alcança o cliente dela.
     await prisma.guestCheckout.updateMany({ where: { id: ficha.id }, data: { naoApagadaEm: agora } });
     console.warn(`[stripe] limpeza: a ficha ${ficha.id} é do ${ficha.livemode ? "modo de verdade" : "modo de teste"} e a chave não — não apagada`);
     return "outro-modo";
   }
-  return prisma.$transaction(async (tx) => {
+  return transacaoDaCobranca(async (tx) => {
     if (!(await travarSeLivre(tx, ficha.email))) return "ocupada";
     // Relida COM a trava — é ELA que decide, e o lead é gravado com ela: o visitante pode ter voltado (a última tentativa
     // mudou), mudado a caixa ou o nome, ou ter pago (a conta nasceu).
@@ -254,27 +281,43 @@ async function apagar(ficha: FichaDaRodada, agora: Date): Promise<"apagada" | "c
     if (!atual || oQueFazerComAFicha(atual, agora) !== "apagar") return "nada";
     // Quem marcou a caixa vira lead (o lembrete pode não ter saído).
     if (atual.novidades) await leadDaCaixaNaTrava(tx, atual);
-    const naStripe = await lerClienteNaStripe(atual.stripeCustomerId);
-    if (naStripe !== "nao-existe") {
-      const decisao = podeApagar(naStripe);
-      if (!decisao.pode) {
-        await tx.guestCheckout.update({ where: { id: atual.id }, data: { naoApagadaEm: agora } });
-        if (atual.naoApagadaEm === null) {
-          console.error(`[stripe] limpeza: a ficha ${atual.id} (cliente ${atual.stripeCustomerId}) NÃO foi apagada — ${decisao.motivo}: alguém pagou e ficou sem conta? Conferir no painel da Stripe`);
-        }
-        return "com-pagamento";
+    const cliente = await apagarClienteDaFicha(tx, atual, inicio);
+    if (cliente === "adiada") return "adiada";
+    if (cliente !== "apagado") {
+      await tx.guestCheckout.update({ where: { id: atual.id }, data: { naoApagadaEm: agora } });
+      if (atual.naoApagadaEm === null) {
+        console.error(`[stripe] limpeza: a ficha ${atual.id} (cliente ${atual.stripeCustomerId}) NÃO foi apagada — ${cliente.pagou}: alguém pagou e ficou sem conta? Conferir no painel da Stripe`);
       }
-      for (const pagamento of decisao.aCancelar) await cancelarPagamentoAberto(pagamento);
-      // Antes de apagar: a transação (e com ela a trava) ainda vale, e sobra tempo para a exclusão — senão, a próxima hora.
-      await tx.$queryRaw`SELECT 1`;
-      if (Date.now() - inicio > PRAZO_PARA_APAGAR_EM_MS) {
-        console.warn(`[stripe] limpeza: a ficha ${atual.id} passou do prazo antes de apagar o cliente — fica para a próxima hora`);
-        return "adiada";
-      }
-      await apagarClienteNaStripe(atual.stripeCustomerId);
+      await abrirCaso({ tipo: TipoDeCaso.PAGOU_SEM_CONTA, chave: `ficha:${atual.id}`, urgente: true, cliente: atual.stripeCustomerId, detalhe: `a limpeza dos 7 dias achou pagamento: ${cliente.pagou}` });
+      return "com-pagamento";
     }
     await tx.guestCheckout.delete({ where: { id: atual.id } });
     console.info(`[stripe] limpeza: a ficha ${atual.id} e o cliente ${atual.stripeCustomerId} apagados (7 dias sem pagamento)`);
+    return "apagada";
+  }, TEMPO_DA_LIMPEZA);
+}
+
+/**
+ * A TENTATIVA DO E-MAIL QUE A CORREÇÃO DO ADMIN VAI USAR (etapa 4.7b, passo 3c — P121): a ficha SEM conta desse e-mail (a
+ * pessoa tentou de novo com o e-mail certo, e não pagou) sai AGORA, pela regra da limpeza — a ficha e o cliente da
+ * Stripe, só se ele nunca pagou nada —, sem esperar os 7 dias: o e-mail vai ser de uma conta, e a ficha dela passa a ele.
+ * Sem lead (quem fica com o e-mail é uma conta, com o consentimento dela) e sem alerta: com pagamento, a correção não
+ * segue, e o operador confere a tentativa. "livre": não há ficha sem conta com esse e-mail.
+ */
+export async function apagarTentativaDoEmail(email: string): Promise<"livre" | "apagada" | "com-pagamento" | "outro-modo" | "ocupada" | "adiada"> {
+  const inicio = Date.now();
+  const daLista = await prisma.guestCheckout.findUnique({ where: { email }, select: CAMPOS });
+  if (!daLista || daLista.userId !== null) return "livre";
+  if (!doModoDaChave(daLista)) return "outro-modo";
+  return transacaoDaCobranca(async (tx) => {
+    if (!(await travarSeLivre(tx, email))) return "ocupada";
+    const atual = await fichaAgora(tx, daLista.id);
+    if (!atual || atual.userId !== null) return "livre";
+    const cliente = await apagarClienteDaFicha(tx, atual, inicio);
+    if (cliente === "adiada") return "adiada";
+    if (cliente !== "apagado") return "com-pagamento";
+    await tx.guestCheckout.delete({ where: { id: atual.id } });
+    console.info(`[stripe] correção do e-mail: a tentativa ${atual.id} e o cliente ${atual.stripeCustomerId} apagados (sem pagamento) — o e-mail passa a uma conta`);
     return "apagada";
   }, TEMPO_DA_LIMPEZA);
 }

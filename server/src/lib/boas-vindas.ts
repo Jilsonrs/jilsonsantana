@@ -4,6 +4,7 @@ import { enviarEmail } from "./email.js";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { enderecoDoSite } from "./endereco-do-site.js";
+import { abrirCaso, resolvidoSozinho, TipoDeCaso } from "./casos.js";
 
 // O E-MAIL DE BOAS-VINDAS de quem assinou sem conta (Fase 4, etapa 4.7, passo 5 — decisão do
 // operador, 21/10/2026): confirma a assinatura e diz como entrar. Não é preciso para começar (a senha
@@ -69,7 +70,13 @@ export async function mandarBoasVindasDaAssinatura(assinaturaId: string): Promis
     });
     // Falhou: a marca volta, e o próximo aviso da Stripe tenta de novo. "Duplicado" é o outro envio,
     // com a mesma chave, saindo — a marca fica.
-    if (!envio.enviado && envio.motivo === "falhou") await prisma.guestCheckout.updateMany({ where: { id: ficha.id }, data: { boasVindasEnviadaEm: null } });
+    const doEmail = { tipo: TipoDeCaso.EMAIL_NAO_SAIU, chave: `boas-vindas:${conta.id}` };
+    if (!envio.enviado && envio.motivo === "falhou") {
+      await prisma.guestCheckout.updateMany({ where: { id: ficha.id }, data: { boasVindasEnviadaEm: null } });
+      await abrirCaso({ ...doEmail, urgente: false, conta: conta.id, assinatura: assinaturaId, detalhe: "as boas-vindas não saíram; o próximo aviso tenta de novo" });
+    } else if (envio.enviado) {
+      await resolvidoSozinho(doEmail);
+    }
   } catch (erro) {
     console.error(`[email] as boas-vindas da assinatura ${assinaturaId} não saíram: ${erro instanceof Error ? erro.name : "falha sem tipo"}`);
   }

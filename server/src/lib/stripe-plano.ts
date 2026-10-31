@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { erroSemMensagem, stripe } from "./stripe.js";
+import { abrirCaso, TipoDeCaso } from "./casos.js";
 
 // MUDAR DE PLANO (Fase 4, etapa 4.6, sessão b — billing.md → Minha assinatura). Decisões do
 // operador (11/10/2026): mensal → anual vale NA HORA, com o valor mostrado antes; anual → mensal
@@ -172,6 +173,7 @@ export async function trocarAgora(troca: TrocaNaHora, cobrar: number): Promise<D
       pendente = false;
     }
     console.error(`[stripe] mudar de plano: a assinatura ${troca.assinaturaId} foi cobrada em ${nova.amount_due} centavos, e o valor mostrado era ${cobrar} — conferir no painel da Stripe`);
+    await abrirCaso({ tipo: TipoDeCaso.TROCA_DE_PLANO, chave: `sub:${troca.assinaturaId}`, urgente: false, assinatura: troca.assinaturaId, centavos: nova.amount_due - cobrar, detalhe: `cobrado ${nova.amount_due} centavos e mostrado ${cobrar}` });
   }
   if (!pendente) return { estado: "trocado" };
   const fatura = assinatura.latest_invoice;
@@ -274,6 +276,7 @@ export async function agendarTroca(assinaturaId: string, precoNovoId: string): P
       await stripe().subscriptionSchedules.release(agendamento.id);
     } catch {
       console.error(`[stripe] mudar de plano: o agendamento pela metade da assinatura ${assinaturaId} não foi solto — soltar pelo painel da Stripe`);
+      await abrirCaso({ tipo: TipoDeCaso.TROCA_DE_PLANO, chave: `agendamento:${agendamento.id}`, urgente: false, assinatura: assinaturaId, objeto: agendamento.id, detalhe: "o agendamento da troca ficou pela metade e não foi solto" });
     }
     throw erroSemMensagem(erro, "o agendamento da troca");
   }

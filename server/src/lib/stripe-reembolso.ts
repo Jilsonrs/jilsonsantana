@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { COMENTARIO_DA_TROCA_POR_PIX, erroSemMensagem, METADADO_DA_CONTESTACAO, stripe } from "./stripe.js";
+import { abrirCaso, TipoDeCaso } from "./casos.js";
 import { cobrancaDoPagamento, pagamentosDaFatura } from "./stripe-devolucao.js";
 import { paraMotivoNaStripe, type MotivoDado } from "./stripe-assinatura.js";
 import { anularFatura } from "./stripe-plano.js";
@@ -117,9 +118,13 @@ export async function cancelarPorContestacao(assinaturaId: string, contestacaoId
   }
   if (!faturaEmAberto) return;
   try {
-    if ((await anularFatura(faturaEmAberto)) === "paga") console.error(`[stripe] contestação ${contestacaoId}: a cobrança em aberto da assinatura ${assinaturaId} foi PAGA no instante do cancelamento — conferir no painel da Stripe`);
+    if ((await anularFatura(faturaEmAberto)) === "paga") {
+      console.error(`[stripe] contestação ${contestacaoId}: a cobrança em aberto da assinatura ${assinaturaId} foi PAGA no instante do cancelamento — conferir no painel da Stripe`);
+      await abrirCaso({ tipo: TipoDeCaso.PAGO_SEM_ASSINATURA, chave: `fatura:${faturaEmAberto}`, urgente: false, assinatura: assinaturaId, objeto: faturaEmAberto, detalhe: `a cobrança em aberto foi paga no instante do cancelamento pela contestação ${contestacaoId}` });
+    }
   } catch (erro) {
     console.error(`[stripe] contestação ${contestacaoId}: a assinatura ${assinaturaId} foi cancelada e a cobrança em aberto NÃO foi anulada — anular pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+    await abrirCaso({ tipo: TipoDeCaso.COBRANCA_EM_ABERTO, chave: `fatura:${faturaEmAberto}`, urgente: false, assinatura: assinaturaId, objeto: faturaEmAberto, detalhe: `cancelada pela contestação ${contestacaoId} e a cobrança em aberto não foi anulada` });
   }
 }
 

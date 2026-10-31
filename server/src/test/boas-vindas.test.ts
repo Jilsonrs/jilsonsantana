@@ -117,10 +117,15 @@ describe("as boas-vindas de quem assinou sem conta", () => {
     enviarEmail.mockResolvedValueOnce({ enviado: false, motivo: "falhou" });
     await enviar(avisoDaAssinatura(sub, "customer.subscription.created"));
     expect(await marca(ficha.id)).toBeNull();
+    // O caso "e-mail que não saiu" (4.7b, bloco 2): abre na falha, e fecha quando o aviso seguinte manda.
+    const conta = (await prisma.guestCheckout.findUniqueOrThrow({ where: { id: ficha.id } })).userId;
+    const casoDoEmail = () => prisma.billingCase.findUnique({ where: { kind_key: { kind: "EMAIL_NAO_SAIU", key: `boas-vindas:${conta}` } } });
+    expect(await casoDoEmail()).toMatchObject({ open: true, urgent: false });
 
     await enviar(avisoDaAssinatura(sub));
     expect(boasVindas()).toHaveLength(2);
     expect(await marca(ficha.id)).not.toBeNull();
+    expect(await casoDoEmail()).toMatchObject({ open: false, closedBy: "STRIPE" });
   });
 
   it("o aviso REPETIDO também tenta: a conta nasceu, o envio falhou, e a Stripe entregou o mesmo aviso de novo", async () => {

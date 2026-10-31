@@ -217,7 +217,8 @@
 > de pagamento de aluno se resolve no admin, sem ir à Stripe; ele acompanha tudo e só é chamado quando precisa (a caixa
 > *Precisa de você*); e fica pronta para automatizar depois (o JilsonAI ou outra ferramenta). O mapa e os passos — 6
 > blocos, um passo por sessão, uma revisão de segurança por bloco — estão na etapa 4.7b. **A tela dos leads fica fora**
-> (decisão dele, 31/10). **Os 6 blocos entram ANTES da abertura** (decisão dele, 31/10/2026, à P146 — entre isso, os
+> (decisão dele, 31/10). **O BLOCO 1 ESTÁ NO AR desde 31/10/2026 (merge `2ce2799`)**; o 2a e o 2b estão no `dev`.
+> **Os 6 blocos entram ANTES da abertura** (decisão dele, 31/10/2026, à P146 — entre isso, os
 > blocos 1 a 4, que o agente recomendou, e só os blocos 1 e 2). **Os 6 blocos aprovados de uma vez e as 9 decisões
 > (P137 a P145) respondidas no mesmo dia** — cada uma no seu lugar, na etapa. **Como trabalhar (decisões dele, 31/10):**
 > os passos correm direto, um commit por passo com os gates; a revisão de segurança de cada bloco roda em segundo plano;
@@ -6394,21 +6395,182 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               `stripe.test.ts` (+1), a tela (novo) e a ficha (+1). **Mutação: 9 de 9 reprovaram.** **Banco de dev:**
               `migrate deploy`, *No difference detected*, nenhuma tabela sem RLS. *Docs check (context7): não
               disparado — nenhuma ida nova à Stripe (o motivo já estava nos metadados).*
-        - [ ] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele).
+        - [x] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele). **PUBLICADO
+              em 31/10/2026, com a ordem do operador ("Sim, pode publicar"): merge `2ce2799`** — só o bloco 1 (um ramo a
+              partir de `d4afd70` com as correções da revisão, `40b7db1`; o bloco 2 seguiu no `dev`). CI e Deploy
+              verdes. **No ar:** `/api/health` 200; a lista e a ficha recusam quem não entrou (401). **Em produção (só
+              leitura, branch `production`):** nenhuma tabela sem RLS; as migrations `20261031120000_espelho_do_painel` e
+              `20261031180000_registro_da_cobranca` aplicadas; o registro vazio (nenhum aviso desde a publicação). As
+              assinaturas que já existiam ganham o plano, o fim marcado e o código na próxima sincronia. **A revisão
+              de segurança (31/10/2026, só o que mudou, `5c358cb..d4afd70`): nenhum P0 nem P1.** Os quatro menores,
+              fechados com teste e mutação (4 de 4 reprovaram), sem nova rodada: (P2) a frase "acesso até" da lista era
+              uma segunda cópia da regra do gate, no navegador — agora o servidor manda `daAcesso` (`assinaturaDaAcesso`,
+              e só com conta: a assinatura sem conta não dá acesso a ninguém); (P3) a busca (o e-mail ou o nome de um
+              aluno) ia no endereço, que o Cloud Run guarda inteiro no registro — a lista virou `POST
+              /api/admin/assinaturas/lista`, com a busca no corpo (a regra foi para o `CLAUDE.md` → *Server*); (P3) a
+              máscara do CPF mostrava o começo e os verificadores, que o padrão público esconde — agora é o padrão do
+              Diário Oficial (`CPF ***.982.247-**`; o CNPJ, `**.ABC.345/****-**`); (P3) o RLS de toda tabela passou a ter
+              teste geral (`rls.test.ts`, contra o banco recém-migrado da suíte). **Falta:** publicar, com a ordem dele
+              — e, depois do deploy, conferir em produção (só leitura) que nenhuma tabela ficou sem RLS. Fotos: não há
+              (o bloco 1 é só do admin; o operador confere usando).
       - [ ] **BLOCO 2 — PRECISA DE VOCÊ** (os casos e o aviso ao operador)
-        - [ ] **2a — Os casos, a base:** a tabela (com RLS), abrir sem repetir e fechar sozinho; os três primeiros
-              tipos de *B* (o Pix em conferência, o dinheiro sem assinatura, o pagou e está sem conta).
-        - [ ] **2b — Os outros tipos de *B*.** O alerta do Sentry continua saindo: é ele que avisa até o 2d existir.
-        - [ ] **2c — A tela "Precisa de você"** (a primeira que abre): os casos, fechar com nota e o link para a ficha.
-        - [ ] **2d — O aviso ao operador** (P137: o urgente na hora; o resto num resumo de manhã).
-        - [ ] **Fechamento do bloco 2.**
+        - [x] **2a — Os casos, a base:** a tabela (com RLS), abrir sem repetir e fechar sozinho; os três primeiros
+              tipos de *B* (o Pix em conferência, o dinheiro sem assinatura, o pagou e está sem conta). **FEITO
+              (31/10/2026).** Migration `20261031200000_casos_da_cobranca`: `billing_case` (`BillingCase`, com RLS; o
+              enum `TipoDeCaso` já com os 12 tipos de *B*; um caso por situação — `kind` + `key`, único). **Abrir NUNCA
+              pode quebrar a cobrança** (`lib/casos.ts`): o caso é aberto no MESMO lugar do alerta (que continua), dentro
+              da transação da cobrança quando há uma (o `tx`), num comando só — `INSERT … ON CONFLICT DO UPDATE` — e a
+              tabela não tem chave estrangeira: um erro ali deixaria a transação abortada. Abrir de novo atualiza o
+              resumo e guarda quando abriu; a situação que volta depois de fechada REABRE, limpa. `operarNaAssinatura`
+              passou a entregar a transação à operação (para o caso ficar nela). **Os três tipos:** *Pix em conferência*
+              (`assinaturas.ts`, `checkout.ts`, `checkout-do-visitante.ts`; fecha sozinho quando o Pix vira assinatura
+              com acesso, ou foi devolvido antes); *dinheiro recebido sem assinatura* (a tentativa cancelada já paga —
+              `checkout.ts`, `checkout-do-visitante.ts`, `pix-pre-pago.ts` — e a cobrança paga no instante de cancelar ou
+              do Pix da atrasada — `minha-assinatura.ts`, `pix-da-atrasada.ts`); *pagou e está sem conta* (o aviso com a
+              assinatura sem conta que dá acesso, a assinatura viva sem conta do visitante, e a limpeza dos 7 dias que
+              achou pagamento — fecha sozinho quando a conta nasce do pagamento). Urgentes, menos o da cobrança paga no
+              Pix da atrasada (a pessoa tem acesso). Testes: `casos.test.ts` (novo — inclusive a transação que não
+              aborta), e o caso conferido em `pix-pre-pago.test.ts` e `cancelar-assinatura.test.ts`. **Mutação: 6 de 6
+              reprovaram.** **Banco de dev:** `migrate deploy`, *No difference detected*, nenhuma tabela sem RLS.
+              *Docs check (context7): não disparado — nenhuma ida nova à Stripe.*
+        - [x] **2b — Os outros tipos de *B*.** O alerta do Sentry continua saindo: é ele que avisa até o 2d existir.
+              **FEITO (31/10/2026).** Cada alerta abre o caso no mesmo lugar (na transação da cobrança quando há uma —
+              `operarNaAssinatura` entrega o `tx` também ao reembolso e à troca de plano): **o site e a Stripe
+              discordam** (`DIVERGENCIA` — a sincronia que falhou na tela do aluno, urgente quando a pessoa pagou e está
+              sem acesso; o reembolso que não acertou o site; a Stripe que não conhece a assinatura ativa; e o "dono
+              diferente", com a chave `dono:`, que não fecha sozinho: é para investigar); **ativa sem período pago**
+              (a rodada diária); **cobrança em aberto** que não foi anulada (cancelar, contestação, Pix da atrasada, troca
+              recusada); **devolução que falhou** (o reembolso do aluno e o aviso `refund.failed` — urgentes); **troca de
+              plano com defeito** (cobrado diferente do mostrado, com a diferença; o agendamento pela metade);
+              **contestação** (uma por contestação, urgente — tem prazo; a fase seguinte atualiza a mesma, com o valor);
+              **aviso de fraude** (não urgente — o passo 5c o resolve sozinho); e **e-mail que não saiu** (o da cobrança e
+              as boas-vindas). **Fecham sozinhos:** a divergência quando uma sincronia da assinatura vale; a ativa sem
+              período pago quando ela é cancelada ou volta a ter período pago; o e-mail quando a vez seguinte o manda. O
+              *pedido de reembolso* não abre por aqui (P138: vem do JilsonAI). Testes: o caso conferido nos testes que já
+              passavam por cada alerta (`ativas-vencidas`, `contestacao`, `stripe-webhook`, `avisos-da-assinatura`,
+              `boas-vindas`, `minha-assinatura`, `cancelar-assinatura`, `reembolso`, `stripe-plano`). **Mutação: 12 de
+              12 reprovaram.** *Docs check (context7): não disparado — nenhuma ida nova à Stripe.*
+        - [x] **2c — A tela "Precisa de você"** (a primeira que abre): os casos, fechar com nota e o link para a ficha.
+              **FEITO (31/10/2026).** `GET /api/admin/cobranca/casos?situacao=abertos|fechados` (só admin;
+              `listarCasos`, em `lib/casos.ts`): os abertos com os URGENTES primeiro e dos mais novos para os mais
+              velhos, ou os fechados (o fechamento mais recente primeiro); quantos abertos e quantos urgentes; e para
+              onde cada caso leva — a conta, a dona da assinatura, a assinatura sem conta ou o visitante (`ficha:`).
+              `POST /api/admin/cobranca/casos/:id/fechar` (a nota opcional, até 500): fecha com quem fechou, e o
+              fechamento entra no registro da cobrança (`caso-fechado`, com o tipo); fechar de novo é 404. **A tela**
+              `/admin/cobranca/precisa-de-voce` — agora a primeira da Cobrança (`/admin/cobranca` leva a ela; o item do
+              submenu deixou de ser "em breve"): "N casos abertos · N urgentes", Abertos · Fechados, cada caso com o
+              tipo, "Urgente", quando abriu, o valor, o resumo, o aluno levando à ficha e "O que resolve" (a lista *B*
+              do mapa), e o "Fechar" com "O que foi feito (opcional)"; os fechados dizem quando, quem fechou e a nota.
+              Carregando, erro com "Tentar de novo" e vazio ("Nada precisa de você agora"). Os botões que resolvem
+              chegam nos blocos 3 a 5. Testes: `admin-cobranca-casos.test.ts` (novo), a tela (novo) e o registro (+1).
+              **Mutação: 7 de 7 reprovaram.** *Docs check (context7): não disparado.*
+        - [x] **2d — O aviso ao operador** (P137: o urgente na hora; o resto num resumo de manhã). **FEITO
+              (31/10/2026).** `lib/avisos-ao-operador.ts`, para o e-mail de cada conta de admin (do nosso banco), pelo
+              `enviarEmail` (tipos novos `casos-urgentes` e `resumo-dos-casos`). **O urgente:** os casos urgentes abertos e
+              ainda não avisados são tomados num comando só (`notifiedAt` — duas cópias do servidor nunca mandam o mesmo
+              aviso) e saem num e-mail ("Precisa de você: N casos urgentes na cobrança", cada caso com o tipo e o resumo,
+              e o botão "Abrir Precisa de você"); se nenhum e-mail saiu, a marca volta e a vez seguinte tenta de novo; o
+              caso que reabre volta a ser avisado. **Quando sai — o e-mail nunca sai de dentro de uma transação
+              (`CLAUDE.md`):** ao fim do processamento de cada aviso da Stripe (`depois-do-aviso.ts` — a contestação, o Pix
+              em conferência, o "pagou e está sem conta" e a devolução que falhou vêm quase todos daí) e na rodada de hora
+              em hora. **O urgente aberto numa tela do aluno** (o checkout, o cancelamento, a sincronia da tela) **sai em
+              até uma hora** — o alerta do Sentry continua na hora. **O resumo da manhã:** na rodada das 12h UTC (9h em
+              Brasília, a mesma da conferência das ativas), todos os casos abertos (os urgentes primeiro, até 30 listados
+              e "e mais N"), um por dia (a chave do dia), e só se houver algum. **Os textos dos dois e-mails são rascunho
+              do agente** — vão ao operador no fechamento do bloco 2, no e-mail de verdade. Testes:
+              `avisos-ao-operador.test.ts` (novo); e os casos de "Precisa de você" passaram a começar vazios a cada
+              arquivo de teste (`setup.ts`, como o limite de tentativas: um caso urgente de outro arquivo faria o aviso
+              sair num teste que conta e-mails). **Mutação: 6 de 6 reprovaram.** *Docs check (context7): não
+              disparado.*
+        - [ ] **Fechamento do bloco 2.** **A revisão de segurança (31/10/2026, só o que mudou — os passos 2a a 2d):
+              nenhum P0 nem P1.** Os cinco menores, fechados com teste e mutação (6 de 6 reprovaram), sem nova rodada.
+              Três se fecharam com UMA mudança — **o caso aberto dentro de uma transação da cobrança é guardado e
+              gravado quando ela termina, tenha dado certo ou não** (`transacaoDaCobranca`, em `casos.ts`; a regra foi
+              para o `CLAUDE.md` → *Membership Gating*): (P2) aberto DENTRO da transação de uma operação, o caso morria
+              com ela — a sincronia que falha depois de a Stripe mudar desfazia a transação e levava junto o caso de uma
+              situação que continuava de pé (a devolução que falhou, a cobrança em aberto que não se anulou); (P2) aberto
+              pelo banco de sempre no meio de uma transação (a contestação dentro do aviso, a troca de plano dentro da
+              operação), ele pedia uma segunda ligação enquanto a transação segurava a dela; (P3) um erro no comando do
+              caso, dentro da transação, a abortava. E os dois do aviso ao operador: (P2) o e-mail dos urgentes de um
+              caso REABERTO repetia a chave do primeiro aviso, e o Resend o descartava — a chave agora sai do lote (cada
+              caso com a hora em que abriu) e do texto (`chaveDosUrgentes`); (P3) os casos eram marcados como avisados
+              antes de ler as contas de admin — agora elas são lidas antes, e qualquer falha depois de marcar devolve a
+              marca (só um processo que morre no meio deixa caso marcado sem e-mail, e o resumo da manhã o lista).
+              Testes: `casos-uma-ligacao.test.ts` (novo — o banco aceitando UMA ligação: a contestação com a cobrança
+              que não se anula, e o agendamento pela metade dentro de uma operação que falha), `casos.test.ts`,
+              `avisos-ao-operador.test.ts` (+3) e `reembolso.test.ts` (+1: a devolução e a sincronia falhando juntas).
+              **Falta:** os dois e-mails ao operador (no e-mail de verdade) e publicar — **junto com o bloco 3**: as
+              correções desta revisão mexem em código que o bloco 3 também mudou, e publicar o 2 sozinho pediria
+              refazê-las numa cópia à parte. Depois do deploy, conferir em produção (só leitura) o RLS da `billing_case`.
       - [ ] **BLOCO 3 — AS AÇÕES SEM DINHEIRO**
-        - [ ] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
+        - [x] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
               Stripe (a sincronia, agora na ficha), Cancelar no fim do período, Desfazer, Copiar ou enviar o link,
-              Reenviar o e-mail.
-        - [ ] **3b — Os consertos que hoje só o painel da Stripe faz:** anular a cobrança em aberto, soltar o
-              agendamento, encerrar na hora sem devolver, corrigir o CPF ou CNPJ.
-        - [ ] **3c — Corrigir o e-mail** (P121) — sozinho no passo: é a porta de tomar conta.
+              Reenviar o e-mail. **FEITO (31/10/2026).** `lib/acoes-da-cobranca.ts` (a regra foi para o `CLAUDE.md` →
+              *Membership Gating*): cada ação chama a MESMA operação do aluno — `pararMinhaRenovacao` e
+              `manterMinhaAssinatura` foram separadas em "achar a assinatura da conta" + `pararRenovacaoDe` /
+              `manterAssinaturaDe`, sem mudar o que o aluno faz — e grava no registro quem fez. **Rotas** (só admin; sem a
+              Stripe configurada, 503): `POST /api/admin/cobranca/acoes/conferir` (`{conta}`, `{assinatura}` ou
+              `{visitante}` — pela ficha do visitante, a conta nasce se o pagamento passou, com as boas-vindas),
+              `…/acoes/cancelar` e `…/acoes/desfazer-cancelamento` (`{assinatura}`, o id do espelho; cancelar em dia
+              para de renovar SEM motivo — o motivo é do aluno —, e atrasada termina agora, como na tela do aluno; a
+              pré-paga, 409), e `POST /api/admin/cobranca/casos/:id/reenviar` (só o caso "e-mail que não saiu": as
+              boas-vindas ou o e-mail da cobrança devido agora; saiu, o caso fecha sozinho). O que não deu tem nome:
+              404 `NaoEncontrada`, 409 `Ocupada`/`PrePaga`/`NadaAFazer`/`StripeNaoConhece`. **A ficha** ganhou "Conferir
+              na Stripe", a ação embaixo de cada assinatura — "Cancelar no fim do período" (em dia), "Cancelar agora"
+              (atrasada), "Desfazer o cancelamento" (marcada para acabar), sempre com a confirmação dizendo o efeito
+              ("Ana continua com acesso até 20/11, e a assinatura não renova") e o que a Stripe respondeu — e os
+              **links para o aluno** (trocar o cartão, reativar e, com o Pix no ar, pagar a atrasada com Pix: os
+              mesmos dos e-mails), com "Copiar". O caso "e-mail que não saiu" ganhou "Reenviar". **O "Conferir na Stripe"
+              por e-mail saiu da lista** (mora na ficha; o componente `ConferirNaStripe` foi apagado; a rota antiga
+              `POST /api/admin/assinaturas/sincronizar` continua). **"Enviar o link" por e-mail ficou para o 3b** (é um
+              e-mail ao aluno: o texto vai ao operador). Testes: `admin-cobranca-acoes.test.ts` (novo, 9), a ficha (+6)
+              e "Precisa de você" (+1). **Mutação: 10 de 10 reprovaram** (uma sobreviveu antes: o teste do "reenviar"
+              barrava pelo motivo errado — corrigido). *Docs check (context7): não disparado — as idas à Stripe são as
+              de sempre (`buscarDetalhes`, `pararRenovacao`, `retomarRenovacao`, a sincronia).*
+        - [x] **3b — Os consertos que hoje só o painel da Stripe faz:** anular a cobrança em aberto, soltar o
+              agendamento, encerrar na hora sem devolver, corrigir o CPF ou CNPJ. **FEITO (31/10/2026).** Os três
+              consertos moram no **cartão do caso**, onde a situação já é conhecida (`POST
+              /api/admin/cobranca/casos/:id/resolver`, `{acao}`; o caso diz qual conserto tem — `conserto`): **anular a
+              cobrança em aberto** (caso "cobrança em aberto") só com a assinatura ENCERRADA, ou quando a fatura é a da
+              troca de plano — anular a renovação de uma assinatura viva a reativa sem pagamento (`[FATO — medido, 11/10]`),
+              e aí é 409 `AssinaturaViva`; **soltar o agendamento** pela metade (caso "troca de plano"); **encerrar
+              agora, sem devolver** (caso "ativa sem período pago": `cancelarNaHora`, sem crédito, pela operação na
+              assinatura). Cada um fecha o caso com o que foi feito e grava no registro. **Na ficha:** "Corrigir o CPF ou
+              CNPJ" (`POST …/acoes/corrigir-documento`, de uma conta ou de um visitante): o número é conferido no
+              `core` (o dígito: `[FATO — medido na área de teste, 31/10/2026]` a Stripe aceitou um CPF com o dígito
+              errado — ela confere só o formato), e a troca na Stripe cria o novo e só então apaga os antigos do Brasil
+              (`trocarNumeroFiscal`, em `stripe.ts`); o número nunca vai ao registro. E o **"Enviar por e-mail"** ao lado
+              de cada link (`POST …/acoes/enviar-link`, só com conta): o e-mail `link-do-painel`, com o texto no
+              dicionário (`app.email.linkDoPainel` — **rascunho do agente: vai ao operador no fechamento do bloco 3**).
+              Testes: `admin-cobranca-acoes.test.ts` (+6), `stripe-numero-fiscal-rede.test.ts` (novo), "Precisa de você"
+              (+2) e a ficha (+3). **Mutação: 7 de 7 reprovaram.** **Provado na área de teste da Stripe:** a troca do CPF
+              (o novo entra, o antigo sai). *Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026, 3ª
+              consulta da sessão: os números fiscais do cliente — criar, listar, apagar ("to update a tax ID, delete the
+              old ID and create another one").*
+        - [x] **3c — Corrigir o e-mail** (P121) — sozinho no passo: é a porta de tomar conta. **FEITO (31/10/2026).** Na
+              ficha da conta, **"Corrigir o e-mail"**: o admin digita o e-mail certo → um código de 6 números vai PARA ELE
+              (`POST /api/admin/cobranca/acoes/corrigir-email/codigo`; os mesmos 10 minutos e 3 tentativas do código de
+              entrar; o pedido fica em `email_correction` — migration `20261031220000_correcao_de_email`, com RLS — só com o
+              resumo do código) → o código que a pessoa recebeu → a troca (`POST …/acoes/corrigir-email`). **Quem confirma é
+              o admin, com o código que a pessoa passa a ele** (o atendimento já é com ela — leitura do agente para "com o
+              código no e-mail novo"). As travas: o e-mail novo não pode ser de outra conta (no pedido, e de novo com as
+              travas da conta e dos dois e-mails); a troca encerra todas as sessões **e apaga a senha** (trava de
+              engenharia do agente, da mesma família das sessões: quem leu o e-mail errado pode ter entrado por ele e criado
+              uma — a pessoa entra pelo código no e-mail novo, que fica confirmado); a ficha do visitante e os clientes da
+              Stripe passam ao e-mail novo (a Stripe antes do banco: se ela falha, nada muda); o registro diz quem pediu e
+              quem trocou, sem os e-mails. **A tentativa sem pagamento que o e-mail novo tenha deixado** (a pessoa tentou de
+              novo com o e-mail certo) sai antes, pela regra da limpeza dos 7 dias (`apagarTentativaDoEmail`, que divide com
+              a limpeza o trecho que apaga o cliente na Stripe); com pagamento, 409 `PagamentoNoEmailNovo`, e nada muda. O
+              código vai a um e-mail sem conta: a segunda exceção da regra do `para` (`CLAUDE.md`), decidida pelo operador
+              (P121), pedida só pelo admin e só com texto fixo — **o texto (`app.email.codigoDoEmailNovo`) é rascunho do
+              agente: vai ao operador no fechamento do bloco 3.** Testes: `admin-cobranca-email.test.ts` (novo, 10 —
+              inclusive a pessoa entrando pelo código no e-mail novo, e a senha antiga recusada), `CorrigirEmail.test.tsx`
+              (novo, 5) e a ficha (+2). **Mutação: 13 de 13 reprovaram.** **Provado na área de teste da Stripe:** a troca do
+              e-mail do cliente (e repetir dá no mesmo). **Banco de dev:** `migrate deploy`, *No difference detected*,
+              nenhuma tabela sem RLS. *Docs check (context7): Better Auth → `/better-auth/better-auth` → a conta de senha
+              guarda o id da pessoa, não o e-mail; a troca de e-mail do recurso de código exige a sessão da própria pessoa (não
+              serve ao admin) — e, no código instalado (1.7.13), as rotinas de código só valem para e-mail que já tem conta.
+              Stripe → `/websites/stripe` → a fatura finalizada guarda o e-mail de quando foi finalizada.*
         - [ ] **Fechamento do bloco 3.**
       - [ ] **BLOCO 4 — AS AÇÕES COM DINHEIRO** (prova pela rota em cada passo)
         - [ ] **4a — Devolver:** cancelar e devolver num clique (cartão e Pix), devolver um pagamento (inteiro ou em

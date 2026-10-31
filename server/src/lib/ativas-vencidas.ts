@@ -1,3 +1,4 @@
+import { abrirCaso, TipoDeCaso } from "./casos.js";
 import { prisma } from "./prisma.js";
 import { STATUS_VIVOS } from "./acesso.js";
 import { sincronizarSeLivre } from "./assinaturas.js";
@@ -83,6 +84,7 @@ export async function conferirAtivasVencidas(agora: Date = new Date(), prazoEmMs
       } else if (!pagoAte || pagoAte < vencidaAntesDe) {
         resultado.semPeriodoPago += 1;
         console.error(`[stripe] rodada: a assinatura ${id} está ativa na Stripe sem período pago desde ${pagoAte?.toISOString() ?? "o começo"} — o reembolso dado pelo painel sem cancelar, ou a renovação parada; a pessoa continua com as aulas: conferir no painel da Stripe (cancelar a devolvida)`);
+        await abrirCaso({ tipo: TipoDeCaso.ATIVA_SEM_PERIODO_PAGO, chave: `sub:${id}`, urgente: false, assinatura: id, cliente: sincronia.assinatura.clienteId, detalhe: `ativa na Stripe sem período pago desde ${pagoAte?.toISOString().slice(0, 10) ?? "o começo"}` });
       } else {
         resultado.renovadas += 1;
         console.warn(`[stripe] rodada: a assinatura ${id} tinha renovado e o espelho não sabia (o aviso se perdeu) — acertado, pago até ${pagoAte.toISOString()}`);
@@ -91,6 +93,7 @@ export async function conferirAtivasVencidas(agora: Date = new Date(), prazoEmMs
       if (erro instanceof AssinaturaNaoEncontrada || (erro instanceof Error && erro.cause instanceof AssinaturaNaoEncontrada)) {
         resultado.desconhecidas += 1;
         console.error(`[stripe] rodada: a Stripe não conhece a assinatura ${id}, ativa no site — as aulas continuam abertas: conferir (uma assinatura do modo de teste no banco de verdade?)`);
+        await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${id}`, urgente: false, assinatura: id, detalhe: "ativa no site, e a Stripe não conhece a assinatura" });
         continue;
       }
       resultado.falhas += 1;

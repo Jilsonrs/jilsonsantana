@@ -287,7 +287,7 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     const cobranca = doAdmin.find((s) => s.label === "Cobrança");
     expect(cobranca).toMatchObject({ to: "/admin/cobranca", estado: "ativo", papel: Role.ADMIN });
     expect(cobranca?.filhos?.map((f) => [f.label, f.estado ?? "ativo"])).toEqual([
-      ["Precisa de você", "planejado"],
+      ["Precisa de você", "ativo"],
       ["Assinaturas", "ativo"],
       ["Tentativas", "ativo"],
       ["O que aconteceu", "ativo"],

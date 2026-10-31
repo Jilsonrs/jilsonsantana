@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { MotivoDoCancelamento } from "../constants/billing.js";
+import { enderecoDeEmailSchema } from "./billing.js";
 
 // O PAINEL DA COBRANÇA DO ADMIN (Fase 4, etapa 4.7b — decisões do operador, 31/10/2026). Só ADMIN lê e usa estes
 // formatos; o aluno nunca os vê. A ASSINATURA vai ao navegador pelo id do ESPELHO (o nosso banco), nunca pelo da
@@ -141,6 +142,8 @@ export type FichaDaCobranca = {
   emails: EmailDaFicha[];
   /** A Stripe não respondeu: a ficha traz só o que está no banco. */
   stripeIndisponivel: boolean;
+  /** Os links para mandar ao aluno (passo 3a): trocar o cartão, reativar e pagar a atrasada com Pix (quando o Pix está no ar). */
+  links: { trocarCartao: string | null; reativar: string | null; pagarComPix: string | null };
   /** O que aconteceu na cobrança desta pessoa (passo 1f) — as 50 linhas mais recentes. */
   registro: LinhaDoRegistro[];
 };
@@ -182,3 +185,108 @@ export const REGISTRO_POR_PAGINA = 50;
 
 /** O que a tela pede ao registro: a página. */
 export const oQueAconteceuQuerySchema = z.object({ pagina: z.coerce.number().int().min(1).max(10_000).default(1) });
+
+/** O tipo de caso de "Precisa de você" (bloco 2) — os mesmos nomes do banco. */
+export const TIPOS_DE_CASO = [
+  "PIX_EM_CONFERENCIA",
+  "PAGO_SEM_ASSINATURA",
+  "PAGOU_SEM_CONTA",
+  "DIVERGENCIA",
+  "ATIVA_SEM_PERIODO_PAGO",
+  "COBRANCA_EM_ABERTO",
+  "DEVOLUCAO_FALHOU",
+  "TROCA_DE_PLANO",
+  "CONTESTACAO",
+  "AVISO_DE_FRAUDE",
+  "EMAIL_NAO_SAIU",
+  "PEDIDO_DE_REEMBOLSO",
+] as const;
+export type TipoDeCasoDaLista = (typeof TIPOS_DE_CASO)[number];
+
+/** O nome de cada tipo de caso — o mesmo na tela "Precisa de você" e no e-mail ao operador (texto do admin). */
+export const NOME_DO_TIPO_DE_CASO: Record<TipoDeCasoDaLista, string> = {
+  PIX_EM_CONFERENCIA: "Pix pago que não virou assinatura",
+  PAGO_SEM_ASSINATURA: "Dinheiro recebido sem assinatura",
+  PAGOU_SEM_CONTA: "Pagou e está sem conta",
+  DIVERGENCIA: "O site e a Stripe discordam",
+  ATIVA_SEM_PERIODO_PAGO: "Ativa na Stripe sem período pago",
+  COBRANCA_EM_ABERTO: "Cobrança em aberto que não foi anulada",
+  DEVOLUCAO_FALHOU: "Devolução que falhou",
+  TROCA_DE_PLANO: "Troca de plano com defeito",
+  CONTESTACAO: "Contestação no banco",
+  AVISO_DE_FRAUDE: "Aviso de fraude do banco",
+  EMAIL_NAO_SAIU: "E-mail que não saiu",
+  PEDIDO_DE_REEMBOLSO: "Pedido de reembolso",
+};
+
+/** Um caso de "Precisa de você" (passo 2c): o que aconteceu, com quem, e para onde ir (a ficha). */
+export type CasoDaLista = {
+  id: number;
+  tipo: TipoDeCasoDaLista;
+  urgente: boolean;
+  aberto: boolean;
+  abertoEm: string;
+  /** O resumo em poucas palavras (sem dado pessoal). */
+  detalhe: string | null;
+  centavos: number | null;
+  aluno: { id: string; nome: string | null; email: string } | null;
+  /** Para onde a ficha leva: a conta, a assinatura sem conta, ou o visitante. */
+  ficha: OndeLeva;
+  fechadoEm: string | null;
+  fechadoPor: QuemFezNoRegistro | null;
+  nota: string | null;
+  /** O conserto que o painel já faz para este caso (passo 3b) — ou nenhum ainda. */
+  conserto: ConsertoDoCaso | null;
+};
+
+/** A resposta de `GET /api/admin/cobranca/casos`: uma página e quantos casos abertos há (e quantos urgentes). */
+export type ListaDeCasos = { casos: CasoDaLista[]; temMais: boolean; abertos: number; urgentes: number };
+
+/** Quantos casos por página. */
+export const CASOS_POR_PAGINA = 50;
+
+/** O que a tela pede: os abertos ou os fechados, e a página. */
+export const casosQuerySchema = z.object({
+  situacao: z.enum(["abertos", "fechados"]).default("abertos"),
+  pagina: z.coerce.number().int().min(1).max(10_000).default(1),
+});
+
+/** Fechar um caso: a nota é opcional (o que foi feito). */
+export const fecharCasoSchema = z.object({ nota: z.string().trim().max(500).optional() });
+export type FecharCasoInput = z.infer<typeof fecharCasoSchema>;
+
+/** Uma ação do admin numa assinatura (passo 3a): pelo id do ESPELHO — nunca o da Stripe. */
+export const acaoNaAssinaturaSchema = z.object({ assinatura: z.number().int().positive() });
+
+/** O que uma ação fez, em poucas palavras (o que a Stripe respondeu). */
+export type AcaoFeita = { detalhe: string };
+
+/** O resultado de "Conferir na Stripe" pela ficha: se a pessoa ficou com acesso, e o que foi conferido. */
+export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };
+
+/** Os consertos que hoje só o painel da Stripe faz, a partir de um caso (passo 3b). */
+export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora"] as const;
+export type ConsertoDoCaso = (typeof CONSERTOS_DO_CASO)[number];
+export const resolverCasoSchema = z.object({ acao: z.enum(CONSERTOS_DO_CASO) });
+
+/** Corrigir o CPF ou CNPJ (passo 3b): de uma conta, ou da ficha de um visitante. O número é conferido no servidor. */
+export const corrigirDocumentoSchema = z.union([
+  z.object({ conta: z.string().min(1).max(100), documento: z.string().trim().min(1).max(30) }).strict(),
+  z.object({ visitante: z.string().min(1).max(100), documento: z.string().trim().min(1).max(30) }).strict(),
+]);
+
+/** Os links que o admin manda ao aluno por e-mail (passo 3b) — os mesmos da ficha. */
+export const LINKS_PARA_O_ALUNO = ["trocarCartao", "reativar", "pagarComPix"] as const;
+export type LinkParaOAluno = (typeof LINKS_PARA_O_ALUNO)[number];
+export const enviarLinkSchema = z.object({ conta: z.string().min(1).max(100), link: z.enum(LINKS_PARA_O_ALUNO) });
+
+/** CORRIGIR O E-MAIL (passo 3c — decisão do operador P121): o e-mail certo da conta, para onde o código vai. */
+export const pedirCodigoDoEmailSchema = z.object({ conta: z.string().min(1).max(100), email: enderecoDeEmailSchema }).strict();
+export type PedirCodigoDoEmailInput = z.infer<typeof pedirCodigoDoEmailSchema>;
+/** E o código de 6 números que a pessoa recebeu nele: só com ele a troca vale. */
+export const corrigirEmailSchema = z.object({ conta: z.string().min(1).max(100), email: enderecoDeEmailSchema, codigo: z.string().trim().regex(/^\d{6}$/) }).strict();
+export type CorrigirEmailInput = z.infer<typeof corrigirEmailSchema>;
+/** O código saiu: vale por tantos minutos. */
+export type CodigoDoEmailEnviado = { minutos: number };
+/** A troca valeu: o e-mail da conta agora. */
+export type EmailCorrigido = { email: string };
