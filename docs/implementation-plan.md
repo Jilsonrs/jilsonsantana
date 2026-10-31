@@ -217,6 +217,12 @@
 > leitura):** nenhuma tabela sem RLS; as migrations `20261031200000_casos_da_cobranca` e `20261031220000_correcao_de_email`
 > aplicadas; nenhum caso nem pedido de correção ainda. O detalhe: a etapa 4.7b, os fechamentos dos blocos.
 >
+> **Publicado em 31/10/2026: `30a0db1`** — o bloco 6 da 4.7b: o menu Financeiro → Receita e "Precisa de atendente",
+> os códigos promocionais, os números do mês, "Encerrar agora", as cobranças do aluno, o recibo da escola (na tela e por
+> e-mail, com o número único) e os links dos e-mails que levam à tela certa depois de entrar. **Revisão
+> `jilson-prod-00060-sp4`**; a saúde 200, as rotas novas 401 sem login. Fica para o Antigravity o acabamento (GEMINI.md,
+> itens 38 e 39).
+>
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 31/10/2026: a 4.7b remapeada; antes, 30/10, depois da publicação `7000a96`):**
 > **O PRÓXIMO BLOCO (decisão do operador, 30/10/2026, ao fim do dia): "as telas administrativas da parte de cobrança que
 > estiver faltando primeiro, e depois o JilsonAI".** É a **4.7b, REMAPEADA em 31/10/2026 a pedido dele**: todo problema
@@ -6842,7 +6848,10 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               operação na assinatura), sem devolver nada pela Stripe — o dinheiro recebido por fora o operador devolve por fora
               —, com a confirmação dizendo isso e a linha no registro. É o jeito de desfazer uma liberação feita na conta ou no
               plano errado sem ir ao painel da Stripe.
-        - [ ] **Fechamento do bloco 6:** a revisão de segurança, as fotos das telas do aluno, publicar (com a ordem dele).
+        - [x] **Fechamento do bloco 6:** a revisão de segurança, as fotos das telas do aluno, publicar (com a ordem dele).
+              **PUBLICADO em 31/10/2026: `30a0db1`** (ordem do operador: "pode continuar e depois publicar"). CI e publicação
+              com sucesso; **revisão `jilson-prod-00060-sp4`**; no ar: a saúde 200, e as rotas novas (o recibo, os códigos)
+              401 sem login.
               **A revisão (31/10/2026): nenhum P0 nem P1.** O P3 — "Reativar" punha de volta no ar um código de 100% que
               não é cortesia (os tipos da P125), criado na Stripe e pausado — fechado: 409 `ForaDasRegras`; e o caso que
               faltava, "Encerrar agora" com a assinatura ocupada (409 `Ocupada`). Testes: os códigos (+1), liberar (+1), a
