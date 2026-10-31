@@ -4,8 +4,9 @@ import request from "supertest";
 // MINHAS COBRANÇAS (etapa 4.7b, bloco 6, passo 6a — decisão do operador, P144). Só a Stripe vira dublê (as cobranças de
 // cada cliente); a sessão, a conta e os clientes dela rodam de verdade, contra o banco. O que protege: sem login, 401; sem a
 // Stripe, 503; SÓ os clientes da conta da sessão são lidos — o de outra conta, nunca; só a cobrança que passou aparece (a
-// recusada e a pendente, não); a devolvida, a devolvida em parte e a contestada dizem isso; o recibo só com `https`; nenhum
-// código da Stripe sai na resposta; a ordem é da mais nova à mais antiga.
+// recusada e a pendente, não); a devolvida, a devolvida em parte e a contestada dizem isso; cada uma traz a chave do recibo
+// da ESCOLA (estável, uma por cobrança) e nenhum link para o recibo da Stripe, que leva ao CPF de quem pagou; nenhum código
+// da Stripe sai na resposta; a ordem é da mais nova à mais antiga.
 type CobrancaFalsa = { id: string; created: number; amount: number; currency: string; status: string; disputed: boolean; refunded: boolean; amount_refunded: number; receipt_url: string | null; outcome: null; failure_code: string | null; payment_method_details: { type: string; card?: { brand: string; last4: string } } };
 const porCliente = new Map<string, CobrancaFalsa[]>();
 const lidos: string[] = [];
@@ -98,16 +99,25 @@ describe("minhas cobranças (passo 6a)", () => {
     expect(lidos).toContain(DELA);
     expect(lidos).toContain(DELA_2);
     expect(lidos).not.toContain(DE_OUTRA);
-    const minhas = (res.body as { cobrancas: { em: string; centavos: number; forma: string; cartao: unknown; situacao: string; devolvido: number; recibo: string | null }[] }).cobrancas.filter((c) => c.em >= new Date((AGORA - 9 * DIA) * 1000).toISOString());
-    expect(minhas.map((c) => [c.situacao, c.forma, c.centavos, c.devolvido, c.recibo])).toEqual([
-      ["paga", "cartao", 9990, 0, "https://pay.stripe.com/receipts/payment/r1"],
-      ["paga", "pix", 89900, 0, expect.stringMatching(/^https:[/][/]pay[.]stripe[.]com[/]receipts[/]payment[/]r[0-9]+$/)],
-      ["devolvida", "cartao", 9990, 9990, "https://pay.stripe.com/receipts/payment/r4"],
-      ["devolvida-em-parte", "cartao", 99900, 2500, "https://pay.stripe.com/receipts/payment/r5"],
-      ["contestada", "cartao", 9990, 0, "https://pay.stripe.com/receipts/payment/r6"],
-      ["paga", "pix", 9990, 0, "https://pay.stripe.com/receipts/payment/r7"],
-      ["paga", "cartao", 9990, 0, null],
+    type Lida = { em: string; centavos: number; forma: string; cartao: unknown; situacao: string; devolvido: number; chave: string };
+    const recentes = (corpo: unknown) => (corpo as { cobrancas: Lida[] }).cobrancas.filter((c) => c.em >= new Date((AGORA - 9 * DIA) * 1000).toISOString());
+    const minhas = recentes(res.body);
+    expect(minhas.map((c) => [c.situacao, c.forma, c.centavos, c.devolvido])).toEqual([
+      ["paga", "cartao", 9990, 0],
+      ["paga", "pix", 89900, 0],
+      ["devolvida", "cartao", 9990, 9990],
+      ["devolvida-em-parte", "cartao", 99900, 2500],
+      ["contestada", "cartao", 9990, 0],
+      ["paga", "pix", 9990, 0],
+      ["paga", "cartao", 9990, 0],
     ]);
+    // A chave do recibo da escola: 16 letras e números, uma por cobrança, a mesma na leitura seguinte.
+    const chaves = minhas.map((c) => c.chave);
+    expect(chaves.every((c) => /^[0-9a-f]{16}$/.test(c))).toBe(true);
+    expect(new Set(chaves).size).toBe(chaves.length);
+    expect(recentes((await ler()).body).map((c) => c.chave)).toEqual(chaves);
+    // Nenhum link para o recibo da Stripe: ele leva à fatura com o CPF inteiro de quem pagou.
+    expect(JSON.stringify(res.body)).not.toContain("pay.stripe.com");
     expect(minhas[0]?.cartao).toEqual({ bandeira: "visa", final: "4242" });
     expect(minhas[5]?.cartao).toBeNull();
     expect(JSON.stringify(res.body)).not.toMatch(/ch_|cus_|sub_/);

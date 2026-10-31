@@ -1,35 +1,15 @@
-import type { MinhaCobranca } from "@jilson/core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageSection } from "@/components/layout/PageLayout";
 import { dinheiro } from "@/lib/assinar";
-import { dataPorExtenso, nomeDaBandeira, useMinhasCobrancas } from "@/lib/faturamento";
-import { useT, type AppTexts } from "@/lib/language";
-
-type Textos = AppTexts["faturamento"]["cobrancas"];
-
-/** Como foi paga: "Cartão Visa final 4242", "Pix". */
-function forma(t: Textos, cobranca: MinhaCobranca): string {
-  if (cobranca.forma === "pix") return t.pix;
-  if (cobranca.forma === "cartao" && cobranca.cartao) {
-    const bandeira = nomeDaBandeira(cobranca.cartao.bandeira);
-    return (bandeira ? t.cartao.replace("{bandeira}", bandeira) : t.cartaoSemBandeira).replace("{final}", cobranca.cartao.final);
-  }
-  return t.outra;
-}
-
-/** Em que pé ela está: paga, devolvida (inteira ou em parte), contestada. */
-function situacao(t: Textos, cobranca: MinhaCobranca): string {
-  if (cobranca.situacao === "devolvida") return t.devolvida;
-  if (cobranca.situacao === "devolvida-em-parte") return t.devolvidaEmParte.replace("{valor}", dinheiro(cobranca.devolvido, cobranca.moeda));
-  if (cobranca.situacao === "contestada") return t.contestada;
-  return t.paga;
-}
+import { dataPorExtenso, useMinhasCobrancas } from "@/lib/faturamento";
+import { enderecoDoRecibo, formaDaCobranca, situacaoDaCobranca } from "@/lib/minhas-cobrancas";
+import { useT } from "@/lib/language";
 
 /**
  * MINHAS COBRANÇAS (Fase 4, etapa 4.7b, passo 6a — decisão do operador, 31/10/2026, P144): as cobranças que passaram, da
- * mais nova à mais antiga, e o recibo de cada uma — a página de recibo da Stripe, numa aba nova. Quem diz o que passou é o
- * servidor; aqui só se desenha.
+ * mais nova à mais antiga, e o recibo de cada uma — o recibo da ESCOLA, numa aba nova (decisão dele, 31/10/2026: no lugar
+ * do da Stripe, que mostrava o CPF de quem pagou). Quem diz o que passou é o servidor; aqui só se desenha.
  */
 export function BlocoDasCobrancas() {
   const textos = useT();
@@ -49,23 +29,21 @@ export function BlocoDasCobrancas() {
       <Card className="max-w-3xl">
         <CardContent className="p-0">
           <ul aria-label={t.titulo} className="divide-y divide-border">
-            {data.cobrancas.map((cobranca, i) => (
-              <li key={`${cobranca.em}-${i}`} className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            {data.cobrancas.map((cobranca) => (
+              <li key={cobranca.chave} className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-0.5">
                   <p className="text-sm font-semibold text-foreground">
                     {dataPorExtenso(cobranca.em)} · {dinheiro(cobranca.centavos, cobranca.moeda)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {forma(t, cobranca)} · {situacao(t, cobranca)}
+                    {formaDaCobranca(t, cobranca)} · {situacaoDaCobranca(t, cobranca)}
                   </p>
                 </div>
-                {cobranca.recibo && (
-                  <Button asChild variant="outline" size="sm" className="self-start sm:self-auto">
-                    <a href={cobranca.recibo} target="_blank" rel="noopener noreferrer" aria-label={t.reciboDe.replace("{data}", dataPorExtenso(cobranca.em))}>
-                      {t.recibo}
-                    </a>
-                  </Button>
-                )}
+                <Button asChild variant="outline" size="sm" className="self-start sm:self-auto">
+                  <a href={enderecoDoRecibo(cobranca.chave)} target="_blank" rel="noopener noreferrer" aria-label={t.reciboDe.replace("{data}", dataPorExtenso(cobranca.em))}>
+                    {t.recibo}
+                  </a>
+                </Button>
               </li>
             ))}
           </ul>

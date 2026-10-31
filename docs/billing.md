@@ -2055,9 +2055,13 @@ lá, vale o texto de hoje):
 - **Sem botão de pedir reembolso depois dos 7 dias** (P138): a política é não devolver depois dos 7 dias, e um botão
   convida o pedido. O pedido chega pelo suporte e, quando o JilsonAI existir, por ele, que abre o caso.
 - **O aluno vê as próprias cobranças e baixa o recibo** em Faturamento (P144). — passo 6a, no código desde 31/10/2026: as
-  cobranças que passaram, e **Ver recibo** abre a página de recibo da Stripe numa aba nova (com os dados da escola
-  preenchidos pelo operador em 28/10/2026); a tela de Faturamento fica aberta. Os textos e o recibo da Stripe são
-  proposta do agente, a aprovar pelas fotos.
+  cobranças que passaram, e **Ver recibo** abre numa aba nova o **recibo da ESCOLA**, em português e **sem o CPF de quem
+  pagou** *(decisão do operador, 31/10/2026, na revisão de segurança do bloco 6: o recibo da Stripe vinha em inglês e
+  levava à fatura com o CPF inteiro de quem pagou — provado na área de teste)*. Nele: o nome empresarial e o CNPJ da
+  escola, o site e o e-mail; quem assina, o que foi pago, a data, o valor, como foi paga e a situação; e "Imprimir ou
+  salvar em PDF". Fica fora do menu do app (`/aluno/conta/faturamento/recibo/<chave>`, só com login), e a cobrança se
+  acha pela chave dela — sem código da Stripe —, só entre as da conta da sessão. Os textos são proposta do agente, a
+  aprovar pelas fotos. *Reabre se o recibo precisar valer como documento fiscal: aí é a nota fiscal (Impostos).*
 - **Os códigos promocionais pelo admin** (P142), com as regras de *Códigos promocionais* no formulário. — passo 6d, no
   código desde 31/10/2026.
 - **O aviso ao operador** (P137): na hora, só o urgente (quem pagou e está sem acesso; a contestação); o resto num

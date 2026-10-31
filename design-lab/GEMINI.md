@@ -716,7 +716,10 @@ exceto o item 4, que é página pública.
     3. **Do aluno, uma seção só:** **Cobranças**, no fim de **Faturamento e Assinatura** (`client/src/components/faturamento/BlocoDasCobrancas.tsx`
        — a data, o valor, como foi paga, a situação e o botão **Ver recibo**). Ela segue o desenho que você já deu aos
        blocos **Seu plano** e **Forma de pagamento** (item 34): o mesmo cartão, o mesmo espaçamento. **Os textos dela
-       saem do dicionário e estão sendo aprovados pelo operador** — não mexa neles.
+       saem do dicionário e estão sendo aprovados pelo operador** — não mexa neles. E o **recibo da escola**, que o
+       **Ver recibo** abre (`client/src/pages/aluno/ReciboPage.tsx`): uma página **fora do menu do app**, de propósito,
+       para imprimir só o recibo — o botão **Imprimir ou salvar em PDF** some na impressão (`print:hidden`, não tirar).
+       Vale conferir a impressão (Cmd+P) além da tela.
     4. Não mudar: textos, o que é botão ou link e para onde leva, `aria-*` e `role` (os avisos de erro são
        `role="alert"`, a resposta de cada ação é `role="status"`), as confirmações antes de cada ação que mexe em
        dinheiro ou acesso (elas dizem o efeito — **nunca tirar uma**), a ordem dos campos. **O "Ver recibo" abre numa aba

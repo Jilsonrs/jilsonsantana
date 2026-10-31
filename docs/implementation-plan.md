@@ -6797,9 +6797,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               *Cobranças* (`BlocoDasCobrancas`), de `GET /api/billing/minhas-cobrancas` (`lib/minhas-cobrancas.ts`, com o limite
               das leituras): as cobranças que PASSARAM, da mais nova à mais antiga — a data, o valor, como foi paga (cartão com a
               bandeira e o final, ou Pix) e em que pé está (paga, devolvida, quanto voltou, contestada) — e o botão **Ver
-              recibo**, que abre a página de recibo da Stripe numa aba nova. A MESMA leitura da ficha do admin (os clientes da
-              conta e as cobranças de cada um), com a conta da sessão; a recusada e a pendente não aparecem; nenhum código da
-              Stripe sai na resposta; o recibo só com `https`. Aparece para quem assina ou já assinou (quem nunca assinou não
+              recibo**, que abre numa aba nova o recibo da ESCOLA (desde a revisão do bloco 6; antes, a página de recibo da
+              Stripe). A MESMA leitura da ficha do admin (os clientes da conta e as cobranças de cada um), com a conta da
+              sessão; a recusada e a pendente não aparecem; nenhum código da Stripe sai na resposta. Aparece para quem assina ou já assinou (quem nunca assinou não
               vê a seção). Textos no dicionário (`app.faturamento.cobrancas`) — **rascunho do agente, a aprovar pelas fotos**.
               Testes: `minhas-cobrancas.test.ts` (novo, 2), o limite das leituras, `BlocoDasCobrancas.test.tsx` (novo, 5) e
               `FaturamentoPage.test.tsx` (+2). **Mutação: 10 de 10 reprovaram.** Fotos com contas descartáveis no banco de dev
@@ -6850,7 +6850,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               inglês**, com o botão que baixa a fatura com o **CPF inteiro de quem pagou** (provado na área de teste: o PDF
               traz `BR CPF …`; com o cadastro em português, a página e o PDF saem em português e o CPF continua) — foi ao
               operador, que escolheu **o recibo da escola, sem CPF**, com o nome empresarial e o CNPJ da escola, o site e o
-              e-mail (31/10/2026). Falta: o recibo, as fotos, publicar.
+              e-mail (31/10/2026). **O recibo da escola — FEITO (31/10/2026):** `ReciboPage`, em
+              `/aluno/conta/faturamento/recibo/<chave>`, fora do menu do app (para imprimir) e só com login; a cobrança vem
+              da lista da conta da sessão, achada pela chave (o começo do SHA-256 do código da cobrança — nenhum código da
+              Stripe no navegador, e nenhum link para o recibo dela). Nele: o nome empresarial (mandado pelo operador) e o
+              CNPJ da matriz que sai dele (a confirmar), o site e o e-mail; quem assina, o que foi pago, a data, o valor, a
+              forma e a situação; "Imprimir ou salvar em PDF". Testes: `ReciboPage.test.tsx` (novo, 6), a lista (revista),
+              as rotas (+3: sem o menu, com o menu na conta, sem login vai ao login) e `minhas-cobrancas.test.ts` (revisto).
+              **Mutação: 9 de 9 reprovaram.** Falta: as fotos, publicar.
       - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA
             CONTINUAR*. **FEITO (31/10/2026):** o roteiro, passo a passo pelo painel (os casos de *Precisa de você* e o

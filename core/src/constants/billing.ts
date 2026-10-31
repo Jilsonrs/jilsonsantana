@@ -328,7 +328,7 @@ export type CartaoTrocado = {
 
 /**
  * MINHAS COBRANÇAS (Fase 4, etapa 4.7b, passo 6a — decisão do operador, 31/10/2026, P144): uma cobrança que PASSOU, como o
- * aluno a vê em Faturamento. Nenhum código da Stripe sai daqui; o recibo é o endereço da página de recibo dela (só `https`).
+ * aluno a vê em Faturamento e no recibo da escola. Nenhum código da Stripe sai daqui.
  */
 export type MinhaCobranca = {
   em: string;
@@ -339,7 +339,11 @@ export type MinhaCobranca = {
   situacao: "paga" | "devolvida" | "devolvida-em-parte" | "contestada";
   /** Quanto já voltou, em centavos. */
   devolvido: number;
-  recibo: string | null;
+  /**
+   * Acha o recibo da escola (decisão do operador, 31/10/2026 — no lugar do recibo da Stripe, que mostra o CPF de quem
+   * pagou): a mesma para a mesma cobrança, e sem nenhum código da Stripe. Só vale dentro das cobranças da própria conta.
+   */
+  chave: string;
 };
 /** Resposta de `GET /api/billing/minhas-cobrancas`: da mais nova à mais antiga. */
 export type MinhasCobrancas = { cobrancas: MinhaCobranca[] };

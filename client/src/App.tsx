@@ -30,6 +30,7 @@ import { TrocarCartaoPage } from "@/pages/aluno/TrocarCartaoPage";
 import { PagarComPixPage } from "@/pages/aluno/PagarComPixPage";
 import { CancelarPage } from "@/pages/aluno/CancelarPage";
 import { MudarDePlanoPage } from "@/pages/aluno/MudarDePlanoPage";
+import { ReciboPage } from "@/pages/aluno/ReciboPage";
 import { AdminCoursesPage } from "@/pages/admin/AdminCoursesPage";
 import { NewCoursePage } from "@/pages/admin/course-editor/NewCoursePage";
 import { CourseEditorLayout } from "@/pages/admin/course-editor/CourseEditorLayout";
@@ -70,6 +71,18 @@ export default function App() {
           </ProtecaoDoApp>
         }
       />
+      {/* O RECIBO DA ESCOLA (etapa 4.7b, passo 6a — decisão do operador, 31/10/2026): FORA do Layout, para imprimir só
+          o recibo, sem o menu do app. Só com login: as cobranças são as da conta da sessão. */}
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/aluno/conta/faturamento/recibo/:chave"
+          element={
+            <ProtecaoDoApp>
+              <ReciboPage />
+            </ProtecaoDoApp>
+          }
+        />
+      </Route>
       <Route element={<Layout />}>
         {/* NÃO existe rota "/" aqui, e é de propósito: a raiz é a home PÚBLICA,
             servida pelo Express. Em produção ele responde antes de o React

@@ -24,6 +24,7 @@ vi.mock("@/lib/api", async (original) => {
     adminListarTentativas: nunca,
     adminOQueAconteceu: nunca,
     adminListarCodigos: nunca,
+    getMinhasCobrancas: () => Promise.resolve({ cobrancas: [{ em: "2026-10-10T15:00:00.000Z", centavos: 9990, moeda: "brl", forma: "pix", cartao: null, situacao: "paga", devolvido: 0, chave: "abc0000000000000" }] }),
   };
 });
 
@@ -75,5 +76,34 @@ describe("o menu do Financeiro leva a cada tela", () => {
   it("o próprio Financeiro abre Precisa de atendente", async () => {
     renderWithProviders(<App />, { route: "/admin/financeiro" });
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Precisa de atendente");
+  });
+});
+
+// O RECIBO DA ESCOLA (decisão do operador, 31/10/2026): abre FORA do menu do app, para imprimir só o recibo — e só com login.
+describe("o recibo da escola", () => {
+  const RECIBO = "/aluno/conta/faturamento/recibo/abc0000000000000";
+
+  beforeEach(() => {
+    useSession.mockReturnValue({ data: { user: { name: "Ana Souza", email: "ana@exemplo.com", role: Role.MEMBER } }, isPending: false, error: null });
+  });
+
+  it("abre o recibo sem o menu do app (a tela da conta, no mesmo app, tem o menu)", async () => {
+    renderWithProviders(<App />, { route: RECIBO });
+    expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Recibo");
+    expect(await screen.findByText("Pix")).toBeTruthy();
+    expect(screen.queryByRole("navigation")).toBeNull();
+  });
+
+  it("a tela da conta, para comparar: com o menu", async () => {
+    renderWithProviders(<App />, { route: "/aluno/conta" });
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryAllByRole("navigation").length).toBeGreaterThan(0);
+  });
+
+  it("sem login, vai ao login — o recibo não abre", async () => {
+    useSession.mockReturnValue({ data: null, isPending: false, error: null });
+    renderWithProviders(<App />, { route: RECIBO });
+    expect(await screen.findByRole("button", { name: "Entrar" })).toBeTruthy();
+    expect(screen.queryByText("Recibo")).toBeNull();
   });
 });

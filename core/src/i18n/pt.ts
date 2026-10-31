@@ -795,6 +795,26 @@ export const pt = {
         recibo: "Ver recibo",
         reciboDe: "Ver o recibo de {data} (abre em outra aba)"
       },
+      // O RECIBO DA ESCOLA (etapa 4.7b, passo 6a — decisão do operador, 31/10/2026: no lugar do recibo da Stripe, e sem o
+      // CPF de quem pagou). Os dados da escola: o nome empresarial, mandado por ele, e o CNPJ da matriz que sai dele (a
+      // confirmar). Rascunho do agente: o operador aprova vendo.
+      recibo: {
+        titulo: "Recibo",
+        imprimir: "Imprimir ou salvar em PDF",
+        emitente: "67.633.954 JILSON RODRIGUES DE SANTANA",
+        cnpj: "CNPJ 67.633.954/0001-02",
+        contato: "jilsonsantana.com · suporte@jilsonsantana.com",
+        assinante: "Assinante",
+        referente: "Referente a",
+        assinatura: "Assinatura da escola Jilson Santana",
+        data: "Data",
+        valor: "Valor",
+        forma: "Forma de pagamento",
+        situacao: "Situação",
+        naoEncontrado: "Este recibo não foi encontrado.",
+        erro: "Não foi possível carregar o recibo. Tente de novo.",
+        tentarDeNovo: "Tentar de novo"
+      },
       // A tela de trocar o cartão.
       cartaoDescricao: "O novo cartão passa a valer na próxima cobrança.",
       salvarCartao: "Salvar cartão",
