@@ -696,6 +696,34 @@ exceto o item 4, que é página pública.
     receber novidades" e "Descadastrar" (`server/src/views/pagina-do-link.ts`, página do servidor —
     as mesmas regras do passo 3).
 
+39. **O acabamento das telas novas da COBRANÇA, no admin, e das Cobranças do aluno** *(etapa 4.7b,
+    31/10/2026; trazido para cá no fim dela, a pedido do operador; a ordem entre o 38 e o 39 é dele)*. **Só visual** —
+    nada de texto, comportamento, rota ou teste. As telas nasceram com o layout padrão (`PageContainer`, `PageHeader`,
+    `PageSection`) e a estrutura certa; falta o acabamento. **No admin o texto mora na própria tela** (regra do admin) —
+    mesmo assim, não mude nenhum: o operador os confere usando.
+    1. Da `dev`, abrir o branch `acabamento-cobranca`. Ligar `npm run dev:server` e `npm run dev:client` e entrar pelo
+       Vite (`http://localhost:5173`) com o admin. Para ter o que ver, o banco de dev precisa de assinaturas e casos: peça
+       ao Claude um roteiro de dados de teste, se a tela vier vazia — **não crie dado à mão no painel da Stripe**.
+    2. As telas, em **Admin → Cobrança** (o submenu): **Precisa de você** (`client/src/pages/admin/cobranca/CobrancaPrecisaDeVocePage.tsx`,
+       com a faixa dos **números do mês** no topo — `NumerosDoMes` —, o cartão de cada caso — `CartaoDoCaso` — e os
+       consertos dentro dele — `ConsertoDoCaso`, `ResponderComProvas`); **Assinaturas** (`CobrancaAssinaturasPage`,
+       `FiltrosDasAssinaturas`, `ListaDasAssinaturas`, `LinhaDaAssinatura`); a **ficha** do aluno, aberta a partir de
+       uma assinatura (`CobrancaFichaPage`, `ResumoDaFicha`, `CobrancasDaFicha`, `AcoesDaAssinatura`, `ConferirDaFicha`,
+       `LinksParaOAluno`, `CorrigirDocumento`, `CorrigirEmail`, `DevolverTudo`, `DevolverPagamento`, `LiberarPagoPorFora`,
+       `LinhasDoRegistro`); **Tentativas** (`CobrancaTentativasPage`); **O que aconteceu** (`CobrancaOQueAconteceuPage`);
+       e **Códigos promocionais** (`CobrancaCodigosPage`, `CriarCodigo`). Os componentes moram em
+       `client/src/components/admin/cobranca/`.
+    3. **Do aluno, uma seção só:** **Cobranças**, no fim de **Faturamento e Assinatura** (`client/src/components/faturamento/BlocoDasCobrancas.tsx`
+       — a data, o valor, como foi paga, a situação e o botão **Ver recibo**). Ela segue o desenho que você já deu aos
+       blocos **Seu plano** e **Forma de pagamento** (item 34): o mesmo cartão, o mesmo espaçamento. **Os textos dela
+       saem do dicionário e estão sendo aprovados pelo operador** — não mexa neles.
+    4. Não mudar: textos, o que é botão ou link e para onde leva, `aria-*` e `role` (os avisos de erro são
+       `role="alert"`, a resposta de cada ação é `role="status"`), as confirmações antes de cada ação que mexe em
+       dinheiro ou acesso (elas dizem o efeito — **nunca tirar uma**), a ordem dos campos. **O "Ver recibo" abre numa aba
+       nova com `rel="noopener noreferrer"`**: não tirar. Os quatro gates verdes (`typecheck`, `lint`, `test`, `build`),
+       conferidos pelo código de saída. Commit no branch e **parar**: sem merge na `dev` nem na `main` — o Claude
+       confere o diff e faz o merge na `dev`.
+
 > **Fora do seu trabalho, para não confundir:** o Bunny ganhou **Live Stream** em acesso
 > antecipado (29/09). É só avaliação depois da Fase 3, **não** é tela a desenhar (`docs/bunny.md`
 > § 6, decisão 8).
@@ -954,6 +982,7 @@ Sem essa separação, a décima tela tem dez paletas paralelas e ninguém sabe q
   1. **Item 23 — Landing page de venda do curso (`/curso/:slug`) e mock na `design-lab/`:** acabamento da página de vendas do curso (cartão de assinar, bloco do autor, diferenciais com ✓ em duas colunas, ferramentas do curso, trilhas e outros cursos) para orientar a transposição para template rápido de servidor (Bloco C5). *(Ponto de retorno da próxima sessão com o Antigravity)*.
   2. **Item 14/15 — Polimento dos relatórios do Dashboard (`/dashboard`):** os 4 cartões de relatório hoje estão com o selo EM BREVE; recebem o acabamento visual definitivo quando as métricas agregadas chegarem.
   3. **Item 38 — a 6g, o acabamento das telas de assinar** *(entrou em 30/10/2026; a ordem entre os itens é do operador)*: é o que vem antes do teste final dele com dinheiro de verdade — o passo a passo está no item 38, na §2.
+  4. **Item 39 — o acabamento das telas novas da Cobrança, no admin, e da seção Cobranças do aluno** *(entrou em 31/10/2026, no fim da etapa 4.7b; a ordem entre os itens é do operador)*: o passo a passo está no item 39, na §2.
 - **Status da sessão (12/10/2026):** O operador pausou os ajustes visuais para fechar a parte de cartões de crédito/faturamento com o Claude Code. Ao voltar, recomeçamos diretamente pelo Item 23.
 - **Vem aí no produto, e vai precisar de você** *(plano de etapas futuras)*: o **arrastar na ordem dos cursos e das perguntas** (mesma mecânica do Conteúdo), e as novas páginas públicas (a **página curta da trilha**, **Quem somos**, **Contato** e a **página de baixar material**). Elas seguem o fluxo padrão: mock na `design-lab/`, transposição para template de servidor, e acabamento no código.
 

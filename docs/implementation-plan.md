@@ -6843,9 +6843,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               —, com a confirmação dizendo isso e a linha no registro. É o jeito de desfazer uma liberação feita na conta ou no
               plano errado sem ir ao painel da Stripe.
         - [ ] **Fechamento do bloco 6:** a revisão de segurança, as fotos das telas do aluno, publicar (com a ordem dele).
-      - [ ] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
+      - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA
-            CONTINUAR*.
+            CONTINUAR*. **FEITO (31/10/2026):** o roteiro, passo a passo pelo painel (os casos de *Precisa de você* e o
+            botão de cada um, a ficha, as ações com e sem dinheiro, os códigos), rascunho do agente a revisar pelo
+            operador; no `GEMINI.md`, o **item 39** — o acabamento das telas novas da Cobrança e da seção *Cobranças* do
+            aluno —, ao lado do 38, com o passo a passo. A pergunta das telas da *mesma família* do item 38 vai ao
+            operador no fechamento.
       **OS 6 BLOCOS ENTRAM ANTES DA ABERTURA** *(decisão do operador, 31/10/2026, à pergunta P146 — entre isso, os
       blocos 1 a 4 antes e o 5 e o 6 logo depois, que o agente recomendou, e só os blocos 1 e 2 antes)*. Do bloco 6,
       respondido no mesmo dia: entram o 6a, o 6c e o 6d; o 6b saiu (P138). *A conta, dita sem rodeio:* são 23 passos e
