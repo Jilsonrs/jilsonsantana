@@ -36,7 +36,7 @@ import { ROTAS_DO_EDITOR } from "@/pages/admin/course-editor/steps";
 import { AdminSiteTextPage } from "@/pages/admin/AdminSiteTextPage";
 import { AdminTestimonialsPage } from "@/pages/admin/AdminTestimonialsPage";
 import { AdminFaqPage } from "@/pages/admin/AdminFaqPage";
-import { AdminAssinaturasPage } from "@/pages/admin/AdminAssinaturasPage";
+import { CobrancaAssinaturasPage } from "@/pages/admin/cobranca/CobrancaAssinaturasPage";
 import { AvisosPage } from "@/pages/admin/comunicacao/AvisosPage";
 import { AvisoEditorPage } from "@/pages/admin/comunicacao/AvisoEditorPage";
 import { MensagensAutomaticasPage } from "@/pages/admin/comunicacao/MensagensAutomaticasPage";
@@ -139,8 +139,10 @@ export default function App() {
           <Route path="/admin/comunicacao/notificacoes/nova" element={<AvisoEditorPage />} />
           <Route path="/admin/comunicacao/notificacoes/:id" element={<AvisoEditorPage />} />
           <Route path="/admin/comunicacao/mensagens-automaticas" element={<MensagensAutomaticasPage />} />
-          {/* Conferir na Stripe a assinatura de um aluno (Fase 4, etapa 4.4 — operador, 10/10/2026). */}
-          <Route path="/admin/assinaturas" element={<AdminAssinaturasPage />} />
+          {/* COBRANÇA (etapa 4.7b — o nome e o submenu decididos pelo operador, 31/10/2026). O link do menu é
+              /admin/cobranca, que leva à primeira tela pronta; "Precisa de você" passa a ser ela no bloco 2. */}
+          <Route path="/admin/cobranca" element={<Navigate to="/admin/cobranca/assinaturas" replace />} />
+          <Route path="/admin/cobranca/assinaturas" element={<CobrancaAssinaturasPage />} />
         </Route>
         {/* Endereço que não existe no app — um favorito antigo de /conta, um
             endereço digitado errado — leva ao Início (decisão do operador,

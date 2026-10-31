@@ -40,6 +40,8 @@ import type {
   AssinaturaCriada,
   SituacaoDaAssinatura,
   SincroniaDaConta,
+  FiltroDasAssinaturas,
+  ListaDeAssinaturas,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1204,6 +1206,12 @@ export async function desistirDaTroca(): Promise<TrocaDesfeita> {
  * ADMIN: confere na Stripe as assinaturas da conta deste e-mail e acerta o acesso (etapa 4.4).
  * Conta que não existe: 404 `ContaNaoEncontrada`. Sem tentar de novo sozinho.
  */
+/** A lista do painel da Cobrança (etapa 4.7b, passo 1b): uma página, com a contagem de cada filtro. */
+export async function adminListarAssinaturas(consulta: { filtro: FiltroDasAssinaturas; busca?: string; pagina: number }): Promise<ListaDeAssinaturas> {
+  const { data } = await client.get<ListaDeAssinaturas>("/admin/assinaturas", { params: consulta });
+  return data;
+}
+
 export async function adminSincronizarConta(email: string): Promise<SincroniaDaConta> {
   const { data } = await client.post<SincroniaDaConta>("/admin/assinaturas/sincronizar", { email });
   return data;

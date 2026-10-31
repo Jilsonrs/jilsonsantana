@@ -9,9 +9,9 @@ vi.mock("@/lib/api", () => ({
   adminSincronizarConta: (email: string) => adminSincronizarConta(email),
 }));
 
-import { AdminAssinaturasPage } from "./AdminAssinaturasPage";
+import { ConferirNaStripe } from "./ConferirNaStripe";
 
-// ADMIN → ASSINATURAS (Fase 4, etapa 4.4 — operador, 10/10/2026): conferir na Stripe a
+// CONFERIR NA STRIPE (Fase 4, etapa 4.4 — operador, 10/10/2026; na lista da Cobrança desde a 4.7b): conferir na Stripe a
 // assinatura de um aluno. O que estes testes protegem: a tela manda só o e-mail (aparado), diz
 // o que a Stripe respondeu e se a conta ficou com acesso, e nunca deixa na tela o resultado de
 // uma conferência anterior quando a nova falha — o operador leria o acesso de OUTRO aluno.
@@ -34,10 +34,9 @@ beforeEach(() => {
   adminSincronizarConta.mockReset().mockResolvedValue({ temAcesso: true, assinaturas: [conferida()] });
 });
 
-describe("Assinaturas do admin — conferir na Stripe", () => {
+describe("Cobrança do admin — conferir na Stripe", () => {
   it("de início: só o campo e o botão — nada conferido, e o servidor não é chamado", () => {
-    renderWithProviders(<AdminAssinaturasPage />);
-    expect(screen.getByRole("heading", { name: "Assinaturas" })).toBeTruthy();
+    renderWithProviders(<ConferirNaStripe />);
     expect(screen.getByLabelText("E-mail do aluno")).toBeTruthy();
     expect(screen.queryByRole("status")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
@@ -45,7 +44,7 @@ describe("Assinaturas do admin — conferir na Stripe", () => {
   });
 
   it("manda o e-mail digitado, aparado nas pontas, e mostra o que a Stripe diz e que a conta tem acesso", async () => {
-    renderWithProviders(<AdminAssinaturasPage />);
+    renderWithProviders(<ConferirNaStripe />);
     conferir("  aluno@exemplo.com ");
     const resultado = await screen.findByRole("status");
     expect(adminSincronizarConta).toHaveBeenCalledTimes(1);
@@ -58,7 +57,7 @@ describe("Assinaturas do admin — conferir na Stripe", () => {
   it("carregando: enquanto confere, o botão diz Conferindo… e fica desligado — sem resultado na tela", async () => {
     let responder: (r: SincroniaDaConta) => void = () => {};
     adminSincronizarConta.mockReturnValue(new Promise((ok) => (responder = ok)));
-    renderWithProviders(<AdminAssinaturasPage />);
+    renderWithProviders(<ConferirNaStripe />);
     conferir("aluno@exemplo.com");
     const botao = (await screen.findByRole("button", { name: "Conferindo…" })) as HTMLButtonElement;
     expect(botao.disabled).toBe(true);
@@ -79,7 +78,7 @@ describe("Assinaturas do admin — conferir na Stripe", () => {
         conferida({ id: "sub_nova", status: "status_que_a_stripe_inventou", pagoAte: null }),
       ],
     });
-    renderWithProviders(<AdminAssinaturasPage />);
+    renderWithProviders(<ConferirNaStripe />);
     conferir("aluno@exemplo.com");
     const resultado = await screen.findByRole("status");
     expect(resultado.textContent).toContain("Esta conta está sem acesso.");
@@ -94,7 +93,7 @@ describe("Assinaturas do admin — conferir na Stripe", () => {
 
   it("vazio: a conta nunca passou pela Stripe", async () => {
     adminSincronizarConta.mockResolvedValue({ temAcesso: false, assinaturas: [] });
-    renderWithProviders(<AdminAssinaturasPage />);
+    renderWithProviders(<ConferirNaStripe />);
     conferir("aluno@exemplo.com");
     const resultado = await screen.findByRole("status");
     expect(resultado.textContent).toContain("Esta conta está sem acesso.");
@@ -108,7 +107,7 @@ describe("Assinaturas do admin — conferir na Stripe", () => {
       [recusa("NaoConfigurado"), "A Stripe não está configurada neste ambiente."],
       [new Error("Network Error"), "Não foi possível conferir na Stripe. Tente de novo."],
     ];
-    renderWithProviders(<AdminAssinaturasPage />);
+    renderWithProviders(<ConferirNaStripe />);
     for (const [falha, frase] of casos) {
       adminSincronizarConta.mockRejectedValueOnce(falha);
       conferir("aluno@exemplo.com");
@@ -118,7 +117,7 @@ describe("Assinaturas do admin — conferir na Stripe", () => {
   });
 
   it("o que não é e-mail: avisa no campo e não chama o servidor", async () => {
-    renderWithProviders(<AdminAssinaturasPage />);
+    renderWithProviders(<ConferirNaStripe />);
     for (const digitado of ["", "   ", "nao-e-email"]) {
       conferir(digitado);
       expect((await screen.findByRole("alert")).textContent).toBe("Informe um e-mail válido.");
@@ -127,7 +126,7 @@ describe("Assinaturas do admin — conferir na Stripe", () => {
   });
 
   it("o resultado de UM aluno não fica na tela quando a conferência do seguinte falha", async () => {
-    renderWithProviders(<AdminAssinaturasPage />);
+    renderWithProviders(<ConferirNaStripe />);
     conferir("primeiro@exemplo.com");
     expect((await screen.findByRole("status")).textContent).toContain("Esta conta tem acesso.");
 

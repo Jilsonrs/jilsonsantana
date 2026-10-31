@@ -1285,7 +1285,8 @@ apaga o nome e o UTM (LGPD — o plano → passo 9, 9e).
 ## Sincronizar e perder o acesso *(Fase 4, etapa 4.4 — 10/10/2026)*
 
 **Decisões do operador (10/10/2026):**
-- **Forçar a sincronia mora em Admin → "Assinaturas"**, um item novo no menu (entre um item novo,
+- **Forçar a sincronia mora em Admin → "Assinaturas"** *(desde 31/10/2026: Admin → Cobrança → Assinaturas — o
+  item virou "Cobrança", P145)*, um item novo no menu (entre um item novo,
   um bloco no Dashboard e nenhuma tela): o e-mail do aluno e o botão "Conferir na Stripe". A tela
   diz se a conta ficou com acesso e o que a Stripe respondeu de cada assinatura. *Reabre quando a
   tela "Alunos" (planejada) existir, se fizer sentido conferir a assinatura a partir do aluno.*
@@ -2044,7 +2045,8 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
 
 **O que fazer, passo a passo:**
 1. **Ache a pessoa.** Cole o id do alerta na busca do painel da Stripe → abra o cliente → pegue o e-mail.
-2. **Confira.** Admin → Assinaturas → o e-mail → **"Conferir na Stripe"**. Se ela tem acesso, responda que está
+2. **Confira.** Admin → Cobrança → Assinaturas → o e-mail → **"Conferir na Stripe"** (na mesma tela, a busca acha
+   a pessoa pelo e-mail, pelo nome ou pelo `sub_`, `cus_` ou `pi_` do alerta). Se ela tem acesso, responda que está
    liberado — sem senha, ela entra por **"Receber código de acesso"**, na tela de entrar.
 3. **Pagou e continua sem acesso:**
    - **Pix "em conferência":** devolva o Pix no painel e peça que pague de novo pela tela. **Não** crie a

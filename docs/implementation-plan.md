@@ -6302,10 +6302,25 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               assinaturas intactas. *Docs check (context7): Stripe → `/websites/stripe` → a consulta da sessão
               (31/10) e os tipos da `stripe@23.0.1` (`Subscription.discounts`, `Discount.promotion_code`,
               `PromotionCode.code`); a expansão, medida na área de teste.*
-        - [ ] **1b — A lista** (*A*, item 1): filtros, busca e a contagem no topo; a rota de admin e a tela. O "Conferir
+        - [x] **1b — A lista** (*A*, item 1): filtros, busca e a contagem no topo; a rota de admin e a tela. O "Conferir
               na Stripe" de hoje fica até ir para a ficha, no 3a. **No menu: "Cobrança"**, no lugar de "Assinaturas"
               (depois de "Alunos"), com o submenu Precisa de você · Assinaturas · Tentativas · O que aconteceu
-              *(decisão do operador, 31/10/2026, P145)*.
+              *(decisão do operador, 31/10/2026, P145)*. **FEITO (31/10/2026).** `GET /api/admin/assinaturas` (só
+              admin; `listarAssinaturas`, em `lib/painel-da-cobranca.ts`): só o espelho, sem ir à Stripe; a mais
+              recente primeiro, 50 por página; a contagem de cada filtro é da escola inteira; a tentativa que expirou
+              sem pagar fica fora (é de "Tentativas"); a pré-paga do Pix é "ativa", nunca "vai cancelar". **A busca:**
+              `sub_`, `cus_` ou `pi_` ao pé da letra (a busca prometida no E13 da 4.9b — `ch_`, `in_` e `du_` precisam
+              da Stripe e vão com a ficha, no 1c); senão, um pedaço do e-mail ou do nome por `strpos`, nunca por
+              `ILIKE` (o `_` seria curinga). **Nenhum id da Stripe vai ao navegador** (só o do espelho). O formato
+              mora no `core` (`schemas/cobranca-admin.ts`). **A tela** (`/admin/cobranca/assinaturas`; `/admin/cobranca`
+              leva a ela até o bloco 2): os filtros com a contagem, a busca, a lista (a situação com a data, o plano, o
+              "pago até", o código, a marca de teste; "Sem conta na escola"), carregando, erro com "Tentar de novo" e
+              vazio; a página anterior fica na tela enquanto a nova chega. O "Conferir na Stripe" virou o componente
+              `ConferirNaStripe`, embaixo da lista. `/admin/assinaturas` deixou de existir (endereço antigo não
+              redireciona — decisão de 29/09/2026). Testes: `admin-cobranca-lista.test.ts` (novo, 11), a tela
+              (novo, 11), `ConferirNaStripe.test.tsx` (o de antes, movido) e o menu. **Mutação: 9 de 10 reprovaram;
+              a que passou é equivalente** (com o pedido falho, a tela já não tem lista: `!dados` cobre o erro). *Docs
+              check (context7): não disparado — nada vai à Stripe.*
         - [ ] **1c — A ficha do aluno, no servidor** (*A*, item 2): a Stripe lida na hora (as cobranças de cartão e
               Pix, as devoluções, as contestações, o cartão, o CPF com parte escondida, os recibos) e o nosso banco (a
               conta, o espelho, os e-mails, o registro). Provada na área de teste.

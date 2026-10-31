@@ -280,15 +280,23 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     }
   });
 
-  // ASSINATURAS (decisão do operador, 10/10/2026 — Fase 4, etapa 4.4): conferir na Stripe a
-  // assinatura de um aluno. É do ADMIN: o aluno não fica sabendo que a área existe.
-  it("Assinaturas é do admin (o aluno não vê), é tela de verdade e vem logo depois de Alunos", () => {
+  // COBRANÇA (decisão do operador, 31/10/2026, P145 — etapa 4.7b; no lugar de "Assinaturas", de 10/10/2026): o painel
+  // da cobrança. É do ADMIN: o aluno não fica sabendo que a área existe.
+  it("Cobrança é do admin (o aluno não vê), vem logo depois de Alunos, com o submenu decidido e a lista acendendo Cobrança", () => {
     const doAdmin = secoesVisiveis(Role.ADMIN);
-    expect(doAdmin.find((s) => s.label === "Assinaturas")).toMatchObject({ to: "/admin/assinaturas", estado: "ativo", papel: Role.ADMIN });
-    expect(secoesVisiveis(Role.MEMBER).some((s) => s.to === "/admin/assinaturas")).toBe(false);
+    const cobranca = doAdmin.find((s) => s.label === "Cobrança");
+    expect(cobranca).toMatchObject({ to: "/admin/cobranca", estado: "ativo", papel: Role.ADMIN });
+    expect(cobranca?.filhos?.map((f) => [f.label, f.estado ?? "ativo"])).toEqual([
+      ["Precisa de você", "planejado"],
+      ["Assinaturas", "ativo"],
+      ["Tentativas", "planejado"],
+      ["O que aconteceu", "planejado"],
+    ]);
+    expect(secoesVisiveis(Role.MEMBER).some((s) => s.to.startsWith("/admin/cobranca"))).toBe(false);
     const rotulos = doAdmin.map((s) => s.label);
-    expect(rotulos.indexOf("Assinaturas")).toBe(rotulos.indexOf("Alunos") + 1);
-    expect(secaoAtiva("/admin/assinaturas", doAdmin)?.label).toBe("Assinaturas");
+    expect(rotulos.indexOf("Cobrança")).toBe(rotulos.indexOf("Alunos") + 1);
+    expect(rotulos).not.toContain("Assinaturas");
+    expect(secaoAtiva("/admin/cobranca/assinaturas", doAdmin)?.label).toBe("Cobrança");
   });
 
   // COMUNICAÇÃO (decisões do operador, 06/10/2026): antes de "Alunos", com o nível 2;
