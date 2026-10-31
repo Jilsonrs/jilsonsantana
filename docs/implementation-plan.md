@@ -6394,7 +6394,18 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               `stripe.test.ts` (+1), a tela (novo) e a ficha (+1). **Mutação: 9 de 9 reprovaram.** **Banco de dev:**
               `migrate deploy`, *No difference detected*, nenhuma tabela sem RLS. *Docs check (context7): não
               disparado — nenhuma ida nova à Stripe (o motivo já estava nos metadados).*
-        - [ ] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele).
+        - [ ] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele). **A revisão
+              de segurança (31/10/2026, só o que mudou, `5c358cb..d4afd70`): nenhum P0 nem P1.** Os quatro menores,
+              fechados com teste e mutação (4 de 4 reprovaram), sem nova rodada: (P2) a frase "acesso até" da lista era
+              uma segunda cópia da regra do gate, no navegador — agora o servidor manda `daAcesso` (`assinaturaDaAcesso`,
+              e só com conta: a assinatura sem conta não dá acesso a ninguém); (P3) a busca (o e-mail ou o nome de um
+              aluno) ia no endereço, que o Cloud Run guarda inteiro no registro — a lista virou `POST
+              /api/admin/assinaturas/lista`, com a busca no corpo (a regra foi para o `CLAUDE.md` → *Server*); (P3) a
+              máscara do CPF mostrava o começo e os verificadores, que o padrão público esconde — agora é o padrão do
+              Diário Oficial (`CPF ***.982.247-**`; o CNPJ, `**.ABC.345/****-**`); (P3) o RLS de toda tabela passou a ter
+              teste geral (`rls.test.ts`, contra o banco recém-migrado da suíte). **Falta:** publicar, com a ordem dele
+              — e, depois do deploy, conferir em produção (só leitura) que nenhuma tabela ficou sem RLS. Fotos: não há
+              (o bloco 1 é só do admin; o operador confere usando).
       - [ ] **BLOCO 2 — PRECISA DE VOCÊ** (os casos e o aviso ao operador)
         - [x] **2a — Os casos, a base:** a tabela (com RLS), abrir sem repetir e fechar sozinho; os três primeiros
               tipos de *B* (o Pix em conferência, o dinheiro sem assinatura, o pagou e está sem conta). **FEITO
