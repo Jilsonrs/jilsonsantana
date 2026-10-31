@@ -6450,7 +6450,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               passavam por cada alerta (`ativas-vencidas`, `contestacao`, `stripe-webhook`, `avisos-da-assinatura`,
               `boas-vindas`, `minha-assinatura`, `cancelar-assinatura`, `reembolso`, `stripe-plano`). **Mutação: 12 de
               12 reprovaram.** *Docs check (context7): não disparado — nenhuma ida nova à Stripe.*
-        - [ ] **2c — A tela "Precisa de você"** (a primeira que abre): os casos, fechar com nota e o link para a ficha.
+        - [x] **2c — A tela "Precisa de você"** (a primeira que abre): os casos, fechar com nota e o link para a ficha.
+              **FEITO (31/10/2026).** `GET /api/admin/cobranca/casos?situacao=abertos|fechados` (só admin;
+              `listarCasos`, em `lib/casos.ts`): os abertos com os URGENTES primeiro e dos mais novos para os mais
+              velhos, ou os fechados (o fechamento mais recente primeiro); quantos abertos e quantos urgentes; e para
+              onde cada caso leva — a conta, a dona da assinatura, a assinatura sem conta ou o visitante (`ficha:`).
+              `POST /api/admin/cobranca/casos/:id/fechar` (a nota opcional, até 500): fecha com quem fechou, e o
+              fechamento entra no registro da cobrança (`caso-fechado`, com o tipo); fechar de novo é 404. **A tela**
+              `/admin/cobranca/precisa-de-voce` — agora a primeira da Cobrança (`/admin/cobranca` leva a ela; o item do
+              submenu deixou de ser "em breve"): "N casos abertos · N urgentes", Abertos · Fechados, cada caso com o
+              tipo, "Urgente", quando abriu, o valor, o resumo, o aluno levando à ficha e "O que resolve" (a lista *B*
+              do mapa), e o "Fechar" com "O que foi feito (opcional)"; os fechados dizem quando, quem fechou e a nota.
+              Carregando, erro com "Tentar de novo" e vazio ("Nada precisa de você agora"). Os botões que resolvem
+              chegam nos blocos 3 a 5. Testes: `admin-cobranca-casos.test.ts` (novo), a tela (novo) e o registro (+1).
+              **Mutação: 7 de 7 reprovaram.** *Docs check (context7): não disparado.*
         - [ ] **2d — O aviso ao operador** (P137: o urgente na hora; o resto num resumo de manhã).
         - [ ] **Fechamento do bloco 2.**
       - [ ] **BLOCO 3 — AS AÇÕES SEM DINHEIRO**

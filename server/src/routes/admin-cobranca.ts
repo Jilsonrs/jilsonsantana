@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { acharQuerySchema, fichaQuerySchema, oQueAconteceuQuerySchema } from "@jilson/core";
+import { acharQuerySchema, casosQuerySchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema } from "@jilson/core";
 import { requireAdmin } from "../middleware/auth.js";
-import { validate } from "../lib/http.js";
+import { parseId, validate } from "../lib/http.js";
+import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 
@@ -35,6 +36,33 @@ router.get("/admin/cobranca/o-que-aconteceu", requireAdmin, async (req, res) => 
   const pedido = validate(oQueAconteceuQuerySchema, req.query, res);
   if (pedido === null) return;
   res.json(await oQueAconteceu(pedido.pagina));
+});
+
+// GET /api/admin/cobranca/casos?situacao=abertos|fechados&pagina=… — "Precisa de você" (passo 2c).
+router.get("/admin/cobranca/casos", requireAdmin, async (req, res) => {
+  res.set("Cache-Control", "private, no-store");
+  const pedido = validate(casosQuerySchema, req.query, res);
+  if (pedido === null) return;
+  res.json(await listarCasos(pedido));
+});
+
+// POST /api/admin/cobranca/casos/:id/fechar — o operador fecha o caso, com uma nota opcional (passo 2c).
+router.post("/admin/cobranca/casos/:id/fechar", requireAdmin, async (req, res) => {
+  res.set("Cache-Control", "private, no-store");
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  const corpo = validate(fecharCasoSchema, req.body, res);
+  if (corpo === null) return;
+  const operador = req.user?.id;
+  if (!operador) {
+    res.status(401).json({ error: "SemSessao" });
+    return;
+  }
+  if (!(await fecharPeloOperador(id, operador, corpo.nota || null))) {
+    res.status(404).json({ error: "NaoEncontrado" });
+    return;
+  }
+  res.json({ fechado: true });
 });
 
 // GET /api/admin/cobranca/achar?codigo=<sub_|cus_|pi_|ch_|in_|du_…> — de quem é o código que veio num alerta.

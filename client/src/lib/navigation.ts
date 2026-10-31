@@ -271,14 +271,14 @@ export function navegacao(t: AppTexts): Secao[] {
     {
       // COBRANÇA (decisão do operador, 31/10/2026, P145 — etapa 4.7b): o painel em que se resolve todo problema de
       // pagamento de aluno. No lugar de "Assinaturas" (etapa 4.4), depois de "Alunos". O que ainda não existe é EM
-      // BREVE: "Precisa de você" (bloco 2).
+      // BREVE: nenhum, desde o passo 2c.
       label: "Cobrança",
       to: "/admin/cobranca",
       icon: CreditCard,
       papel: Role.ADMIN,
       estado: "ativo",
       filhos: [
-        { label: "Precisa de você", to: "/admin/cobranca/precisa-de-voce", estado: "planejado" }, // 4.7b, bloco 2
+        { label: "Precisa de você", to: "/admin/cobranca/precisa-de-voce" },
         { label: "Assinaturas", to: "/admin/cobranca/assinaturas" },
         { label: "Tentativas", to: "/admin/cobranca/tentativas" },
         { label: "O que aconteceu", to: "/admin/cobranca/o-que-aconteceu" },

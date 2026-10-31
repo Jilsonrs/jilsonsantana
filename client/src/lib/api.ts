@@ -46,6 +46,7 @@ import type {
   OndeLeva,
   ListaDeTentativas,
   OQueAconteceu,
+  ListaDeCasos,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1221,6 +1222,17 @@ export async function adminListarAssinaturas(consulta: { filtro: FiltroDasAssina
 export async function adminFichaDaCobranca(quem: { conta: string } | { assinatura: number } | { visitante: string }): Promise<FichaDaCobranca> {
   const { data } = await client.get<FichaDaCobranca>("/admin/cobranca/ficha", { params: quem });
   return data;
+}
+
+/** "Precisa de você": os casos abertos ou os fechados (etapa 4.7b, passo 2c). */
+export async function adminListarCasos(consulta: { situacao: "abertos" | "fechados"; pagina: number }): Promise<ListaDeCasos> {
+  const { data } = await client.get<ListaDeCasos>("/admin/cobranca/casos", { params: consulta });
+  return data;
+}
+
+/** O operador fecha um caso, com uma nota opcional. */
+export async function adminFecharCaso(id: number, nota: string): Promise<void> {
+  await client.post(`/admin/cobranca/casos/${id}/fechar`, { nota });
 }
 
 /** O que aconteceu na cobrança da escola, e os motivos de cancelamento contados (etapa 4.7b, passo 1f). */

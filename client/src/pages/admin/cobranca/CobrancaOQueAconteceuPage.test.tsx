@@ -31,6 +31,7 @@ beforeEach(() => {
       linha({ id: 3, acao: "customer.subscription.updated", detalhe: "active · vai-cancelar · motivo:caro", aluno: { id: "u-1", nome: "Ana Souza", email: "ana@exemplo.com" } }),
       linha({ id: 2, acao: "charge.dispute.created", detalhe: "aberta · fraudulent", centavos: 9990 }),
       linha({ id: 1, acao: "tipo.novo_da_stripe", quem: "RODADA" }),
+      linha({ id: 4, acao: "caso-fechado", quem: "OPERADOR", detalhe: "PIX_EM_CONFERENCIA" }),
     ],
   });
 });
@@ -58,6 +59,8 @@ describe("Cobrança → O que aconteceu", () => {
     expect(screen.getByText("Assinatura mudou · ativa · vai cancelar no fim do período · motivo: Está caro para mim agora")).toBeTruthy();
     expect(screen.getByText("Contestação no banco · aberta · fraudulent · R$ 99,90")).toBeTruthy();
     expect(screen.getByText("tipo.novo_da_stripe")).toBeTruthy();
+    // O fechamento de um caso pelo operador (passo 2c), com o tipo do caso em português.
+    expect(screen.getByText("Caso fechado · Pix pago que não virou assinatura")).toBeTruthy();
     expect(screen.getAllByText("20/11/2026, 12:30 · Stripe")).toHaveLength(2);
     expect(screen.getByText("20/11/2026, 12:30 · A rodada de hora em hora")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ana Souza" }).getAttribute("href")).toBe("/admin/cobranca/assinaturas/ficha?conta=u-1");

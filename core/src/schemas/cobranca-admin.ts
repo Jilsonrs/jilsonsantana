@@ -182,3 +182,54 @@ export const REGISTRO_POR_PAGINA = 50;
 
 /** O que a tela pede ao registro: a página. */
 export const oQueAconteceuQuerySchema = z.object({ pagina: z.coerce.number().int().min(1).max(10_000).default(1) });
+
+/** O tipo de caso de "Precisa de você" (bloco 2) — os mesmos nomes do banco. */
+export const TIPOS_DE_CASO = [
+  "PIX_EM_CONFERENCIA",
+  "PAGO_SEM_ASSINATURA",
+  "PAGOU_SEM_CONTA",
+  "DIVERGENCIA",
+  "ATIVA_SEM_PERIODO_PAGO",
+  "COBRANCA_EM_ABERTO",
+  "DEVOLUCAO_FALHOU",
+  "TROCA_DE_PLANO",
+  "CONTESTACAO",
+  "AVISO_DE_FRAUDE",
+  "EMAIL_NAO_SAIU",
+  "PEDIDO_DE_REEMBOLSO",
+] as const;
+export type TipoDeCasoDaLista = (typeof TIPOS_DE_CASO)[number];
+
+/** Um caso de "Precisa de você" (passo 2c): o que aconteceu, com quem, e para onde ir (a ficha). */
+export type CasoDaLista = {
+  id: number;
+  tipo: TipoDeCasoDaLista;
+  urgente: boolean;
+  aberto: boolean;
+  abertoEm: string;
+  /** O resumo em poucas palavras (sem dado pessoal). */
+  detalhe: string | null;
+  centavos: number | null;
+  aluno: { id: string; nome: string | null; email: string } | null;
+  /** Para onde a ficha leva: a conta, a assinatura sem conta, ou o visitante. */
+  ficha: OndeLeva;
+  fechadoEm: string | null;
+  fechadoPor: QuemFezNoRegistro | null;
+  nota: string | null;
+};
+
+/** A resposta de `GET /api/admin/cobranca/casos`: uma página e quantos casos abertos há (e quantos urgentes). */
+export type ListaDeCasos = { casos: CasoDaLista[]; temMais: boolean; abertos: number; urgentes: number };
+
+/** Quantos casos por página. */
+export const CASOS_POR_PAGINA = 50;
+
+/** O que a tela pede: os abertos ou os fechados, e a página. */
+export const casosQuerySchema = z.object({
+  situacao: z.enum(["abertos", "fechados"]).default("abertos"),
+  pagina: z.coerce.number().int().min(1).max(10_000).default(1),
+});
+
+/** Fechar um caso: a nota é opcional (o que foi feito). */
+export const fecharCasoSchema = z.object({ nota: z.string().trim().max(500).optional() });
+export type FecharCasoInput = z.infer<typeof fecharCasoSchema>;

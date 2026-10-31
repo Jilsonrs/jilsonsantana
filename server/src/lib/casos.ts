@@ -1,3 +1,4 @@
+import { CASOS_POR_PAGINA, type CasoDaLista, type ListaDeCasos, type QuemFezNoRegistro, type TipoDeCasoDaLista } from "@jilson/core";
 import { Prisma, prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 
 // OS CASOS — "PRECISA DE VOCÊ" (Fase 4, etapa 4.7b, bloco 2 — o mapa aprovado pelo operador, 31/10/2026). Cada situação
@@ -63,6 +64,88 @@ export async function fecharCaso(alvo: { tipo: TipoDeCaso; chave: string }, por:
 /** A situação se resolveu sozinha (o Pix virou assinatura, a conta nasceu): fecha o caso, se houver — a Stripe "fez". */
 export async function resolvidoSozinho(alvo: { tipo: TipoDeCaso; chave: string }, banco: Banco = prisma): Promise<void> {
   await fecharCaso(alvo, { quem: QuemFez.STRIPE, nota: "resolvido sozinho" }, banco);
+}
+
+type LinhaDoCaso = {
+  id: number;
+  kind: TipoDeCasoDaLista;
+  urgent: boolean;
+  open: boolean;
+  openedAt: Date;
+  detail: string | null;
+  amount: number | null;
+  key: string;
+  userId: string | null;
+  name: string | null;
+  email: string | null;
+  closedAt: Date | null;
+  closedBy: QuemFezNoRegistro | null;
+  note: string | null;
+  assinaturaId: number | null;
+  donoDaAssinatura: string | null;
+};
+
+/** Um caso no formato da tela, com para onde a ficha leva. Função pura. */
+export function paraCasoDaLista(linha: LinhaDoCaso): CasoDaLista {
+  const conta = linha.userId && linha.email !== null ? linha.userId : linha.donoDaAssinatura;
+  return {
+    id: linha.id,
+    tipo: linha.kind,
+    urgente: linha.urgent,
+    aberto: linha.open,
+    abertoEm: linha.openedAt.toISOString(),
+    detalhe: linha.detail,
+    centavos: linha.amount,
+    aluno: linha.userId && linha.email !== null ? { id: linha.userId, nome: linha.name, email: linha.email } : null,
+    ficha: {
+      conta,
+      assinatura: conta ? null : linha.assinaturaId,
+      visitante: !conta && linha.assinaturaId === null && linha.key.startsWith("ficha:") ? linha.key.slice("ficha:".length) : null,
+    },
+    fechadoEm: linha.closedAt?.toISOString() ?? null,
+    fechadoPor: linha.closedBy,
+    nota: linha.note,
+  };
+}
+
+/**
+ * "PRECISA DE VOCÊ" (passo 2c): os casos abertos — os urgentes primeiro, e dos mais novos para os mais velhos — ou os
+ * fechados (o fechamento mais recente primeiro). E quantos abertos há, e quantos urgentes.
+ */
+export async function listarCasos({ situacao, pagina }: { situacao: "abertos" | "fechados"; pagina: number }): Promise<ListaDeCasos> {
+  const abertos = situacao === "abertos";
+  const ordem = abertos ? Prisma.sql`c."urgent" DESC, c."openedAt" DESC` : Prisma.sql`c."closedAt" DESC`;
+  const linhas = await prisma.$queryRaw<LinhaDoCaso[]>`
+    SELECT c."id", c."kind"::text AS "kind", c."urgent", c."open", c."openedAt", c."detail", c."amount", c."key",
+           c."userId", u."name", u."email", c."closedAt", c."closedBy"::text AS "closedBy", c."note",
+           s."id" AS "assinaturaId", s."ownerUserId" AS "donoDaAssinatura"
+      FROM "billing_case" c
+      LEFT JOIN "user" u ON u."id" = c."userId"
+      LEFT JOIN "subscription" s ON s."stripeSubscriptionId" = c."stripeSubscriptionId"
+     WHERE c."open" = ${abertos}
+     ORDER BY ${ordem}, c."id" DESC
+     LIMIT ${CASOS_POR_PAGINA + 1} OFFSET ${(pagina - 1) * CASOS_POR_PAGINA}`;
+  const [contagem] = await prisma.$queryRaw<{ abertos: number; urgentes: number }[]>`
+    SELECT count(*) FILTER (WHERE "open")::int AS "abertos", count(*) FILTER (WHERE "open" AND "urgent")::int AS "urgentes" FROM "billing_case"`;
+  return { casos: linhas.slice(0, CASOS_POR_PAGINA).map(paraCasoDaLista), temMais: linhas.length > CASOS_POR_PAGINA, abertos: contagem?.abertos ?? 0, urgentes: contagem?.urgentes ?? 0 };
+}
+
+/**
+ * O OPERADOR fecha um caso aberto, com uma nota (o que ele fez) — e o fechamento entra no registro da cobrança, com quem
+ * fechou. Devolve se havia um caso aberto com esse id.
+ */
+export async function fecharPeloOperador(id: number, operador: string, nota: string | null): Promise<boolean> {
+  return prisma.$transaction(async (tx) => {
+    const fechados = await tx.$executeRaw`
+      UPDATE "billing_case" SET "open" = false, "closedAt" = now(), "closedBy" = 'OPERADOR'::"QuemFez", "closedByUserId" = ${operador}, "note" = ${nota}, "updatedAt" = now()
+       WHERE "id" = ${id} AND "open"`;
+    if (fechados === 0) return false;
+    const caso = await tx.billingCase.findUniqueOrThrow({ where: { id }, select: { kind: true, userId: true, stripeSubscriptionId: true, stripeCustomerId: true } });
+    // O caso não tem chave estrangeira; o registro tem: a conta só vai se ela existir.
+    const conta = caso.userId ? await tx.user.findUnique({ where: { id: caso.userId }, select: { id: true } }) : null;
+    await tx.billingLog.create({ data: { who: QuemFez.OPERADOR, actorUserId: operador, action: "caso-fechado", userId: conta?.id ?? null, stripeSubscriptionId: caso.stripeSubscriptionId, stripeCustomerId: caso.stripeCustomerId, detail: caso.kind } });
+    return true;
+  });
 }
 
 export { TipoDeCaso };
