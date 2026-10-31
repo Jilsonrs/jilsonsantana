@@ -141,6 +141,8 @@ export type FichaDaCobranca = {
   emails: EmailDaFicha[];
   /** A Stripe não respondeu: a ficha traz só o que está no banco. */
   stripeIndisponivel: boolean;
+  /** Os links para mandar ao aluno (passo 3a): trocar o cartão, reativar e pagar a atrasada com Pix (quando o Pix está no ar). */
+  links: { trocarCartao: string | null; reativar: string | null; pagarComPix: string | null };
   /** O que aconteceu na cobrança desta pessoa (passo 1f) — as 50 linhas mais recentes. */
   registro: LinhaDoRegistro[];
 };
@@ -249,3 +251,12 @@ export const casosQuerySchema = z.object({
 /** Fechar um caso: a nota é opcional (o que foi feito). */
 export const fecharCasoSchema = z.object({ nota: z.string().trim().max(500).optional() });
 export type FecharCasoInput = z.infer<typeof fecharCasoSchema>;
+
+/** Uma ação do admin numa assinatura (passo 3a): pelo id do ESPELHO — nunca o da Stripe. */
+export const acaoNaAssinaturaSchema = z.object({ assinatura: z.number().int().positive() });
+
+/** O que uma ação fez, em poucas palavras (o que a Stripe respondeu). */
+export type AcaoFeita = { detalhe: string };
+
+/** O resultado de "Conferir na Stripe" pela ficha: se a pessoa ficou com acesso, e o que foi conferido. */
+export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };

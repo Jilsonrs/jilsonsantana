@@ -410,10 +410,19 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
+  return pararRenovacaoDe(achada.detalhes, userId, dado);
+}
+
+/**
+ * A MESMA operação de cancelar, numa assinatura JÁ ACHADA — a da conta do aluno logado (acima) ou a que o admin
+ * escolheu na ficha (o painel da cobrança, etapa 4.7b, passo 3a: "o painel e o JilsonAI chamam as mesmas"). `userId`:
+ * a dona, para o registro e para os casos.
+ */
+export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: string, dado: MotivoDado): Promise<Parada> {
   // A pré-paga (etapa 4.9) já termina no fim do período: não há renovação a parar — e o reembolso é outra porta.
-  if (prePaga(achada.detalhes)) return { resultado: "pre-paga" };
-  const { id } = achada.detalhes;
-  if (oQueCancelarFaz(achada.detalhes) === "nada") return { resultado: "sem-assinatura" };
+  if (prePaga(detalhes)) return { resultado: "pre-paga" };
+  const { id } = detalhes;
+  if (oQueCancelarFaz(detalhes) === "nada") return { resultado: "sem-assinatura" };
   const operacao = await operarNaAssinatura(
     id,
     async (tx): Promise<Cancelada> => {
@@ -476,7 +485,11 @@ export async function manterMinhaAssinatura(userId: string): Promise<Mantida> {
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
-  const { detalhes } = achada;
+  return manterAssinaturaDe(achada.detalhes, userId);
+}
+
+/** A MESMA operação de voltar atrás no cancelamento, numa assinatura já achada (a do aluno, ou a que o admin escolheu). */
+export async function manterAssinaturaDe(detalhes: DetalhesDaAssinatura, userId: string): Promise<Mantida> {
   if (prePaga(detalhes)) return { resultado: "pre-paga" };
   const { id } = detalhes;
   // Já renova: não há o que desfazer (o segundo clique, ou a segunda aba).

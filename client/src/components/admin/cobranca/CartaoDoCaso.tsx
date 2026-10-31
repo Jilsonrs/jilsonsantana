@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { CasoDaLista } from "@jilson/core";
 import * as api from "@/lib/api";
 import { O_QUE_RESOLVE, TIPO_DO_CASO } from "@/lib/cobranca-casos";
+import { mensagemDaAcaoQueFalhou } from "@/lib/cobranca-acoes";
 import { dinheiro, enderecoDaFicha } from "@/lib/cobranca-ficha";
 import { QUEM, quando } from "@/lib/cobranca-registro";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,11 @@ export function CartaoDoCaso({ caso }: { caso: CasoDaLista }) {
   const queryClient = useQueryClient();
   const fechar = useMutation({
     mutationFn: () => api.adminFecharCaso(caso.id, nota.trim()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "cobranca", "casos"] }),
+  });
+  // REENVIAR (passo 3a): o e-mail que não saiu sai de novo pela mesma rotina; se sair, o caso fecha sozinho.
+  const reenviar = useMutation({
+    mutationFn: () => api.adminReenviarEmail(caso.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "cobranca", "casos"] }),
   });
   const ficha = enderecoDaFicha(caso.ficha);
@@ -41,6 +47,15 @@ export function CartaoDoCaso({ caso }: { caso: CasoDaLista }) {
       {caso.aberto ? (
         <>
           <p className="text-sm text-muted-foreground">O que resolve: {O_QUE_RESOLVE[caso.tipo]}</p>
+          {caso.tipo === "EMAIL_NAO_SAIU" ? (
+            <div className="space-y-1">
+              <Button type="button" size="sm" variant="outline" disabled={reenviar.isPending} onClick={() => reenviar.mutate()}>
+                {reenviar.isPending ? "Reenviando…" : "Reenviar"}
+              </Button>
+              {reenviar.isSuccess ? <p role="status" className="text-sm text-foreground">Feito: {reenviar.data.detalhe}.</p> : null}
+              {reenviar.isError ? <p role="alert" className="text-sm font-medium text-destructive">{mensagemDaAcaoQueFalhou(reenviar.error)}</p> : null}
+            </div>
+          ) : null}
           {fechando ? (
             <form
               className="max-w-xl space-y-2"

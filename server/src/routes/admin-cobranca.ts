@@ -1,8 +1,12 @@
 import { Router } from "express";
-import { acharQuerySchema, casosQuerySchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema } from "@jilson/core";
+import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema } from "@jilson/core";
+import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
+import { cancelarPeloOperador, conferirPeloOperador, desfazerCancelamentoPeloOperador, reenviarPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
+import { cobrancaConfigurada } from "../lib/stripe.js";
+import { QuemFez } from "../lib/prisma.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 
@@ -63,6 +67,68 @@ router.post("/admin/cobranca/casos/:id/fechar", requireAdmin, async (req, res) =
     return;
   }
   res.json({ fechado: true });
+});
+
+// AS AÇÕES (bloco 3): o que não deu para fazer vira um status com nome; o que deu, o que a Stripe respondeu.
+const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
+  "nao-encontrada": [404, "NaoEncontrada"],
+  ocupada: [409, "Ocupada"],
+  "pre-paga": [409, "PrePaga"],
+  "nada-a-fazer": [409, "NadaAFazer"],
+  "stripe-nao-conhece": [409, "StripeNaoConhece"],
+};
+function responder<T>(res: Response, resultado: Resultado<T>): void {
+  if (resultado.resultado === "ok") {
+    res.json(resultado.feito);
+    return;
+  }
+  const [status, error] = STATUS_DO_QUE_NAO_FOI[resultado.resultado];
+  res.status(status).json({ error });
+}
+/** Quem faz: o operador da sessão. Sem a Stripe configurada, nenhuma ação vai a ela. */
+function operador(req: { user?: { id: string } }, res: Response): { quem: typeof QuemFez.OPERADOR; conta: string } | null {
+  res.set("Cache-Control", "private, no-store");
+  if (!cobrancaConfigurada()) {
+    res.status(503).json({ error: "NaoConfigurado" });
+    return null;
+  }
+  return req.user ? { quem: QuemFez.OPERADOR, conta: req.user.id } : null;
+}
+
+// POST /api/admin/cobranca/acoes/conferir — { conta } | { assinatura } | { visitante }: a sincronia de sempre (passo 3a).
+router.post("/admin/cobranca/acoes/conferir", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const quem = validate(fichaQuerySchema, req.body, res);
+  if (quem === null) return;
+  responder(res, await conferirPeloOperador(quem, por));
+});
+
+// POST /api/admin/cobranca/acoes/cancelar — { assinatura }: a mesma operação de cancelar do aluno (passo 3a).
+router.post("/admin/cobranca/acoes/cancelar", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await cancelarPeloOperador(corpo.assinatura, por));
+});
+
+// POST /api/admin/cobranca/acoes/desfazer-cancelamento — { assinatura }: a mesma operação de voltar atrás (passo 3a).
+router.post("/admin/cobranca/acoes/desfazer-cancelamento", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await desfazerCancelamentoPeloOperador(corpo.assinatura, por));
+});
+
+// POST /api/admin/cobranca/casos/:id/reenviar — o e-mail de um caso "e-mail que não saiu" (passo 3a).
+router.post("/admin/cobranca/casos/:id/reenviar", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const id = parseId(req.params.id, res);
+  if (id === null) return;
+  responder(res, await reenviarPeloOperador(id, por));
 });
 
 // GET /api/admin/cobranca/achar?codigo=<sub_|cus_|pi_|ch_|in_|du_…> — de quem é o código que veio num alerta.

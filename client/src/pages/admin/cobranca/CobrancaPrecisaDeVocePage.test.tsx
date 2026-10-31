@@ -7,9 +7,11 @@ import type { CasoDaLista, ListaDeCasos } from "@jilson/core";
 type Consulta = { situacao: "abertos" | "fechados"; pagina: number };
 const adminListarCasos = vi.fn<(consulta: Consulta) => Promise<ListaDeCasos>>();
 const adminFecharCaso = vi.fn<(id: number, nota: string) => Promise<void>>();
+const adminReenviarEmail = vi.fn<(id: number) => Promise<{ detalhe: string }>>();
 vi.mock("@/lib/api", () => ({
   adminListarCasos: (consulta: Consulta) => adminListarCasos(consulta),
   adminFecharCaso: (id: number, nota: string) => adminFecharCaso(id, nota),
+  adminReenviarEmail: (id: number) => adminReenviarEmail(id),
 }));
 
 import { CobrancaPrecisaDeVocePage } from "./CobrancaPrecisaDeVocePage";
@@ -110,5 +112,17 @@ describe("Precisa de você — os casos", () => {
     expect(await screen.findByText("Fechado em 21/11/2026, 12:30 · por Você · devolvido")).toBeTruthy();
     expect(screen.queryByText("Urgente")).toBeNull();
     expect(screen.queryByRole("button", { name: "Fechar" })).toBeNull();
+  });
+});
+
+describe("Precisa de você — reenviar (passo 3a)", () => {
+  it("só o e-mail que não saiu tem 'Reenviar'; ele manda o caso e diz o que aconteceu", async () => {
+    adminReenviarEmail.mockReset().mockResolvedValue({ detalhe: "o e-mail saiu" });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 5, tipo: "EMAIL_NAO_SAIU", urgente: false }), caso({ id: 6 })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Reenviar" }));
+    expect(await screen.findByText("Feito: o e-mail saiu.")).toBeTruthy();
+    expect(adminReenviarEmail.mock.calls).toEqual([[5]]);
+    expect(screen.getAllByRole("button", { name: "Reenviar" })).toHaveLength(1);
   });
 });

@@ -7,6 +7,9 @@ import { LinhaDaAssinatura } from "@/components/admin/cobranca/LinhaDaAssinatura
 import { CobrancasDaFicha } from "@/components/admin/cobranca/CobrancasDaFicha";
 import { ResumoDaFicha } from "@/components/admin/cobranca/ResumoDaFicha";
 import { LinhasDoRegistro } from "@/components/admin/cobranca/LinhasDoRegistro";
+import { AcoesDaAssinatura } from "@/components/admin/cobranca/AcoesDaAssinatura";
+import { ConferirDaFicha } from "@/components/admin/cobranca/ConferirDaFicha";
+import { LinksParaOAluno } from "@/components/admin/cobranca/LinksParaOAluno";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
@@ -69,6 +72,7 @@ export function CobrancaFichaPage() {
           <Badge variant={temAcesso ? "default" : "secondary"}>{temAcesso ? "Com acesso às aulas" : "Sem acesso às aulas"}</Badge>
           {voltar}
         </div>
+        <ConferirDaFicha quem={quem} />
         {visitante ? (
           <div className="space-y-1">
             <p className="text-foreground">
@@ -91,7 +95,9 @@ export function CobrancaFichaPage() {
           ) : (
             <ul aria-label="Assinaturas" className="divide-y divide-border rounded-2xl border border-border/60">
               {assinaturas.map((assinatura) => (
-                <LinhaDaAssinatura key={assinatura.id} assinatura={assinatura} />
+                <LinhaDaAssinatura key={assinatura.id} assinatura={assinatura}>
+                  <AcoesDaAssinatura assinatura={assinatura} quem={titulo} />
+                </LinhaDaAssinatura>
               ))}
             </ul>
           )}
@@ -112,6 +118,9 @@ export function CobrancaFichaPage() {
         </PageSection>
         <PageSection title="Cartão, CPF e e-mails">
           <ResumoDaFicha ficha={ficha.data} />
+        </PageSection>
+        <PageSection title="Links para o aluno" description="Copie e mande ao aluno: ele entra e cai na tela certa.">
+          <LinksParaOAluno links={ficha.data.links} />
         </PageSection>
         <PageSection title="O que aconteceu">
           <LinhasDoRegistro linhas={ficha.data.registro} />

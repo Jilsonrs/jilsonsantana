@@ -152,10 +152,11 @@ describe("Cobrança → Assinaturas — filtro, busca e página vão ao servidor
     await waitFor(() => expect(ultimaConsulta()).toEqual({ filtro: "todas", pagina: 2 }));
   });
 
-  it("o 'Conferir na Stripe' continua na tela", async () => {
+  it("o 'Conferir na Stripe' por e-mail saiu da lista: ele mora na ficha (passo 3a)", async () => {
     renderWithProviders(<CobrancaAssinaturasPage />);
-    expect(screen.getByLabelText("E-mail do aluno")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Conferir na Stripe" })).toBeTruthy();
+    await screen.findByText("Ana Souza");
+    expect(screen.queryByLabelText("E-mail do aluno")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Conferir na Stripe" })).toBeNull();
   });
 });
 

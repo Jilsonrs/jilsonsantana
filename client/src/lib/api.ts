@@ -47,6 +47,8 @@ import type {
   ListaDeTentativas,
   OQueAconteceu,
   ListaDeCasos,
+  AcaoFeita,
+  ConferenciaPelaFicha,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1221,6 +1223,24 @@ export async function adminListarAssinaturas(consulta: { filtro: FiltroDasAssina
 /** A ficha do aluno no painel da Cobrança (etapa 4.7b, passo 1d): por conta, ou pela assinatura sem conta. */
 export async function adminFichaDaCobranca(quem: { conta: string } | { assinatura: number } | { visitante: string }): Promise<FichaDaCobranca> {
   const { data } = await client.get<FichaDaCobranca>("/admin/cobranca/ficha", { params: quem });
+  return data;
+}
+
+/** AS AÇÕES DO PAINEL (etapa 4.7b, passo 3a): a assinatura pelo id do espelho. */
+export async function adminConferir(quem: { conta: string } | { assinatura: number } | { visitante: string }): Promise<ConferenciaPelaFicha> {
+  const { data } = await client.post<ConferenciaPelaFicha>("/admin/cobranca/acoes/conferir", quem);
+  return data;
+}
+export async function adminCancelar(assinatura: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cancelar", { assinatura });
+  return data;
+}
+export async function adminDesfazerCancelamento(assinatura: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/desfazer-cancelamento", { assinatura });
+  return data;
+}
+export async function adminReenviarEmail(casoId: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>(`/admin/cobranca/casos/${casoId}/reenviar`);
   return data;
 }
 

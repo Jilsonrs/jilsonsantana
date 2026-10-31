@@ -6484,9 +6484,30 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               disparado.*
         - [ ] **Fechamento do bloco 2.**
       - [ ] **BLOCO 3 — AS AÇÕES SEM DINHEIRO**
-        - [ ] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
+        - [x] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
               Stripe (a sincronia, agora na ficha), Cancelar no fim do período, Desfazer, Copiar ou enviar o link,
-              Reenviar o e-mail.
+              Reenviar o e-mail. **FEITO (31/10/2026).** `lib/acoes-da-cobranca.ts` (a regra foi para o `CLAUDE.md` →
+              *Membership Gating*): cada ação chama a MESMA operação do aluno — `pararMinhaRenovacao` e
+              `manterMinhaAssinatura` foram separadas em "achar a assinatura da conta" + `pararRenovacaoDe` /
+              `manterAssinaturaDe`, sem mudar o que o aluno faz — e grava no registro quem fez. **Rotas** (só admin; sem a
+              Stripe configurada, 503): `POST /api/admin/cobranca/acoes/conferir` (`{conta}`, `{assinatura}` ou
+              `{visitante}` — pela ficha do visitante, a conta nasce se o pagamento passou, com as boas-vindas),
+              `…/acoes/cancelar` e `…/acoes/desfazer-cancelamento` (`{assinatura}`, o id do espelho; cancelar em dia
+              para de renovar SEM motivo — o motivo é do aluno —, e atrasada termina agora, como na tela do aluno; a
+              pré-paga, 409), e `POST /api/admin/cobranca/casos/:id/reenviar` (só o caso "e-mail que não saiu": as
+              boas-vindas ou o e-mail da cobrança devido agora; saiu, o caso fecha sozinho). O que não deu tem nome:
+              404 `NaoEncontrada`, 409 `Ocupada`/`PrePaga`/`NadaAFazer`/`StripeNaoConhece`. **A ficha** ganhou "Conferir
+              na Stripe", a ação embaixo de cada assinatura — "Cancelar no fim do período" (em dia), "Cancelar agora"
+              (atrasada), "Desfazer o cancelamento" (marcada para acabar), sempre com a confirmação dizendo o efeito
+              ("Ana continua com acesso até 20/11, e a assinatura não renova") e o que a Stripe respondeu — e os
+              **links para o aluno** (trocar o cartão, reativar e, com o Pix no ar, pagar a atrasada com Pix: os
+              mesmos dos e-mails), com "Copiar". O caso "e-mail que não saiu" ganhou "Reenviar". **O "Conferir na Stripe"
+              por e-mail saiu da lista** (mora na ficha; o componente `ConferirNaStripe` foi apagado; a rota antiga
+              `POST /api/admin/assinaturas/sincronizar` continua). **"Enviar o link" por e-mail ficou para o 3b** (é um
+              e-mail ao aluno: o texto vai ao operador). Testes: `admin-cobranca-acoes.test.ts` (novo, 9), a ficha (+6)
+              e "Precisa de você" (+1). **Mutação: 10 de 10 reprovaram** (uma sobreviveu antes: o teste do "reenviar"
+              barrava pelo motivo errado — corrigido). *Docs check (context7): não disparado — as idas à Stripe são as
+              de sempre (`buscarDetalhes`, `pararRenovacao`, `retomarRenovacao`, a sincronia).*
         - [ ] **3b — Os consertos que hoje só o painel da Stripe faz:** anular a cobrança em aberto, soltar o
               agendamento, encerrar na hora sem devolver, corrigir o CPF ou CNPJ.
         - [ ] **3c — Corrigir o e-mail** (P121) — sozinho no passo: é a porta de tomar conta.
