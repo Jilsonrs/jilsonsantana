@@ -103,6 +103,7 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "data-invalida": [400, "DataInvalida"],
   "codigo-ja-existe": [409, "CodigoJaExiste"],
   "nao-reativa": [409, "NaoReativa"],
+  "fora-das-regras": [409, "ForaDasRegras"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {

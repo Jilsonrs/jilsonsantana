@@ -1821,7 +1821,9 @@ letras sem 0, O, 1 e I) e um limite de usos obrigatório; o desconto nasce com a
 horário de Brasília — e sem limite de usos. Os dois tipos da P125 não existem no formulário nem passam no servidor. O
 nome do cupom, que a Stripe mostra na fatura, é o próprio código. **O teto de 20 usos da cortesia é escolha do agente**
 para "poucos usos" (`USOS_DA_CORTESIA`, no `core`), a confirmar pelo operador. Para criar um código fora dessas regras,
-a Stripe, como está aqui.)*
+a Stripe, como está aqui. **E o painel só REATIVA o que ele poderia criar** *(revisão de segurança do bloco 6,
+31/10/2026)*: o de 100% que não é cortesia, criado na Stripe e pausado, recebe 409 `ForaDasRegras` — reativá-lo poria
+no ar, pelo painel, os dois tipos que esperam a P125.)*
 
 **A regra:** **limite de usos, só em código de 100%** (cortesia, presente): ele ativa a assinatura
 no próprio clique, então o uso é gasto em acesso de verdade. **Código de desconto parcial**

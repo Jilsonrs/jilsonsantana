@@ -6843,6 +6843,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               —, com a confirmação dizendo isso e a linha no registro. É o jeito de desfazer uma liberação feita na conta ou no
               plano errado sem ir ao painel da Stripe.
         - [ ] **Fechamento do bloco 6:** a revisão de segurança, as fotos das telas do aluno, publicar (com a ordem dele).
+              **A revisão (31/10/2026): nenhum P0 nem P1.** O P3 — "Reativar" punha de volta no ar um código de 100% que
+              não é cortesia (os tipos da P125), criado na Stripe e pausado — fechado: 409 `ForaDasRegras`; e o caso que
+              faltava, "Encerrar agora" com a assinatura ocupada (409 `Ocupada`). Testes: os códigos (+1), liberar (+1), a
+              tela dos códigos (+1). **Mutação: 6 de 6 reprovaram.** O P2 — o "Ver recibo" abria a página da Stripe, **em
+              inglês**, com o botão que baixa a fatura com o **CPF inteiro de quem pagou** (provado na área de teste: o PDF
+              traz `BR CPF …`; com o cadastro em português, a página e o PDF saem em português e o CPF continua) — foi ao
+              operador, que escolheu **o recibo da escola, sem CPF**, com o nome empresarial e o CNPJ da escola, o site e o
+              e-mail (31/10/2026). Falta: o recibo, as fotos, publicar.
       - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA
             CONTINUAR*. **FEITO (31/10/2026):** o roteiro, passo a passo pelo painel (os casos de *Precisa de você* e o

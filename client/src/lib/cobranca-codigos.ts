@@ -39,6 +39,8 @@ export function mensagemDoCodigoQueFalhou(erro: unknown): string {
       return "Essa data não existe ou já passou.";
     case "NaoReativa":
       return "Este código não volta: está esgotado ou vencido. Crie outro.";
+    case "ForaDasRegras":
+      return "Este código dá 100% e não é uma cortesia: o painel não o reativa. Se precisar, crie uma cortesia.";
     case "Ocupada":
       return "Outro código está sendo criado agora. Tente de novo em instantes.";
     case "NadaAFazer":

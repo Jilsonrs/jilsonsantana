@@ -85,4 +85,12 @@ describe("Cobrança → Códigos promocionais", () => {
     fireEvent.click(within(linha("BLACK50")).getByRole("button", { name: "Reativar" }));
     expect((await within(linha("BLACK50")).findByRole("alert")).textContent).toBe("Este código não volta: está esgotado ou vencido. Crie outro.");
   });
+
+  it("o de 100% que não é cortesia: diz que o painel não o reativa", async () => {
+    adminMudarCodigo.mockRejectedValue({ response: { data: { error: "ForaDasRegras" } } });
+    renderWithProviders(<CobrancaCodigosPage />);
+    await screen.findByText("BLACK50");
+    fireEvent.click(within(linha("BLACK50")).getByRole("button", { name: "Reativar" }));
+    expect((await within(linha("BLACK50")).findByRole("alert")).textContent).toBe("Este código dá 100% e não é uma cortesia: o painel não o reativa. Se precisar, crie uma cortesia.");
+  });
 });

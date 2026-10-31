@@ -354,4 +354,31 @@ describe("encerrar agora a paga por fora (passo 6e)", () => {
     expect((await acao("encerrar-paga-por-fora", { assinatura: deCartao.id })).body).toEqual({ error: "NadaAFazer" });
     expect(cancelarNaHora).not.toHaveBeenCalled();
   });
+
+  // Revisão de segurança do bloco 6 (31/10/2026): faltava o caso da trava ocupada.
+  it("a assinatura ocupada por outra operação (com a trava dela): 409 Ocupada, nada é encerrado, e a pessoa continua com acesso", async () => {
+    await acao("liberar-pago-por-fora", { conta: aluna, plano: "mensal" });
+    const espelho = await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: POR_FORA } });
+    let soltar: () => void = () => {};
+    const segurando = new Promise<void>((ok) => (soltar = ok));
+    let pegou: () => void = () => {};
+    const pegouATrava = new Promise<void>((ok) => (pegou = ok));
+    const outraOperacao = prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${POR_FORA}))`;
+      pegou();
+      await segurando;
+    });
+    await pegouATrava;
+    const registrosDeEncerrar = () => prisma.billingLog.count({ where: { action: "encerrar-paga-por-fora", stripeSubscriptionId: POR_FORA } });
+    const antes = await registrosDeEncerrar();
+    try {
+      expect((await acao("encerrar-paga-por-fora", { assinatura: espelho.id })).body).toEqual({ error: "Ocupada" });
+      expect(cancelarNaHora).not.toHaveBeenCalled();
+      expect(await temAcessoAtivo(aluna)).toBe(true);
+      expect(await registrosDeEncerrar()).toBe(antes);
+    } finally {
+      soltar();
+      await outraOperacao;
+    }
+  });
 });

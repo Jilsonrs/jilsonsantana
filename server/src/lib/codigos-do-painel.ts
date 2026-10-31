@@ -82,12 +82,19 @@ export async function criarCodigoPeloOperador(pedido: CriarCodigoInput, por: Por
   return { resultado: "ok", feito: { detalhe, codigo: linha.codigo } };
 }
 
-/** PAUSAR ou REATIVAR (passo 6d). Reativar só o pausado: o esgotado e o vencido não voltam (a Stripe recusaria). */
+/**
+ * PAUSAR ou REATIVAR (passo 6d). Reativar só o pausado: o esgotado e o vencido não voltam (a Stripe recusaria). E só o que
+ * o painel poderia criar (revisão de segurança do bloco 6, 31/10/2026): o de 100% que não é cortesia (para sempre, com
+ * limite de usos) é um dos tipos que esperam a P125 — criado na Stripe e pausado, ele não volta por aqui, senão o painel
+ * poria no ar o acesso sem cartão guardado e a mesma conta repetindo o código.
+ */
 export async function mudarCodigoPeloOperador(id: string, ativo: boolean, por: PorQuem, agora: Date = new Date()): Promise<Resultado<AcaoFeita>> {
   const codigo = await lerCodigo(id);
   if (!codigo) return { resultado: "nao-encontrada" };
   if (codigo.active === ativo) return { resultado: "nada-a-fazer" };
-  if (ativo && paraCodigoDaLista(codigo, agora).situacao !== "pausado") return { resultado: "nao-reativa" };
+  const linha = paraCodigoDaLista(codigo, agora);
+  if (ativo && linha.situacao !== "pausado") return { resultado: "nao-reativa" };
+  if (ativo && linha.percentual === 100 && !(linha.duracao === "para-sempre" && linha.maximo !== null)) return { resultado: "fora-das-regras" };
   const mudado = await mudarAtivoDoCodigo(id, ativo);
   const detalhe = `${mudado.code} ${ativo ? "reativado" : "pausado"}`;
   await registrar(por, ativo ? "reativar-codigo" : "pausar-codigo", {}, detalhe);

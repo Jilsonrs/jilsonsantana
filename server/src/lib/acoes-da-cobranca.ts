@@ -54,7 +54,9 @@ export type NaoFeita =
   // Os códigos promocionais (passo 6d):
   | "data-invalida"
   | "codigo-ja-existe"
-  | "nao-reativa";
+  | "nao-reativa"
+  // A revisão de segurança do bloco 6 (31/10/2026):
+  | "fora-das-regras";
 export type Resultado<T> = { resultado: "ok"; feito: T } | { resultado: NaoFeita };
 
 /** Grava a ação no registro: quem fez, em quem, o valor (quando há dinheiro) e o que a Stripe respondeu (sem dado pessoal). */

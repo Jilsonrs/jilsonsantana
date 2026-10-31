@@ -262,6 +262,29 @@ describe("os códigos promocionais pelo painel (passo 6d)", () => {
     expect((await mudar({ id: "cupom_nao_e_codigo", ativo: false })).status).toBe(400);
   });
 
+  // Revisão de segurança do bloco 6 (31/10/2026): o de 100% que não é cortesia (os tipos que esperam a P125), criado na
+  // Stripe e pausado, não volta pelo painel.
+  it("reativar o de 100% que não é cortesia (só a primeira, por meses, ou sem limite de usos): 409, e ele continua pausado", async () => {
+    const naStripe = (duracao: string, maximo: number | null, percentual = 100) => {
+      const cupom: CupomFalso = { id: `cupom_${S}_${++n}`, object: "coupon", percent_off: percentual, duration: duracao, duration_in_months: duracao === "repeating" ? 3 : null, valid: true, name: null, metadata: {} };
+      cupons.push(cupom);
+      const codigo: CodigoFalso = { id: `promo_${S}x${++n}`, object: "promotion_code", code: `FORA${S.slice(-6)}N${n}`, active: false, max_redemptions: maximo, times_redeemed: 0, expires_at: null, created: Math.floor(Date.now() / 1000), metadata: {}, promotion: { type: "coupon", coupon: cupom } };
+      codigos.push(codigo);
+      return codigo;
+    };
+    for (const codigo of [naStripe("once", 5), naStripe("repeating", 5), naStripe("forever", null)]) {
+      const res = await mudar({ id: codigo.id, ativo: true });
+      expect([res.status, res.body]).toEqual([409, { error: "ForaDasRegras" }]);
+      expect(codigo.active).toBe(false);
+    }
+    expect(falsa.promotionCodes.update).not.toHaveBeenCalled();
+    // A regra é só do 100%: o desconto parcial pausado volta, mesmo criado fora do painel; e a cortesia também.
+    for (const codigo of [naStripe("once", null, 30), naStripe("forever", 5)]) {
+      expect((await mudar({ id: codigo.id, ativo: true })).status).toBe(200);
+      expect(codigo.active).toBe(true);
+    }
+  });
+
   it("a lista: do mais novo ao mais antigo, com quantos usaram, o desconto, a validade e a situação", async () => {
     const res = await request(servidor).get("/api/admin/cobranca/codigos").set("Cookie", admin);
     expect(res.status).toBe(200);
