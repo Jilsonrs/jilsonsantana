@@ -54,7 +54,8 @@ export function situacaoNaLista(linha: { status: string; cancelAt: Date | null; 
   }
 }
 
-type Linha = {
+/** Uma linha do espelho com o nome e o e-mail da conta dona (a lista e a ficha montam a mesma coisa). */
+export type LinhaDoEspelho = {
   id: number;
   status: string;
   currentPeriodEnd: Date | null;
@@ -69,7 +70,7 @@ type Linha = {
   email: string | null;
 };
 
-function paraLista(linha: Linha): AssinaturaDaLista {
+export function paraAssinaturaDaLista(linha: LinhaDoEspelho): AssinaturaDaLista {
   return {
     id: linha.id,
     aluno: linha.ownerUserId && linha.email !== null ? { id: linha.ownerUserId, nome: linha.name, email: linha.email } : null,
@@ -87,7 +88,7 @@ function paraLista(linha: Linha): AssinaturaDaLista {
 
 /** Uma página da lista (a mais recente primeiro) e a contagem de cada filtro — a contagem é da escola inteira, sem a busca. */
 export async function listarAssinaturas({ filtro, busca, pagina }: ListaDeAssinaturasQuery): Promise<ListaDeAssinaturas> {
-  const linhas = await prisma.$queryRaw<Linha[]>`
+  const linhas = await prisma.$queryRaw<LinhaDoEspelho[]>`
     SELECT s."id", s."status", s."currentPeriodEnd", s."cancelAt", s."plan"::text AS "plan", s."promotionCode",
            s."pixPaymentIntentId", s."livemode", s."createdAt", s."ownerUserId", u."name", u."email"
       FROM "subscription" s
@@ -105,5 +106,5 @@ export async function listarAssinaturas({ filtro, busca, pagina }: ListaDeAssina
       FROM "subscription" s
      WHERE ${DA_LISTA}`;
   if (!contagem) throw new Error("[api] a contagem das assinaturas não veio");
-  return { contagem, assinaturas: linhas.slice(0, ASSINATURAS_POR_PAGINA).map(paraLista), temMais: linhas.length > ASSINATURAS_POR_PAGINA };
+  return { contagem, assinaturas: linhas.slice(0, ASSINATURAS_POR_PAGINA).map(paraAssinaturaDaLista), temMais: linhas.length > ASSINATURAS_POR_PAGINA };
 }

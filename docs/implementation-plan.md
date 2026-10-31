@@ -6321,9 +6321,27 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               (novo, 11), `ConferirNaStripe.test.tsx` (o de antes, movido) e o menu. **Mutação: 9 de 10 reprovaram;
               a que passou é equivalente** (com o pedido falho, a tela já não tem lista: `!dados` cobre o erro). *Docs
               check (context7): não disparado — nada vai à Stripe.*
-        - [ ] **1c — A ficha do aluno, no servidor** (*A*, item 2): a Stripe lida na hora (as cobranças de cartão e
+        - [x] **1c — A ficha do aluno, no servidor** (*A*, item 2): a Stripe lida na hora (as cobranças de cartão e
               Pix, as devoluções, as contestações, o cartão, o CPF com parte escondida, os recibos) e o nosso banco (a
-              conta, o espelho, os e-mails, o registro). Provada na área de teste.
+              conta, o espelho, os e-mails, o registro). Provada na área de teste. **FEITO (31/10/2026).**
+              `GET /api/admin/cobranca/ficha?conta=…|?assinatura=…` (só admin; `montarFicha`, em
+              `lib/ficha-da-cobranca.ts`): a conta, as assinaturas, o acesso e os e-mails da cobrança (com as
+              boas-vindas) pelo banco; pela Stripe, na hora (`lib/stripe-ficha.ts`, só leitura), as 100 cobranças mais
+              recentes de CADA cliente da conta (o do checkout logado, o da ficha do visitante e os das assinaturas),
+              da mais nova para a mais velha — paga, falhou (o motivo como o banco disse, `outcome.reason`), pendente,
+              devolvida, em parte ou contestada (com o prazo) —, o recibo da que passou, o cartão padrão (bandeira,
+              final e validade) e o CPF ou CNPJ com o meio escondido (nunca inteiro na resposta). **A Stripe fora do ar
+              não derruba a ficha:** ela sai com o banco e `stripeIndisponivel`. A assinatura SEM conta tem ficha pelo
+              cliente dela; a que tem conta leva à ficha da conta. **E `GET /api/admin/cobranca/achar?codigo=…`:** de
+              quem é o código que veio num alerta — `sub_`, `cus_` e o `pi_` da pré-paga pelo nosso banco; `ch_`, `in_`,
+              `du_` e os outros `pi_` pela Stripe, pelo cliente (fecha a busca prometida no E13 da 4.9b). O "registro"
+              entra na ficha com o 1f. **A cobrança vai à tela pelo id da Stripe (`ch_`)** — não tem espelho; a ação
+              sobre ela (bloco 4) confere no servidor que é do aluno. Testes: `ficha-da-cobranca.test.ts` (as traduções),
+              `stripe-ficha-rede.test.ts` (o que se pede à Stripe), `admin-cobranca-ficha.test.ts` (as rotas contra o
+              banco). **Mutação: 9 de 9 reprovaram.** **Provado na área de teste da Stripe** (cliente descartável): a
+              recusa "insufficient_funds", a devolução parcial, o recibo, o CPF escondido, o cartão e o código da
+              cobrança levando ao cliente. *Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026, 2ª consulta
+              da sessão: o motivo da recusa em `outcome.reason`; `refunds` só expandido; `receipt_url`.*
         - [ ] **1d — A ficha do aluno, a tela.**
         - [ ] **1e — As tentativas que não terminaram** (*A*, item 3).
         - [ ] **1f — O que aconteceu** (*A*, itens 4 e 5): a tabela do **registro** (veio do 1a) — quem fez (o
