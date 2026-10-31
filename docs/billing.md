@@ -1309,6 +1309,8 @@ apaga o nome e o UTM (LGPD — o plano → passo 9, 9e).
   filtros e busca, e as ações que cabem em cada situação. **Mapa aprovado por ele em
   10/10/2026**, e fica para depois da etapa 4.7 (*"que é mais importante"*): plano → etapa 4.7b.
   *Reabre se um problema de aluno não se resolver com a tela de hoje antes de o painel existir.*
+  **Remapeado em 31/10/2026** (decisão do operador: todo problema de pagamento de aluno se resolve
+  no admin — *O painel da cobrança*, abaixo).
 - **Assinatura cancelada: o SISTEMA manda sozinho o e-mail com o link para reativar, e é o
   aluno quem paga**; no painel, o admin só copia o link (entre isso, dar acesso de cortesia
   pela tela, e os dois). *Reabre se ele quiser presentear acesso por ali.*
@@ -1979,7 +1981,27 @@ IPv4 "embrulhado" (`::ffff:127.0.0.1`) vira IPv4, e o IPv6 vira a faixa (`2001:d
   nunca no limite. Se ele for recusado, a troca pendente vence sozinha em ~23 h, e a troca seguinte
   a anula.
 
+## O painel da cobrança: o problema do aluno se resolve no admin *(decisão do operador, 31/10/2026)*
+
+*"O que quero é poder resolver todos os problemas que os alunos tenham relacionados a pagamento dentro do painel
+administrativo, sem precisar ir na Stripe para nada, a Stripe só quando realmente for necessário e para outras
+questões"* — e acompanhar tudo, ser chamado só quando precisar e poder automatizar depois (*"se ficar dependendo de
+fazer coisas na Stripe eu não tenho como automatizar"*). Amplia o pedido de 10/10/2026 (*Sincronizar e perder o
+acesso*, acima) e a decisão da P114 (29/10/2026: o reembolso é um clique no admin).
+
+**O que muda nesta especificação:** cada "pelo painel da Stripe" deste documento vira uma ação no admin, conforme a
+etapa 4.7b for construída — o mapa (o que ver, os casos que chamam o operador, as ações) e os passos estão no plano →
+etapa 4.7b. **Até cada ação existir, vale o roteiro de hoje** (*Quando um aluno não conseguir pagar*, abaixo), reescrito
+no fim da 4.7b. *No mapa do agente (31/10/2026, a confirmar com o plano):* o painel da Stripe fica só para o que não é
+problema de aluno — os repasses e o saldo, as taxas, os impostos, a configuração da conta, os preços — e para
+emergência; e a **contestação** deixa de ficar lá: passa a ser respondida pelo admin (as provas, P140).
+*Reabre se uma ação no admin custar mais que o problema que resolve (um caso raro que pede uma integração grande): aí
+ela fica no painel da Stripe, com o passo a passo escrito aqui.*
+
 ## Quando um aluno não conseguir pagar *(roteiro de hoje — rascunho do agente, 29/10/2026, a revisar pelo operador)*
+
+**Vale até a etapa 4.7b trocar cada passo por uma ação no admin** (*O painel da cobrança*, acima); é reescrito no fim
+dela.
 
 Saiu da revisão ampla da cobrança (o plano → etapa 4.9b), e descreve **o que existe hoje**. As decisões em
 aberto estão marcadas com o número da pendência; a proposta de engenharia que fecha os buracos é a 4.9b (E1 a E13).
