@@ -5,16 +5,17 @@ import { renderWithProviders } from "@/test-utils";
 import type { CobrancaDaFicha } from "@jilson/core";
 
 type Quem = { conta: string } | { visitante: string };
-const adminDevolverPagamento = vi.fn<(quem: Quem, cobranca: string, centavos: number, encerrar: boolean) => Promise<{ detalhe: string }>>();
+const adminDevolverPagamento = vi.fn<(quem: Quem, cobranca: string, centavos: number, devolvido: number, encerrar: boolean) => Promise<{ detalhe: string }>>();
 vi.mock("@/lib/api", () => ({
-  adminDevolverPagamento: (quem: Quem, cobranca: string, centavos: number, encerrar: boolean) => adminDevolverPagamento(quem, cobranca, centavos, encerrar),
+  adminDevolverPagamento: (quem: Quem, cobranca: string, centavos: number, devolvido: number, encerrar: boolean) => adminDevolverPagamento(quem, cobranca, centavos, devolvido, encerrar),
 }));
 
 import { DevolverPagamento } from "./DevolverPagamento";
 
 // "DEVOLVER UM PAGAMENTO" NA FICHA (etapa 4.7b, passo 4a — P139). O que protege: o valor começa no que falta voltar e não
-// passa dele; o que não é valor não segue; a confirmação diz o efeito; vai a conta (ou o visitante), a cobrança e o valor
-// em centavos; o que não deu diz por quê; a cobrança sem nada a devolver não tem o botão.
+// passa dele; o que não é valor não segue; a confirmação diz o efeito; vai a conta (ou o visitante), a cobrança, o valor em
+// centavos e o que JÁ TINHA VOLTADO como a tela mostrou (revisão de segurança do bloco 4: o servidor não devolve se mudou); o
+// que não deu diz por quê; a cobrança sem nada a devolver não tem o botão.
 
 const cobranca = (extra: Partial<CobrancaDaFicha> = {}): CobrancaDaFicha => ({ id: "ch_1", em: "2026-11-20T15:00:00.000Z", centavos: 9990, moeda: "brl", forma: "cartao", cartao: { bandeira: "visa", final: "4242" }, situacao: "paga", devolvido: 0, motivoDaFalha: null, recibo: null, contestacao: null, ...extra });
 const abrir = (extra: Partial<CobrancaDaFicha> = {}, quem: Quem = { conta: "u-1" }) => renderWithProviders(<DevolverPagamento cobranca={cobranca(extra)} quem={quem} />);
@@ -35,7 +36,7 @@ describe("devolver um pagamento", () => {
     expect(adminDevolverPagamento).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
     expect(await screen.findByText("Feito: R$ 10,00 devolvidos desta cobrança; com acesso às aulas.")).toBeTruthy();
-    expect(adminDevolverPagamento.mock.calls).toEqual([[{ conta: "u-1" }, "ch_1", 1000, false]]);
+    expect(adminDevolverPagamento.mock.calls).toEqual([[{ conta: "u-1" }, "ch_1", 1000, 2000, false]]);
   });
 
   it("'E encerrar a assinatura agora': a confirmação diz que o acesso acaba, e vai junto", async () => {
@@ -46,7 +47,7 @@ describe("devolver um pagamento", () => {
     expect(screen.getByRole("group", { name: "Confirmar a devolução" }).textContent).toMatch(/^Encerra agora a assinatura desta cobrança e devolve R\$\s99,90: a pessoa perde o acesso às aulas, e nada mais é cobrado\./);
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
     expect(await screen.findByText(/^Feito:/)).toBeTruthy();
-    expect(adminDevolverPagamento.mock.calls).toEqual([[{ conta: "u-1" }, "ch_1", 9990, true]]);
+    expect(adminDevolverPagamento.mock.calls).toEqual([[{ conta: "u-1" }, "ch_1", 9990, 0, true]]);
   });
 
   it("acima do que falta, ou o que não é valor: não segue, e diz o limite", () => {
@@ -66,7 +67,7 @@ describe("devolver um pagamento", () => {
     fireEvent.click(screen.getByRole("button", { name: "Devolver" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
     expect((await screen.findByRole("alert")).textContent).toBe("O valor passa do que falta voltar desta cobrança.");
-    expect(adminDevolverPagamento.mock.calls).toEqual([[{ visitante: "ficha-1" }, "ch_1", 9990, false]]);
+    expect(adminDevolverPagamento.mock.calls).toEqual([[{ visitante: "ficha-1" }, "ch_1", 9990, 0, false]]);
   });
 
   it("a que falhou, a já devolvida e a contestada não têm o botão", () => {

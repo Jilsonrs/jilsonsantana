@@ -87,6 +87,12 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "ja-tem-acesso": [409, "JaTemAcesso"],
   "contestacao-nao-ganha": [409, "ContestacaoNaoGanha"],
   "contestacao-nao-aberta": [409, "ContestacaoNaoAberta"],
+  "ja-tem-outra-assinatura": [409, "JaTemOutraAssinatura"],
+  "outra-assinatura-viva": [409, "OutraAssinaturaViva"],
+  "pix-pago-esperando": [409, "PixPagoEsperando"],
+  "pix-ja-virou-assinatura": [409, "PixJaVirouAssinatura"],
+  "sem-valor-da-devolucao": [409, "SemValorDaDevolucao"],
+  "outra-contestacao-nao-ganha": [409, "OutraContestacaoNaoGanha"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {
@@ -221,7 +227,7 @@ router.post("/admin/cobranca/acoes/devolver-pagamento", requireAdmin, async (req
   const corpo = validate(devolverPagamentoSchema, req.body, res);
   if (corpo === null) return;
   const quem = "conta" in corpo ? { conta: corpo.conta } : { visitante: corpo.visitante };
-  responder(res, await devolverPagamentoPeloOperador(quem, corpo.cobranca, corpo.centavos, corpo.encerrar ?? false, por));
+  responder(res, await devolverPagamentoPeloOperador(quem, corpo.cobranca, corpo.centavos, corpo.devolvido, corpo.encerrar ?? false, por));
 });
 
 // POST /api/admin/cobranca/acoes/corrigir-documento — { conta | visitante, documento }: o CPF ou CNPJ (passo 3b).

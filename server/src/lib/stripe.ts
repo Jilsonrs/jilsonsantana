@@ -24,7 +24,14 @@ export { erroSemMensagem, stripe, VERSAO_DA_API };
  * DEVOLVIDO fala de uma cobrança, não de uma assinatura — a assinatura se acha pelo pagamento.
  * `devolucaoFalhou`: uma devolução que tinha sido aceita FALHOU depois — o dinheiro não voltou.
  */
-export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean; pagamentoPrePago?: PagamentoPrePago | null; contestacao?: Contestacao | null; avisoDeFraude?: AvisoDeFraude | null };
+export type AvisoDaStripe = { id: string; tipo: string; assinatura: string | null; pagamento?: string | null; devolucaoFalhou?: boolean; devolucaoQueFalhou?: DevolucaoQueFalhou | null; pagamentoPrePago?: PagamentoPrePago | null; contestacao?: Contestacao | null; avisoDeFraude?: AvisoDeFraude | null };
+
+/**
+ * A DEVOLUÇÃO QUE FALHOU, de um aviso de devolução (achado P1 da revisão do bloco 4, 31/10/2026): o id dela, o VALOR e a
+ * cobrança — o caso guarda os dois últimos, e o "Devolver de novo" do painel devolve exatamente isto (a que falhou podia ser
+ * uma parte da cobrança).
+ */
+export type DevolucaoQueFalhou = { id: string; centavos: number; cobranca: string | null };
 
 /**
  * A CONTESTAÇÃO de um pagamento no banco (chargeback — E7 da revisão ampla da cobrança; decisões do operador P122 e de
@@ -296,6 +303,11 @@ export type AssinaturaNoCheckout = {
    */
   pixPaymentIntentId?: string | null;
   /**
+   * A PAGA POR FORA pelo operador (o "Liberar acesso pago por fora" — 4.7b, passo 4d): a incompleta dela (a fatura que não se
+   * pagou por fora) NUNCA se reaproveita no checkout — não renova e não guarda cartão (achado P2 da revisão do bloco 4).
+   */
+  pagoPorFora?: boolean;
+  /**
    * A Stripe CANCELOU o pagamento de hoje desta assinatura (etapa 4.7, passo 4). `[FATO — medido na
    * área restrita, 21/10/2026]` depois de 10 recusas no mesmo pagamento ela o cancela sozinha, e a
    * assinatura continua incompleta, com a fatura aberta e o segredo do pagamento morto: entregar esse
@@ -350,6 +362,7 @@ export function paraAssinaturaNoCheckout(assinatura: Stripe.Subscription): Assin
     segredoDoCartao: typeof cartao === "object" && cartao !== null ? cartao.client_secret : null,
     resumoDaTentativa: assinatura.metadata[METADADOS_DO_VISITANTE.tentativa] || null,
     pixPaymentIntentId: assinatura.metadata[METADADO_DO_PIX] || null,
+    pagoPorFora: Boolean(assinatura.metadata[METADADO_PAGO_POR_FORA]),
     pagamentoCancelado: pagamentoDeHoje !== null && cancelado,
     numeroFiscalDaFatura: numeroFiscalDoBrasil(typeof fatura === "object" && fatura !== null ? fatura.customer_tax_ids : null),
     fimDoPeriodo: fimDoPeriodoDosItens(assinatura),
@@ -666,6 +679,14 @@ function devolucaoQueFalhou(evento: Stripe.Event): boolean {
   return eAvisoDeDevolucao(evento) && evento.data.object.status === "failed";
 }
 
+/** QUAL devolução falhou — o id, o valor e a cobrança —, ou nada. Função pura. */
+function qualDevolucaoFalhou(evento: Stripe.Event): DevolucaoQueFalhou | null {
+  if (!eAvisoDeDevolucao(evento) || evento.data.object.status !== "failed") return null;
+  const devolucao = evento.data.object;
+  const cobranca = devolucao.charge;
+  return { id: devolucao.id, centavos: devolucao.amount, cobranca: cobranca ? (typeof cobranca === "string" ? cobranca : cobranca.id) : null };
+}
+
 /**
  * O Pix PRÉ-PAGO que caiu — só o `payment_intent.succeeded` de um pagamento NOSSO, com o plano nos
  * metadados (`MARCA_DO_PREPAGO`); qualquer outro pagamento é de outra coisa e não é nosso. Função
@@ -812,6 +833,7 @@ export function paraAviso(evento: Stripe.Event): AvisoDaStripe {
     assinatura: assinaturaDoAviso(evento),
     pagamento: pagamentoDoAviso(evento),
     devolucaoFalhou: devolucaoQueFalhou(evento),
+    devolucaoQueFalhou: qualDevolucaoFalhou(evento),
     pagamentoPrePago: pagamentoPrePagoDoAviso(evento),
     contestacao: contestacaoDoAviso(evento),
     avisoDeFraude: avisoDeFraudeDoAviso(evento),

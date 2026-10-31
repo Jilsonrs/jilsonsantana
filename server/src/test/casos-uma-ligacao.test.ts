@@ -12,7 +12,7 @@ import type { TipoDeCaso as TipoDoCaso } from "../lib/prisma.js";
 
 // A biblioteca da Stripe falsa entra pela fábrica do cliente: é dela que saem as idas da contestação e da troca.
 const falsa = {
-  subscriptions: { update: vi.fn(), cancel: vi.fn() },
+  subscriptions: { retrieve: vi.fn(), update: vi.fn(), cancel: vi.fn() },
   invoices: { voidInvoice: vi.fn(), retrieve: vi.fn() },
   subscriptionSchedules: { create: vi.fn(), update: vi.fn(), release: vi.fn() },
 };
@@ -81,6 +81,7 @@ describe("os casos da cobrança com o banco aceitando UMA ligação", () => {
   it("a contestação cujo dinheiro saiu, com a cobrança em aberto que não se anula: o caso fica, aberto no meio do aviso", async () => {
     const assinatura = novoId("sub");
     const fatura = novoId("in");
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: assinatura, status: "active", metadata: {} });
     falsa.subscriptions.update.mockResolvedValue({ id: assinatura, status: "active", latest_invoice: { id: fatura, status: "open" } });
     falsa.subscriptions.cancel.mockResolvedValue({ id: assinatura, status: "canceled" });
     falsa.invoices.voidInvoice.mockRejectedValue(new Error("fora do ar"));

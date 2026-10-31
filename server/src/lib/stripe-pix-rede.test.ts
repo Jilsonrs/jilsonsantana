@@ -9,7 +9,7 @@ import type { PagamentoPrePago } from "./stripe.js";
 // mensagem crua da Stripe.
 const falsa = {
   paymentIntents: { create: vi.fn(), list: vi.fn(), cancel: vi.fn(), retrieve: vi.fn(), update: vi.fn() },
-  subscriptions: { create: vi.fn(), list: vi.fn(), retrieve: vi.fn() },
+  subscriptions: { create: vi.fn(), list: vi.fn(), retrieve: vi.fn(), cancel: vi.fn() },
   invoices: { pay: vi.fn(), retrieve: vi.fn() },
 };
 vi.mock("./stripe-cliente.js", async (importOriginal) => ({
@@ -311,5 +311,28 @@ describe("criar a assinatura paga por fora", () => {
     expect(pedido).toMatchObject({ customer: "cus_1", items: [{ price: "price_anual", quantity: 1 }], cancel_at_period_end: true, payment_settings: { save_default_payment_method: "off" }, metadata: { userId: "conta-1", plano: "anual", pago_por_fora: "admin-1" } });
     expect(opcoes.idempotencyKey).toMatch(/^pago-por-fora:conta-1:anual:\d+$/);
     expect(falsa.invoices.pay).toHaveBeenCalledWith("in_3", { paid_out_of_band: true }, expect.anything());
+    expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
+  });
+
+  // A revisão de segurança do bloco 4 (P2): a que não se pagou ficava INCOMPLETA e com a marca — o checkout por cartão podia
+  // reaproveitá-la, e a pessoa pagaria uma assinatura que não renova.
+  it("a fatura que não se pagou por fora: a incompleta morre na hora; a que se pagou no meio de uma falha fica", async () => {
+    const pedido = { clienteId: "cus_1", precoId: "price_anual", plano: "anual" as const, userId: "conta-1", operador: "admin-1" };
+    falsa.subscriptions.create.mockResolvedValue({ id: "sub_4", latest_invoice: { id: "in_4", status: "void" } });
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_4", status: "incomplete" });
+    expect(await criarAssinaturaPagaPorFora(pedido)).toEqual({ id: "sub_4", faturaPaga: false });
+    expect(falsa.subscriptions.cancel.mock.calls).toEqual([["sub_4"]]);
+
+    falsa.subscriptions.cancel.mockClear();
+    falsa.subscriptions.create.mockResolvedValue({ id: "sub_5", latest_invoice: { id: "in_5", status: "open" } });
+    falsa.invoices.pay.mockRejectedValue(new Error("fora do ar"));
+    falsa.invoices.retrieve.mockResolvedValue({ id: "in_5", status: "open" });
+    await expect(criarAssinaturaPagaPorFora(pedido)).rejects.toThrow("fora do ar");
+    expect(falsa.subscriptions.cancel.mock.calls).toEqual([["sub_5"]]);
+
+    falsa.subscriptions.cancel.mockClear();
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_5", status: "active" });
+    await expect(criarAssinaturaPagaPorFora(pedido)).rejects.toThrow("fora do ar");
+    expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
   });
 });

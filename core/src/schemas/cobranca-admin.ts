@@ -298,7 +298,9 @@ export const devolverTudoSchema = z.object({ assinatura: z.number().int().positi
  * no acesso — a regra das aulas libera a assinatura ativa sem olhar o pagamento).
  */
 const cobrancaDaFichaSchema = z.string().regex(/^(ch|py)_[A-Za-z0-9_]+$/).max(100);
-const doPagamento = { cobranca: cobrancaDaFichaSchema, centavos: z.number().int().positive(), encerrar: z.boolean().optional() };
+// `devolvido`: o quanto desta cobrança já tinha voltado quando a tela abriu (revisão de segurança do bloco 4, 31/10/2026): se o
+// de agora for outro, nada é feito — o mesmo pedido repetido não devolve duas vezes.
+const doPagamento = { cobranca: cobrancaDaFichaSchema, centavos: z.number().int().positive(), devolvido: z.number().int().min(0), encerrar: z.boolean().optional() };
 export const devolverPagamentoSchema = z.union([
   z.object({ conta: z.string().min(1).max(100), ...doPagamento }).strict(),
   z.object({ visitante: z.string().min(1).max(100), ...doPagamento }).strict(),

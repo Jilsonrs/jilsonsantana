@@ -1284,8 +1284,8 @@ export async function adminDevolverTudo(assinatura: number, centavos: number): P
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/devolver-tudo", { assinatura, centavos });
   return data;
 }
-export async function adminDevolverPagamento(quem: { conta: string } | { visitante: string }, cobranca: string, centavos: number, encerrar: boolean): Promise<AcaoFeita> {
-  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/devolver-pagamento", { ...quem, cobranca, centavos, encerrar });
+export async function adminDevolverPagamento(quem: { conta: string } | { visitante: string }, cobranca: string, centavos: number, devolvido: number, encerrar: boolean): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/devolver-pagamento", { ...quem, cobranca, centavos, devolvido, encerrar });
   return data;
 }
 

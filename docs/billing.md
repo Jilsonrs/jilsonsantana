@@ -237,7 +237,9 @@ assinatura é cancelada na Stripe** *(decisão do operador, 30/10/2026: o cartã
 pessoa recebe o e-mail de sempre de assinatura encerrada, e o operador, um alerta com o valor, o motivo e o prazo para
 responder à contestação no painel da Stripe. Se a contestação for resolvida a favor da escola, o operador libera de
 novo pelo admin — **"Liberar de novo"**, no caso da contestação (no código desde 31/10/2026, 4.7b, passo 4d): o servidor
-confere na Stripe que ela foi GANHA, tira a marca e o período pago volta a valer até o fim; a cancelada não volta. O **aviso de fraude** da Stripe
+confere na Stripe que ela foi GANHA, tira a marca e o período pago volta a valer até o fim; a cancelada não volta. **A marca
+guarda TODAS as contestações da assinatura, e só sai com todas ganhas** *(revisão de segurança do bloco 4, 31/10/2026)*: com
+uma só, a segunda contestação apagava a primeira, e ganhar uma devolvia as aulas sem o dinheiro da outra. O **aviso de fraude** da Stripe
 (`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *(Decisão do
 operador, 31/10/2026, P141: o aviso de fraude passa a devolver, cancelar e cortar o acesso sozinho, avisando o operador
 — 4.7b, passo 5c; até lá, só alerta. E a contestação passa a ser respondida pelo admin, P140 — passo 5b.)* *Cortar o acesso
@@ -2068,7 +2070,10 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
    - **Pix "em conferência":** devolva o Pix no painel e peça que pague de novo pela tela. **Não** crie a
      assinatura à mão no painel: a marca fica no Pix, e a pessoa nunca mais consegue pagar pelo site. *(Decisão
      do operador, 29/10/2026, P117: o admin ganha "Aceitar este Pix" e "Devolver" — no painel desde 31/10/2026, no
-     caso "Pix em conferência" de *Precisa de você* (4.7b, passo 4c).)*
+     caso "Pix em conferência" de *Precisa de você* (4.7b, passo 4c).)* **Os dois recusam o que cobraria em dobro ou
+     devolveria com o acesso aberto** *(revisão de segurança do bloco 4, 31/10/2026)*: "Aceitar" recusa se a pessoa já
+     tem acesso, ou outra assinatura viva (devolva o Pix); "Devolver" recusa o Pix que já virou uma assinatura que vale
+     (use "Cancelar e devolver o dinheiro" na ficha, que encerra e devolve).
    - **E-mail digitado errado, ou o alerta "SEM CONTA":** devolva no painel; ela assina de novo, com o e-mail certo
      ou logada. *(Decisão do operador, 29/10/2026, P121: o e-mail digitado errado passa a ser corrigido pelo admin,
      sem devolver — a etapa 4.7b.)*
@@ -2083,7 +2088,9 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
    31/10/2026, **"Liberar acesso pago por fora"**, na ficha da conta (4.7b, passo 4d): você recebe (Pix direto,
    transferência) e libera um mês ou um ano, com confirmação. É uma assinatura PRÉ-PAGA de verdade na Stripe, paga por
    fora (não renova, não cobra cartão — a tela do aluno e os e-mails a tratam como a do Pix), e fica no registro quem
-   liberou. Só para a conta sem acesso. **Até ela existir, não use o painel da Stripe para isso:** a assinatura criada lá no
+   liberou. Só para a conta sem acesso **e sem outro pagamento aberto** *(revisão de segurança do bloco 4, 31/10/2026)*:
+   com uma assinatura que ainda não acabou (a atrasada) ou um Pix pago esperando, o painel recusa e diz o que resolver
+   antes — liberar por cima cobraria o mesmo período duas vezes; o cartão começado e o QR à espera morrem antes. **Até ela existir, não use o painel da Stripe para isso:** a assinatura criada lá no
    cliente que o site criou libera o acesso quando a fatura fica paga, mas "enviar fatura por e-mail" libera
    **antes** de pagar, o link de pagamento avulso não libera nada, e quem nem chegou ao campo de pagamento não
    tem cliente — nunca foi testado.

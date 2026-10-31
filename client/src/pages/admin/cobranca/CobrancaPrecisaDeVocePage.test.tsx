@@ -160,7 +160,7 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     adminListarCasos.mockResolvedValue(lista([caso({ id: 12, tipo: "DEVOLUCAO_FALHOU", urgente: true, consertos: ["devolver-de-novo"] })]));
     renderWithProviders(<CobrancaPrecisaDeVocePage />);
     fireEvent.click(await screen.findByRole("button", { name: "Devolver de novo" }));
-    expect(screen.getByText("Tenta devolver de novo o que falta voltar. Se falhar outra vez, o caso continua aberto.")).toBeTruthy();
+    expect(screen.getByText("Tenta devolver de novo o valor que não voltou. Se falhar outra vez, o caso continua aberto.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
     expect(await screen.findByText("Feito: R$ 99,90 devolvidos de novo.")).toBeTruthy();
     expect(adminResolverCaso.mock.calls).toEqual([[12, "devolver-de-novo"]]);
@@ -208,7 +208,7 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     adminListarCasos.mockResolvedValue(lista([caso({ id: 18, tipo: "CONTESTACAO", urgente: true, consertos: ["liberar-de-novo"] })]));
     renderWithProviders(<CobrancaPrecisaDeVocePage />);
     fireEvent.click(await screen.findByRole("button", { name: "Liberar de novo" }));
-    expect(screen.getByText("Só se a escola ganhou a contestação: o período que a pessoa pagou volta a valer até o fim. A assinatura continua cancelada.")).toBeTruthy();
+    expect(screen.getByText("Só se a escola ganhou a contestação (e as outras desta assinatura): o período que a pessoa pagou volta a valer até o fim. A assinatura continua cancelada.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
     expect((await screen.findByRole("alert")).textContent).toBe("A escola ainda não ganhou esta contestação (o banco não decidiu, ou decidiu contra): nada foi liberado.");
     expect(adminResolverCaso.mock.calls).toEqual([[18, "liberar-de-novo"]]);

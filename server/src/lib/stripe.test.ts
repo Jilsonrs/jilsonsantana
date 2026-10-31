@@ -296,7 +296,7 @@ function doCheckout({ status = "incomplete", fatura = { status: "open", confirma
 
 describe("a assinatura como o checkout a vê", () => {
   it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null, pixPaymentIntentId: null, fimDoPeriodo: null });
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null, pixPaymentIntentId: null, pagoPorFora: false, fimDoPeriodo: null });
   });
 
   // R4 da revisão das correções (29/10/2026): é por ele que a conferência pula a cancelada que já acabou.
@@ -310,6 +310,8 @@ describe("a assinatura como o checkout a vê", () => {
   // reconhecem — e nunca a cancelam nem a reaproveitam como um cartão começado.
   it("a pré-paga leva o Pix de que nasceu; a do cartão, nada", () => {
     expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { userId: "u1", plano: "mensal", [METADADO_DO_PIX]: "pi_do_pix" } })).pixPaymentIntentId).toBe("pi_do_pix");
+    // A paga por fora pelo operador (revisão de segurança do bloco 4): o checkout nunca a reaproveita.
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { userId: "u1", plano: "mensal", [METADADO_PAGO_POR_FORA]: "conta-do-operador" } })).pagoPorFora).toBe(true);
     expect(paraAssinaturaNoCheckout(doCheckout()).pixPaymentIntentId).toBeNull();
   });
 

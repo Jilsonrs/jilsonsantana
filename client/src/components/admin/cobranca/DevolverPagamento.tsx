@@ -22,7 +22,8 @@ export function DevolverPagamento({ cobranca, quem }: { cobranca: CobrancaDaFich
   const [encerrar, setEncerrar] = useState(false);
   const queryClient = useQueryClient();
   const devolver = useMutation({
-    mutationFn: (centavos: number) => api.adminDevolverPagamento(quem, cobranca.id, centavos, encerrar),
+    // O que já voltou, como a tela mostrou: se o de agora for outro, o servidor não devolve (o pedido repetido não devolve duas vezes).
+    mutationFn: (centavos: number) => api.adminDevolverPagamento(quem, cobranca.id, centavos, cobranca.devolvido, encerrar),
     onSuccess: () => {
       setAberto(false);
       setConfirmando(null);

@@ -152,8 +152,28 @@ export async function criarAssinaturaPagaPorFora(pedido: { clienteId: string; pr
   } catch (erro) {
     throw erroSemMensagem(erro, "a assinatura paga por fora");
   }
-  const fatura = await garantirFaturaPaga(assinatura.id, assinatura.latest_invoice);
-  return { id: assinatura.id, faturaPaga: fatura.status === "paid" };
+  // A fatura que NÃO se pagou por fora deixa a assinatura incompleta e com a marca: ela morre agora (achado P2 da revisão do
+  // bloco 4, 31/10/2026) — viva, o checkout por cartão podia reaproveitá-la, e a pessoa pagaria uma assinatura que não renova.
+  let paga = false;
+  try {
+    paga = (await garantirFaturaPaga(assinatura.id, assinatura.latest_invoice)).status === "paid";
+  } finally {
+    if (!paga) await encerrarSeIncompleta(assinatura.id);
+  }
+  return { id: assinatura.id, faturaPaga: paga };
+}
+
+/**
+ * Encerra a assinatura paga por fora que ficou INCOMPLETA — e só ela: relida agora, a que já vale (a fatura se pagou no meio
+ * de uma falha de rede) fica. Se não der, é alerta: ela continua com a marca, e o checkout não a reaproveita
+ * (`pagoPorFora`, `paraAssinaturaNoCheckout`).
+ */
+async function encerrarSeIncompleta(id: string): Promise<void> {
+  try {
+    if ((await stripe().subscriptions.retrieve(id)).status === "incomplete") await stripe().subscriptions.cancel(id);
+  } catch (erro) {
+    console.error(`[stripe] painel: a assinatura paga por fora ${id} não se pagou e NÃO foi encerrada — conferir no painel: ${erroSemMensagem(erro, "o encerramento da paga por fora incompleta").message}`);
+  }
 }
 
 /** O que a fatura da pré-paga ficou: `paid`, ou o status que a Stripe diz quando não dá para pagar por fora. */

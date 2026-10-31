@@ -27,7 +27,7 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
     case "ValorAcimaDoQueFalta":
       return "O valor passa do que falta voltar desta cobrança.";
     case "DevolucaoFalhou":
-      return "A devolução não saiu. Tente de novo; no \"Cancelar e devolver\", a assinatura já acabou e o caso está em Precisa de você.";
+      return "A devolução não saiu. Tente de novo. Se a assinatura foi encerrada antes (no \"Cancelar e devolver\", ou com \"E encerrar\"), ela já acabou e o caso está em Precisa de você.";
     case "PixNaoAceito":
       return "Não deu para aceitar este Pix: o plano não está à venda, ou a fatura não se pagou por fora. Devolva o Pix.";
     case "JaTemAcesso":
@@ -36,6 +36,18 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
       return "A escola ainda não ganhou esta contestação (o banco não decidiu, ou decidiu contra): nada foi liberado.";
     case "ContestacaoNaoAberta":
       return "Só a contestação aberta se aceita: o inquérito se resolve devolvendo o dinheiro, e a já decidida não muda.";
+    case "JaTemOutraAssinatura":
+      return "A pessoa já tem acesso ou outra assinatura viva: aceitar criaria uma segunda pelo mesmo período. Devolva o Pix.";
+    case "OutraAssinaturaViva":
+      return "A pessoa tem uma assinatura que ainda não acabou (com a cobrança atrasada, por exemplo): liberar agora cobraria o mesmo período duas vezes. Cancele-a na ficha antes.";
+    case "PixPagoEsperando":
+      return "A pessoa tem um Pix pago que ainda não virou assinatura: resolva-o antes (Conferir na Stripe, ou o caso em Precisa de você).";
+    case "PixJaVirouAssinatura":
+      return "Este Pix já virou uma assinatura que vale: use \"Cancelar e devolver o dinheiro\" na ficha, que encerra e devolve.";
+    case "SemValorDaDevolucao":
+      return "Este caso não diz quanto falhou: devolva pelo \"Devolver\" da cobrança, na ficha da pessoa.";
+    case "OutraContestacaoNaoGanha":
+      return "Esta assinatura tem outra contestação que a escola não ganhou: nada foi liberado.";
     case "ContaDeAdmin":
       return "A conta de um admin não se corrige por aqui.";
     case "MesmoEmail":

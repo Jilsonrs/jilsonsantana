@@ -108,7 +108,10 @@ export async function cancelarNaHora(assinaturaId: string, dado: MotivoDado): Pr
 export async function cancelarPorContestacao(assinaturaId: string, contestacaoId: string): Promise<void> {
   let faturaEmAberto: string | null = null;
   try {
-    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: contestacaoId }, expand: ["latest_invoice"] });
+    // A marca JUNTA as contestações da assinatura (achado P1 da revisão do bloco 4, 31/10/2026): com uma só, a segunda
+    // contestação apagava a primeira, e ganhar uma liberava as duas (`tirarMarcaDeContestacao`).
+    const atual = (await stripe().subscriptions.retrieve(assinaturaId)).metadata[METADADO_DA_CONTESTACAO];
+    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: juntarNaMarca(atual, contestacaoId) }, expand: ["latest_invoice"] });
     if (marcada.status === "canceled" || marcada.status === "incomplete_expired") return;
     const fatura = marcada.latest_invoice;
     faturaEmAberto = typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null;
@@ -231,16 +234,37 @@ export async function aceitarContestacao(contestacaoId: string): Promise<string>
   }
 }
 
+/** As contestações da marca (os ids, separados por vírgula). Função pura. */
+export function idsDaMarca(marca: string | undefined): string[] {
+  return (marca ?? "").split(",").filter(Boolean);
+}
+
+/** A marca com mais uma contestação — sem repetir a que já está. Função pura. */
+export function juntarNaMarca(marca: string | undefined, id: string): string {
+  const ids = idsDaMarca(marca);
+  return (ids.includes(id) ? ids : [...ids, id]).join(",");
+}
+
 /**
  * TIRA A MARCA DA CONTESTAÇÃO da assinatura (E7 — liberar de novo a contestação GANHA): sem ela, o período que a pessoa pagou
  * volta a contar como pago (`paraAssinaturaNaStripe`). A assinatura continua cancelada: para seguir depois, ela assina de novo.
+ * SÓ com TODAS as contestações da marca ganhas, lidas na Stripe agora (achado P1 da revisão do bloco 4, 31/10/2026): com uma
+ * delas perdida ou sem decisão, nada muda (`outra-nao-ganha`) — liberar a ganha devolveria as aulas sem o dinheiro da outra.
  */
-export async function tirarMarcaDeContestacao(assinaturaId: string): Promise<void> {
+export async function tirarMarcaDeContestacao(assinaturaId: string): Promise<"tirada" | "outra-nao-ganha"> {
+  let marca: string | undefined;
+  try {
+    marca = (await stripe().subscriptions.retrieve(assinaturaId)).metadata[METADADO_DA_CONTESTACAO];
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura da marca da contestação");
+  }
+  for (const id of idsDaMarca(marca)) if ((await statusDaContestacao(id)) !== "won") return "outra-nao-ganha";
   try {
     await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: "" } });
   } catch (erro) {
     throw erroSemMensagem(erro, "a saída da marca da contestação");
   }
+  return "tirada";
 }
 
 /** Uma cobrança que o painel devolve (passo 4a): de quem é, quanto foi e quanto já voltou. */

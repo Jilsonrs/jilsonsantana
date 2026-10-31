@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
 import request from "supertest";
-import type { AssinaturaNaStripe, PagamentoPrePago, PrecoDoPlano } from "../lib/stripe.js";
+import type { AssinaturaNaStripe, AssinaturaNoCheckout, PagamentoPrePago, PrecoDoPlano } from "../lib/stripe.js";
 import type { PrePagaDoPix, FaturaDaPrePaga } from "../lib/stripe-pix.js";
 import type { DonoDaDevolucao, OQueFoiPago, Pagamento } from "../lib/stripe-reembolso.js";
 import type { PedidoDeEmail, Envio } from "../lib/email.js";
@@ -12,7 +12,11 @@ import type { PedidoDeEmail, Envio } from "../lib/email.js";
 //   - ACEITAR ESTE PIX: a pré-paga nasce no preço de AGORA (com a chave do operador — a do aviso devolveria a que morreu), a
 //     marca de conferência sai, o espelho é gravado e as aulas abrem; a incompleta que se paga por fora é aproveitada; o Pix
 //     que voltou, ou que já virou assinatura, fecha o caso sem criar nada; sem preço à venda, 409 — e o caso fica;
-//   - DEVOLVER O PIX: inteiro, e o caso fecha com o valor; a falha, 502, e o caso fica;
+//   - a revisão de segurança do bloco 4: a pré-paga MORTA do mesmo Pix, com linha no espelho, não derruba o aceite (a coluna do
+//     Pix é única — a nova grava nela, a morta solta); a conta que já tem acesso, ou outra assinatura viva, não ganha uma
+//     segunda (409, o Pix se devolve);
+//   - DEVOLVER O PIX: inteiro, e o caso fecha com o valor; a falha, 502, e o caso fica; o Pix que JÁ VIROU uma assinatura que
+//     vale não se devolve solto (409 — é o "Cancelar e devolver" da ficha), e a pré-paga incompleta dele morre antes;
 //   - DEVOLVER ESTE PAGAMENTO: o da tentativa cancelada já paga (todas as faturas dela) e o da cobrança em aberto paga no
 //     instante de cancelar (a fatura), com a trava e a sincronia da assinatura; o caso fecha com o valor.
 const lerPagamentoPix = vi.fn<(id: string) => Promise<{ status: string; pagamento: PagamentoPrePago | null }>>();
@@ -38,11 +42,13 @@ vi.mock("../lib/stripe-devolucao.js", async (importOriginal) => ({
 const buscarPrecos = vi.fn<() => Promise<PrecoDoPlano[]>>();
 const buscarAssinatura = vi.fn<(id: string) => Promise<AssinaturaNaStripe>>();
 const cancelarIncompleta = vi.fn<(id: string) => Promise<string>>();
+const assinaturasDoCliente = vi.fn<(cliente: string) => Promise<AssinaturaNoCheckout[]>>();
 vi.mock("../lib/stripe.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe.js")>()),
   buscarPrecos: () => buscarPrecos(),
   buscarAssinatura: (id: string) => buscarAssinatura(id),
   cancelarIncompleta: (id: string) => cancelarIncompleta(id),
+  assinaturasDoCliente: (cliente: string) => assinaturasDoCliente(cliente),
 }));
 const devolver = vi.fn<(pagamento: Pagamento, dono: DonoDaDevolucao) => Promise<void>>();
 const buscarOQueFoiPago = vi.fn<(id: string) => Promise<OQueFoiPago>>();
@@ -63,6 +69,7 @@ import servidor from "./servidor.js";
 import { prisma, TipoDeCaso } from "../lib/prisma.js";
 import { abrirCaso } from "../lib/casos.js";
 import { temAcessoAtivo } from "../lib/acesso.js";
+import { sincronizarSeLivre } from "../lib/assinaturas.js";
 
 const S = `${Date.now()}`;
 const DIA = 24 * 60 * 60 * 1000;
@@ -106,6 +113,7 @@ beforeEach(() => {
   buscarPrecos.mockReset().mockResolvedValue(PRECOS);
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: new Date(Date.now() + 30 * DIA), clienteId: CLIENTE, userId: aluna, livemode: false }));
   cancelarIncompleta.mockReset().mockResolvedValue("incomplete_expired");
+  assinaturasDoCliente.mockReset().mockResolvedValue([]);
   devolver.mockReset().mockResolvedValue(undefined);
   buscarOQueFoiPago.mockReset().mockResolvedValue({ moeda: "brl", pagamentos: [{ pagamentoId: novoId("pi_tentativa"), centavos: 9990, devolvido: 0 }] });
   oQueFoiPagoNaFatura.mockReset().mockResolvedValue({ moeda: "brl", pagamentos: [{ pagamentoId: novoId("pi_fatura"), centavos: 9990, devolvido: 0 }] });
@@ -182,6 +190,42 @@ describe("aceitar este Pix", () => {
     await prisma.subscription.deleteMany({ where: { ownerUserId: aluna } });
   });
 
+  // A revisão de segurança do bloco 4 (P1): a pré-paga que morreu já tinha linha no espelho com o MESMO Pix (a coluna é
+  // única) — a sincronia da nova batia nela, e o aceite dava 500 com a assinatura nova já paga na Stripe.
+  it("a pré-paga MORTA do mesmo Pix, com linha no espelho: a nova nasce e grava o Pix; a morta solta a coluna — e a sincronia dela depois não bate", async () => {
+    const pix = novoId("pi_morta_no_espelho");
+    const morta = `sub_${S}_morta_no_espelho`;
+    await prisma.subscription.create({ data: { stripeSubscriptionId: morta, ownerUserId: aluna, status: "incomplete_expired", currentPeriodEnd: null, pixPaymentIntentId: pix } });
+    const id = await casoDe(TipoDeCaso.PIX_EM_CONFERENCIA, `pix:${pix}`);
+    assinaturasDoPix.mockResolvedValue([{ id: morta, status: "incomplete_expired", faturaPaga: false }]);
+    buscarAssinatura.mockImplementation(async (sub) => ({ id: sub, status: sub === morta ? "incomplete_expired" : "active", pagoAte: new Date(Date.now() + 30 * DIA), clienteId: CLIENTE, userId: aluna, livemode: false, pixPaymentIntentId: pix }));
+    const res = await resolver(id, "aceitar-pix");
+    expect([res.status, res.body]).toEqual([200, { detalhe: "o Pix virou a assinatura pré-paga; com acesso às aulas" }]);
+    const nova = criarAssinaturaPrePaga.mock.results[0]?.value as Promise<{ id: string }>;
+    expect(await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: (await nova).id } })).toMatchObject({ pixPaymentIntentId: pix, status: "active" });
+    expect((await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: morta } })).pixPaymentIntentId).toBeNull();
+    expect(await temAcessoAtivo(aluna)).toBe(true);
+    // O aviso atrasado da morta: a sincronia dela grava sem o Pix (ela nunca o usou), e não bate na coluna.
+    await sincronizarSeLivre(morta);
+    expect((await prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: morta } })).pixPaymentIntentId).toBeNull();
+    await prisma.subscription.deleteMany({ where: { ownerUserId: aluna } });
+  });
+
+  // A revisão de segurança do bloco 4 (P2): o aceite criava a pré-paga sem olhar se a conta já tinha acesso (ou outra
+  // assinatura viva) por outro caminho — eram duas assinaturas pelo mesmo período.
+  it("a conta que JÁ TEM acesso, ou outra assinatura viva na Stripe: 409, nada nasce, e o caso continua aberto", async () => {
+    const id = await casoDe(TipoDeCaso.PIX_EM_CONFERENCIA, `pix:${novoId("pi_ja_tem")}`);
+    await prisma.subscription.create({ data: { stripeSubscriptionId: `sub_${S}_ja_tem`, ownerUserId: aluna, status: "active", currentPeriodEnd: new Date(Date.now() + 10 * DIA) } });
+    expect((await resolver(id, "aceitar-pix")).body).toEqual({ error: "JaTemOutraAssinatura" });
+    await prisma.subscription.deleteMany({ where: { ownerUserId: aluna } });
+    assinaturasDoCliente.mockResolvedValue([{ id: `sub_${S}_atrasada`, status: "past_due", precoId: "price_de_agora", codigoId: null, segredoDoPagamento: null, segredoDoCartao: null }]);
+    expect((await resolver(id, "aceitar-pix")).body).toEqual({ error: "JaTemOutraAssinatura" });
+    expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
+    expect(garantirFaturaPaga).not.toHaveBeenCalled();
+    expect(tirarDeConferencia).not.toHaveBeenCalled();
+    expect((await casoAgora(id)).open).toBe(true);
+  });
+
   it("o plano fora de venda: 409, nada nasce, e o caso continua aberto", async () => {
     const id = await casoDe(TipoDeCaso.PIX_EM_CONFERENCIA, `pix:${novoId("pi_sem_preco")}`);
     buscarPrecos.mockResolvedValue([]);
@@ -206,6 +250,35 @@ describe("devolver o Pix", () => {
     expect(devolver.mock.calls.at(-1)?.[0]).toEqual({ pagamentoId: pix, centavos: 8990, devolvido: 0 });
     expect(await casoAgora(id)).toMatchObject({ open: false, closedBy: "OPERADOR" });
     expect(criarAssinaturaPrePaga).not.toHaveBeenCalled();
+  });
+});
+
+describe("devolver o Pix que já virou assinatura (revisão de segurança do bloco 4)", () => {
+  // O P1: devolver solto, sem a trava do Pix, deixava a pré-paga que já vale ATIVA sem o dinheiro (a regra das aulas libera a
+  // ativa sem olhar o pagamento).
+  it("a pré-paga do Pix já vale (no espelho, ou só na Stripe): 409, e nada é devolvido — o caso fica", async () => {
+    const pix = novoId("pi_ja_vale");
+    const id = await casoDe(TipoDeCaso.PIX_EM_CONFERENCIA, `pix:${pix}`);
+    await prisma.subscription.create({ data: { stripeSubscriptionId: `sub_${S}_ja_vale`, ownerUserId: aluna, status: "active", currentPeriodEnd: new Date(Date.now() + 10 * DIA), pixPaymentIntentId: pix } });
+    expect((await resolver(id, "devolver-pix")).body).toEqual({ error: "PixJaVirouAssinatura" });
+    await prisma.subscription.deleteMany({ where: { ownerUserId: aluna } });
+    assinaturasDoPix.mockResolvedValue([{ id: `sub_${S}_so_na_stripe`, status: "active", faturaPaga: true }]);
+    expect((await resolver(id, "devolver-pix")).body).toEqual({ error: "PixJaVirouAssinatura" });
+    expect(devolver).not.toHaveBeenCalled();
+    expect((await casoAgora(id)).open).toBe(true);
+  });
+
+  it("a pré-paga INCOMPLETA dele morre antes de devolver; a que foi paga no meio: 409, e nada é devolvido", async () => {
+    const pix = novoId("pi_incompleta_devolver");
+    const id = await casoDe(TipoDeCaso.PIX_EM_CONFERENCIA, `pix:${pix}`);
+    assinaturasDoPix.mockResolvedValue([{ id: `sub_${S}_incompleta_do_pix`, status: "incomplete", faturaPaga: false }]);
+    cancelarIncompleta.mockResolvedValueOnce("active");
+    expect((await resolver(id, "devolver-pix")).body).toEqual({ error: "PixJaVirouAssinatura" });
+    expect(devolver).not.toHaveBeenCalled();
+    expect((await resolver(id, "devolver-pix")).status).toBe(200);
+    expect(cancelarIncompleta.mock.calls).toEqual([[`sub_${S}_incompleta_do_pix`], [`sub_${S}_incompleta_do_pix`]]);
+    expect(cancelarIncompleta.mock.invocationCallOrder[1] ?? 0).toBeLessThan(devolver.mock.invocationCallOrder[0] ?? 0);
+    expect((await casoAgora(id)).open).toBe(false);
   });
 });
 

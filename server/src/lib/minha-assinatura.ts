@@ -604,16 +604,25 @@ export async function reembolsarAssinaturaDe(detalhes: DetalhesDaAssinatura, use
       // COM A TRAVA, relido: o prazo, a situação e o que foi pago valem os de AGORA.
       const agora = await buscarDetalhes(id);
       if (quem.peloDono && !noPrazoDoReembolso(agora)) return { resultado: "fora-do-prazo" };
+      // O OPERADOR confere o valor que a tela mostrou ANTES de anular a troca pendente (achado P2 da revisão do bloco 4,
+      // 31/10/2026): o "valor mudou" não faz nada — nem desfaz a troca que a pessoa está confirmando no banco. Se a anulação
+      // revelar que a troca já foi paga, o valor mudou também.
+      const mostrados = quem.peloDono ? undefined : quem.centavosMostrados;
+      if (mostrados !== undefined) {
+        const antes = aDevolver(await oQueFoiPago(agora));
+        if (antes <= 0) return { resultado: "nada-a-devolver" };
+        if (antes !== mostrados) return { resultado: "valor-mudou" };
+      }
       // A troca na hora que ficou esperando a confirmação do banco é anulada ANTES de tudo: a
       // fatura dela não pode ser paga depois de a pessoa cancelar (achado da revisão de
       // segurança). Se a resposta for "paga", a troca se completou — e a leitura abaixo, feita
       // depois, já inclui essa cobrança na devolução. `[FATO — medido, 11/10/2026]` ao encerrar
       // na hora a própria Stripe anula essa fatura; anular aqui não depende disso.
-      if (agora.faturaDaTrocaId) await anularFatura(agora.faturaDaTrocaId);
+      if (agora.faturaDaTrocaId && (await anularFatura(agora.faturaDaTrocaId)) === "paga" && mostrados !== undefined) return { resultado: "valor-mudou" };
       const pago = await oQueFoiPago(agora);
       const centavos = aDevolver(pago);
       if (centavos <= 0 || !pago.moeda) return { resultado: "nada-a-devolver" };
-      if (!quem.peloDono && quem.centavosMostrados !== undefined && centavos !== quem.centavosMostrados) return { resultado: "valor-mudou" };
+      if (mostrados !== undefined && centavos !== mostrados) return { resultado: "valor-mudou" };
       // Já encerrada (a devolução falhou da outra vez, ou foi encerrada pelo painel): só devolve.
       if (!encerradaDeVez(agora)) await cancelarNaHora(id, dado);
       try {

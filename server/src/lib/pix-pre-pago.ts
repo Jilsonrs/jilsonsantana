@@ -73,7 +73,7 @@ const TEMPO_DA_TRANSACAO = { maxWait: 10_000, timeout: 120_000 };
  * entre a lista e o cancelamento (outra aba, no mesmo instante) volta como `pagaNoMeio`: a pessoa tem
  * acesso, e o cancelamento de uma assinatura paga precisa de gente. Nada: o caminho está livre para o QR.
  */
-async function assinaturasAbertas(clienteId: string, quem: string): Promise<{ viva: string } | { prePaga: string; resumoDaTentativa: string | null } | { pagaNoMeio: string } | null> {
+export async function assinaturasAbertas(clienteId: string, quem: string): Promise<{ viva: string } | { prePaga: string; resumoDaTentativa: string | null } | { pagaNoMeio: string } | null> {
   const existentes = (await assinaturasDoCliente(clienteId)).filter((a) => !ENCERRADAS.has(a.status));
   const viva = existentes.find((a) => a.status !== "incomplete");
   if (viva) return { viva: viva.id };

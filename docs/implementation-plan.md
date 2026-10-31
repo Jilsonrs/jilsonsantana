@@ -6688,7 +6688,31 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               voltaram, o caso fechou; o retrato do banco igual antes e depois. **Banco de dev:** a migration aplicada, *No
               difference detected*, nenhuma tabela sem RLS. *Docs check (context7): Stripe → `/websites/stripe` → como ganhar
               uma contestação na área de teste (31/10/2026).*
-        - [ ] **Fechamento do bloco 4.**
+        - [ ] **Fechamento do bloco 4.** **A revisão de segurança (31/10/2026, só o que mudou — `933e0ca`, `7c53789`,
+              `d2cc903`, `fe97314`): nenhum P0; seis P1, corrigidos antes de publicar, e sete P2** (seis fechados com
+              teste e mutação, sem nova rodada; o sétimo é tela nova e foi ao operador — P149). Os P1: (1) **"Aceitar este
+              Pix" com a pré-paga MORTA do mesmo Pix no espelho** dava 500 com a assinatura nova já paga (a coluna do Pix é
+              única) — agora o espelho guarda o Pix só na pré-paga que o USOU (`sincronizar`), e a linha da morta solta a
+              coluna antes de a nova nascer; (2) **"Liberar acesso pago por fora" por cima de outro pagamento aberto** (a
+              atrasada sem aulas: a Stripe seguia tentando o cartão dela, e era o mesmo período pago duas vezes) — agora,
+              em todos os clientes da conta, a assinatura viva e o Pix pago à espera recusam (409 `OutraAssinaturaViva`,
+              `PixPagoEsperando`), e o cartão começado e o QR à espera morrem antes (`assinaturasAbertas`, a mesma do Pix);
+              (3) **"Devolver o Pix" sem a trava do Pix** devolvia o Pix que já tinha virado assinatura, que ficava ativa
+              sem o dinheiro — agora com a trava (`devolverPixEmConferencia`): o que já vale recusa (409
+              `PixJaVirouAssinatura`, é o "Cancelar e devolver"), e a pré-paga incompleta morre antes; (4) **"Devolver um
+              pagamento" repetido devolvia de novo** (a chave de repetição levava o que já tinha voltado, lido na hora) —
+              agora o pedido leva o que a tela mostrou, relido com a trava (409 `ValorMudou`); (5) **"Devolver de novo"
+              devolvia tudo o que faltava da cobrança**, e a que falhou podia ser uma parte — agora o caso guarda a
+              cobrança e o valor (`devolucao:<re_…>` do aviso, `cobranca:<ch_…>` do painel) e devolve exatamente isto; o
+              caso antigo, sem o valor, recusa (409 `SemValorDaDevolucao`, é pela ficha); (6) **"Liberar de novo" com duas
+              contestações** — a marca guardava só a última, e ganhar uma devolvia as aulas sem o dinheiro da outra —
+              agora a marca junta todas, e só sai com todas ganhas (409 `OutraContestacaoNaoGanha`). Os P2: "Aceitar este
+              Pix" recusa a conta que já tem acesso ou outra assinatura viva (409 `JaTemOutraAssinatura`); "E encerrar" com
+              a devolução que falha abre o caso urgente com o valor e registra o encerramento; o "valor mudou" do
+              "Cancelar e devolver" não anula mais a troca de plano pendente; a pré-paga do Pix sem espelho é achada na
+              Stripe para o "E encerrar"; a paga por fora cuja fatura não se paga morre na hora, e o checkout nunca a
+              reaproveita; a liberação que valeu e ficou sem o registro é registrada na nova tentativa (e a transação dela
+              ganhou o tempo do Pix). **Mutação: 17 de 17 reprovaram.** *A publicação: a confirmar com o operador.*
       - [ ] **BLOCO 5 — CONTESTAÇÃO E FRAUDE SEM O PAINEL DA STRIPE**
         - [x] **5a — A contestação na ficha e nos casos:** o prazo, o motivo, o valor; aceitar. **FEITO (31/10/2026).** O prazo,
               o motivo e o valor já vinham na ficha (a cobrança contestada, bloco 1) e no caso (o resumo "fase · motivo ·

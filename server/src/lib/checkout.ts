@@ -229,7 +229,8 @@ async function decidir(conta: Conta, pedido: AssinarInput, clienteId: string, pr
       // depois de 10 recusas ela o cancela, e a assinatura continua aberta com o segredo morto
       // (medido na área restrita, 21/10/2026 — achado do passo 4 da etapa 4.7; correção autorizada
       // pelo operador no mesmo dia). Entregá-lo de novo prenderia o aluno.
-      const aMesma = incompleta.precoId === precoId && incompleta.codigoId === codigoId && incompleta.numeroFiscalDaFatura === numeroDoPedido && incompleta.pagamentoCancelado !== true && incompleta.segredoDoPagamento !== null;
+      // A paga por fora que ficou incompleta nunca é "a mesma": ela não renova (revisão do bloco 4, 31/10/2026).
+      const aMesma = incompleta.pagoPorFora !== true && incompleta.precoId === precoId && incompleta.codigoId === codigoId && incompleta.numeroFiscalDaFatura === numeroDoPedido && incompleta.pagamentoCancelado !== true && incompleta.segredoDoPagamento !== null;
       if (aMesma && !assinatura) {
         assinatura = incompleta;
         continue;

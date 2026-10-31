@@ -145,12 +145,14 @@ export function paraCasoDaLista(linha: LinhaDoCaso): CasoDaLista {
 
 /**
  * Os consertos que o painel faz para o caso: a cobrança em aberto, o agendamento pela metade, a ativa sem período pago (passo
- * 3b); a devolução que falhou — a do reembolso (`sub:`) ou a de um pagamento (`pagamento:pi_…`, passo 4a); o Pix em
+ * 3b); a devolução que falhou — a do reembolso (`sub:`) ou a de uma cobrança, com o valor (passo 4a e a revisão do bloco 4); o Pix em
  * conferência — aceitar ou devolver (P117) — e o dinheiro recebido sem assinatura (passo 4c). Só com o que o conserto precisa
  * na chave: sem ela, nenhum.
  */
 export function consertosDoCaso(tipo: TipoDeCasoDaLista, chave: string): ConsertoDoCaso[] {
-  if (tipo === "DEVOLUCAO_FALHOU" && (chave.startsWith("sub:") || chave.startsWith("pagamento:pi_"))) return ["devolver-de-novo"];
+  // A devolução que falhou: a do reembolso (`sub:`), ou a de uma cobrança com o valor guardado (`devolucao:<re_…>` do aviso,
+  // `cobranca:<ch_…>` do painel). O caso antigo de um pagamento (`pagamento:`), sem o valor, se resolve pela ficha.
+  if (tipo === "DEVOLUCAO_FALHOU" && (chave.startsWith("sub:") || chave.startsWith("devolucao:re_") || chave.startsWith("cobranca:"))) return ["devolver-de-novo"];
   if (tipo === "PIX_EM_CONFERENCIA" && chave.startsWith("pix:pi_")) return ["aceitar-pix", "devolver-pix"];
   if (tipo === "PAGO_SEM_ASSINATURA" && (chave.startsWith("sub:") || chave.startsWith("fatura:in_"))) return ["devolver-este-pagamento"];
   // A contestação (bloco 5, passo 5a): aceitar a perda (só a aberta) — ou, se a escola ganhou, liberar de novo (passo 4d).
