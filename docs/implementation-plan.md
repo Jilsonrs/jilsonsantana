@@ -6876,7 +6876,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
                 `discounts` da fatura se expande (com o `promotion_code`), o `total_discount_amounts` traz o valor por
                 desconto, e a linha traz `period` e `pricing.price_details.price` (1 consulta). Testes: `recibo.test.ts`
                 (novo, 6) e o limite das leituras (+1 rota). **Mutação: 9 de 9 reprovaram.**
-          - [ ] **A tela do recibo completo**, com os itens escolhidos (fotos para ele aprovar).
+          - [x] **A tela do recibo completo** (`ReciboPage`, lendo a rota acima): o número e a data; a escola (nome
+                empresarial, CNPJ, site); quem assina (o nome; a conta sem nome, o e-mail — escolha do agente, nas fotos);
+                o plano (Mensal, Anual, ou "Assinatura da escola Jilson Santana" quando não se sabe) e o período; o preço,
+                o desconto com o código, o "Crédito do plano anterior" (só na troca de plano — escolha do agente, nas
+                fotos: sem ele a conta não fecha) e o total pago; sem o detalhe do servidor, só o total; a forma, a
+                situação e as dúvidas. O 404 diz "não encontrado", sem tentar de novo. Textos no dicionário
+                (`app.faturamento.recibo`), rascunho do agente. Testes: `ReciboPage.test.tsx` (reescrito, 7) e as rotas.
+                **Mutação: 9 de 9 reprovaram.** As fotos vão junto com o e-mail, no fim.
           - [ ] **O recibo por e-mail** em todo pagamento (o e-mail de verdade, no Yahoo, para ele aprovar).
           - [ ] **Publicar o bloco 6** (com a ordem dele).
       - [x] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { anotarVersaoDoServidor } from "@/lib/versao";
 import type { CredenciaisDeEnvio, DadosDoEnvio } from "@/lib/video-upload";
-import type { TipoDeEvento, Level, Layer, Material, ContentStatus, PlanItemType, CourseCreateInput, CourseUpdateInput, CourseStructureInput, LessonInsertInput, ModuleInsertInput, LessonKind, ModuleCreateInput, ModuleUpdateInput, LessonCreateInput, LessonUpdateInput, Dict, TestimonialCreateInput, TestimonialUpdateInput, HomeFaqCreateInput, HomeFaqUpdateInput, AnnouncementInput, AnnouncementAudience, PlanosDaAssinatura, PreviaInput, PreviaDaAssinatura, CorpoDeAssinar, CorpoDeAssinarSemLogin, CorpoDePix, CorpoDePixDaAtrasada, CorpoDePixSemLogin, CampoNaoAbriuInput, AssinaturaSemLogin, ConfirmacaoSemLogin, SenhaCriada, AssinaturaCriada, SituacaoDaAssinatura, SincroniaDaConta, FiltroDasAssinaturas, ListaDeAssinaturas, FichaDaCobranca, OndeLeva, ListaDeTentativas, OQueAconteceu, ListaDeCasos, AcaoFeita, ConferenciaPelaFicha, ConsertoDoCaso, LinkParaOAluno, CodigoDoEmailEnviado, EmailCorrigido, PreviaDaDevolucao, Plano, MinhaAssinatura, TrocaDeCartaoPreparada, CartaoTrocado, CancelarInput, RenovacaoParada, ReembolsoFeito, MudarDePlanoInput, PlanoMudado, TrocaDesfeita, TrocaDisponivel, PedirCodigoInput, CodigoPedido, ProvasDaContestacao, NumerosDoMes, CodigoDaLista, CodigoCriado, CriarCodigoInput, MinhasCobrancas } from "@jilson/core";
+import type { TipoDeEvento, Level, Layer, Material, ContentStatus, PlanItemType, CourseCreateInput, CourseUpdateInput, CourseStructureInput, LessonInsertInput, ModuleInsertInput, LessonKind, ModuleCreateInput, ModuleUpdateInput, LessonCreateInput, LessonUpdateInput, Dict, TestimonialCreateInput, TestimonialUpdateInput, HomeFaqCreateInput, HomeFaqUpdateInput, AnnouncementInput, AnnouncementAudience, PlanosDaAssinatura, PreviaInput, PreviaDaAssinatura, CorpoDeAssinar, CorpoDeAssinarSemLogin, CorpoDePix, CorpoDePixDaAtrasada, CorpoDePixSemLogin, CampoNaoAbriuInput, AssinaturaSemLogin, ConfirmacaoSemLogin, SenhaCriada, AssinaturaCriada, SituacaoDaAssinatura, SincroniaDaConta, FiltroDasAssinaturas, ListaDeAssinaturas, FichaDaCobranca, OndeLeva, ListaDeTentativas, OQueAconteceu, ListaDeCasos, AcaoFeita, ConferenciaPelaFicha, ConsertoDoCaso, LinkParaOAluno, CodigoDoEmailEnviado, EmailCorrigido, PreviaDaDevolucao, Plano, MinhaAssinatura, TrocaDeCartaoPreparada, CartaoTrocado, CancelarInput, RenovacaoParada, ReembolsoFeito, MudarDePlanoInput, PlanoMudado, TrocaDesfeita, TrocaDisponivel, PedirCodigoInput, CodigoPedido, ProvasDaContestacao, NumerosDoMes, CodigoDaLista, CodigoCriado, CriarCodigoInput, MinhasCobrancas, ReciboDaEscola } from "@jilson/core";
 
 // Same-origin by design (mirrors auth-client.ts): in dev the Vite proxy
 // forwards /api -> :3000; in prod Express serves the client from the same
@@ -1081,6 +1081,12 @@ export async function getMinhaAssinatura(): Promise<MinhaAssinatura> {
 /** As cobranças que passaram e os recibos (etapa 4.7b, passo 6a). */
 export async function getMinhasCobrancas(): Promise<MinhasCobrancas> {
   const { data } = await client.get<MinhasCobrancas>("/billing/minhas-cobrancas");
+  return data;
+}
+
+/** O recibo da escola de uma cobrança, pela chave dela (etapa 4.7b, passo 6a). 404 `NaoEncontrado`: não é da conta. */
+export async function getRecibo(chave: string): Promise<ReciboDaEscola> {
+  const { data } = await client.get<ReciboDaEscola>(`/billing/minhas-cobrancas/${encodeURIComponent(chave)}`);
   return data;
 }
 

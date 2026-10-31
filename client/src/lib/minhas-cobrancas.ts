@@ -1,4 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import type { MinhaCobranca } from "@jilson/core";
+import { getRecibo } from "@/lib/api";
 import { dinheiro } from "@/lib/assinar";
 import { nomeDaBandeira } from "@/lib/faturamento";
 import type { AppTexts } from "@/lib/language";
@@ -7,9 +9,11 @@ import type { AppTexts } from "@/lib/language";
 // cobrança. Os dois leem daqui, para nunca dizerem coisas diferentes.
 
 type Textos = AppTexts["faturamento"]["cobrancas"];
+/** O que as frases leem de uma cobrança — da lista ou do recibo. */
+type Cobranca = Pick<MinhaCobranca, "forma" | "cartao" | "situacao" | "devolvido" | "moeda">;
 
 /** Como foi paga: "Cartão Visa final 4242", "Pix". */
-export function formaDaCobranca(t: Textos, cobranca: MinhaCobranca): string {
+export function formaDaCobranca(t: Textos, cobranca: Cobranca): string {
   if (cobranca.forma === "pix") return t.pix;
   if (cobranca.forma === "cartao" && cobranca.cartao) {
     const bandeira = nomeDaBandeira(cobranca.cartao.bandeira);
@@ -19,7 +23,7 @@ export function formaDaCobranca(t: Textos, cobranca: MinhaCobranca): string {
 }
 
 /** Em que pé ela está: paga, devolvida (inteira ou em parte), contestada. */
-export function situacaoDaCobranca(t: Textos, cobranca: MinhaCobranca): string {
+export function situacaoDaCobranca(t: Textos, cobranca: Cobranca): string {
   if (cobranca.situacao === "devolvida") return t.devolvida;
   if (cobranca.situacao === "devolvida-em-parte") return t.devolvidaEmParte.replace("{valor}", dinheiro(cobranca.devolvido, cobranca.moeda));
   if (cobranca.situacao === "contestada") return t.contestada;
@@ -32,4 +36,9 @@ export function situacaoDaCobranca(t: Textos, cobranca: MinhaCobranca): string {
  */
 export function enderecoDoRecibo(chave: string): string {
   return `/aluno/conta/faturamento/recibo/${encodeURIComponent(chave)}`;
+}
+
+/** O recibo da escola, com os detalhes que o servidor leu na Stripe. Sem guardar: o recibo segue o que a Stripe diz agora. */
+export function useRecibo(chave: string) {
+  return useQuery({ queryKey: ["billing", "recibo", chave], queryFn: () => getRecibo(chave), gcTime: 0 });
 }

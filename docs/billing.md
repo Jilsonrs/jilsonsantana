@@ -2057,11 +2057,15 @@ lá, vale o texto de hoje):
 - **O aluno vê as próprias cobranças e baixa o recibo** em Faturamento (P144). — passo 6a, no código desde 31/10/2026: as
   cobranças que passaram, e **Ver recibo** abre numa aba nova o **recibo da ESCOLA**, em português e **sem o CPF de quem
   pagou** *(decisão do operador, 31/10/2026, na revisão de segurança do bloco 6: o recibo da Stripe vinha em inglês e
-  levava à fatura com o CPF inteiro de quem pagou — provado na área de teste)*. Nele: o nome empresarial e o CNPJ da
-  escola, o site e o e-mail; quem assina, o que foi pago, a data, o valor, como foi paga e a situação; e "Imprimir ou
-  salvar em PDF". Fica fora do menu do app (`/aluno/conta/faturamento/recibo/<chave>`, só com login), e a cobrança se
-  acha pela chave dela — sem código da Stripe —, só entre as da conta da sessão. Os textos são proposta do agente, a
-  aprovar pelas fotos. *Reabre se o recibo precisar valer como documento fiscal: aí é a nota fiscal (Impostos).*
+  levava à fatura com o CPF inteiro de quem pagou — provado na área de teste)*. **O recibo é o COMPLETO** *(decisão dele,
+  31/10/2026, olhando os da Mosh e da Udemy)*: o número e a data; a escola (o nome empresarial, o CNPJ e o site — sem o
+  endereço); quem assina (o nome); o plano e o período pago; o preço, o desconto com o código (e o crédito da troca de
+  plano) e o total pago — o preço e o que saiu dele só quando a conta fecha com o total; a forma de pagamento; a
+  situação; as dúvidas, com o e-mail de suporte; e "Imprimir ou salvar em PDF". Os detalhes vêm da Stripe na hora
+  (`GET /api/billing/minhas-cobrancas/:chave`). Fica fora do menu do app (`/aluno/conta/faturamento/recibo/<chave>`, só
+  com login), e a cobrança se acha pela chave dela — sem código da Stripe —, só entre as da conta da sessão. Os textos
+  são proposta do agente, a aprovar pelas fotos. *Reabre se o recibo precisar valer como documento fiscal: aí é a nota
+  fiscal (Impostos).*
 - **Os códigos promocionais pelo admin** (P142), com as regras de *Códigos promocionais* no formulário. — passo 6d, no
   código desde 31/10/2026.
 - **O aviso ao operador** (P137): na hora, só o urgente (quem pagou e está sem acesso; a contestação); o resto num

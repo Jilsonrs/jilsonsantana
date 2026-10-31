@@ -24,7 +24,7 @@ vi.mock("@/lib/api", async (original) => {
     adminListarTentativas: nunca,
     adminOQueAconteceu: nunca,
     adminListarCodigos: nunca,
-    getMinhasCobrancas: () => Promise.resolve({ cobrancas: [{ em: "2026-10-10T15:00:00.000Z", centavos: 9990, moeda: "brl", forma: "pix", cartao: null, situacao: "paga", devolvido: 0, chave: "abc0000000000000" }] }),
+    getRecibo: () => Promise.resolve({ em: "2026-10-10T15:00:00.000Z", centavos: 9990, moeda: "brl", forma: "pix", cartao: null, situacao: "paga", devolvido: 0, numero: "ABC0-0000", plano: "mensal", periodo: null, detalhe: null }),
   };
 });
 
