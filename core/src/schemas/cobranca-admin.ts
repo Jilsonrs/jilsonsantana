@@ -270,7 +270,7 @@ export type AcaoFeita = { detalhe: string };
 export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };
 
 /** Os consertos que hoje só o painel da Stripe faz, a partir de um caso (passo 3b). */
-export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo", "aceitar-pix", "devolver-pix", "devolver-este-pagamento", "liberar-de-novo"] as const;
+export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo", "aceitar-pix", "devolver-pix", "devolver-este-pagamento", "liberar-de-novo", "aceitar-contestacao"] as const;
 export type ConsertoDoCaso = (typeof CONSERTOS_DO_CASO)[number];
 export const resolverCasoSchema = z.object({ acao: z.enum(CONSERTOS_DO_CASO) });
 

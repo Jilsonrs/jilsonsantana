@@ -219,6 +219,19 @@ export async function statusDaContestacao(contestacaoId: string): Promise<string
 }
 
 /**
+ * ACEITA A CONTESTAÇÃO (o "Aceitar a perda" do painel, 4.7b, passo 5a): a escola não manda provas, e o banco a encerra como
+ * perdida — o dinheiro fica com a pessoa. `[FATO — context7 /websites/stripe, 31/10/2026]` só a contestação aberta
+ * (`needs_response`) se fecha assim, e não tem volta. Devolve o status de depois.
+ */
+export async function aceitarContestacao(contestacaoId: string): Promise<string> {
+  try {
+    return (await stripe().disputes.close(contestacaoId)).status;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o aceite da contestação");
+  }
+}
+
+/**
  * TIRA A MARCA DA CONTESTAÇÃO da assinatura (E7 — liberar de novo a contestação GANHA): sem ela, o período que a pessoa pagou
  * volta a contar como pago (`paraAssinaturaNaStripe`). A assinatura continua cancelada: para seguir depois, ela assina de novo.
  */

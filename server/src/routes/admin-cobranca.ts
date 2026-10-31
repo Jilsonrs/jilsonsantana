@@ -4,7 +4,7 @@ import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
-import { aceitarPixPeloOperador, cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, liberarDeNovoPeloOperador, liberarPagoPorForaPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
+import { aceitarContestacaoPeloOperador, aceitarPixPeloOperador, cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, liberarDeNovoPeloOperador, liberarPagoPorForaPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { limiteDoCodigoDoEmailNovo } from "../lib/limite-de-tentativas.js";
 import { QuemFez } from "../lib/prisma.js";
@@ -86,6 +86,7 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "pix-nao-aceito": [409, "PixNaoAceito"],
   "ja-tem-acesso": [409, "JaTemAcesso"],
   "contestacao-nao-ganha": [409, "ContestacaoNaoGanha"],
+  "contestacao-nao-aberta": [409, "ContestacaoNaoAberta"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {
@@ -188,7 +189,9 @@ router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res)
             ? await aceitarPixPeloOperador(id, por)
             : acao === "liberar-de-novo"
               ? await liberarDeNovoPeloOperador(id, por)
-              : await resolverCasoPeloOperador(id, acao, por),
+              : acao === "aceitar-contestacao"
+                ? await aceitarContestacaoPeloOperador(id, por)
+                : await resolverCasoPeloOperador(id, acao, por),
   );
 });
 

@@ -191,6 +191,18 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     expect((await screen.findByRole("alert")).textContent).toBe("Não deu para aceitar este Pix: o plano não está à venda, ou a fatura não se pagou por fora. Devolva o Pix.");
   });
 
+  it("a contestação aberta (passo 5a): 'Aceitar a perda', com o efeito de não ter volta; a que não está aberta diz isso", async () => {
+    adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "ContestacaoNaoAberta" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 19, tipo: "CONTESTACAO", urgente: true, consertos: ["aceitar-contestacao", "liberar-de-novo"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    expect(await screen.findByRole("button", { name: "Liberar de novo" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Aceitar a perda" }));
+    expect(screen.getByText("A escola não manda provas: o banco encerra a contestação como perdida, e o dinheiro fica com a pessoa. Não tem volta.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Só a contestação aberta se aceita: o inquérito se resolve devolvendo o dinheiro, e a já decidida não muda.");
+    expect(adminResolverCaso.mock.calls).toEqual([[19, "aceitar-contestacao"]]);
+  });
+
   it("a contestação (passo 4d): 'Liberar de novo', com o efeito; a que a escola não ganhou diz isso", async () => {
     adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "ContestacaoNaoGanha" } } });
     adminListarCasos.mockResolvedValue(lista([caso({ id: 18, tipo: "CONTESTACAO", urgente: true, consertos: ["liberar-de-novo"] })]));

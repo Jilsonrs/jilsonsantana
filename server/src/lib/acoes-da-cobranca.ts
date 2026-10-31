@@ -4,7 +4,7 @@ import { consertosDoCaso } from "./casos.js";
 import { AssinaturaNaoEncontrada, buscarAssinatura, buscarPrecos, DocumentoRecusado, trocarNumeroFiscal } from "./stripe.js";
 import { buscarDetalhes, pagarFatura, type CobrancaDaFatura, type DetalhesDaAssinatura } from "./stripe-assinatura.js";
 import { anularFatura, assinaturaDaFatura, soltarAgendamento } from "./stripe-plano.js";
-import { cancelarNaHora, statusDaContestacao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
+import { aceitarContestacao, cancelarNaHora, statusDaContestacao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
 import { criarAssinaturaPagaPorFora, pixConfigurado } from "./stripe-pix.js";
 import { enviarEmail } from "./email.js";
 import { getDict } from "./dict.js";
@@ -27,7 +27,7 @@ import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 export type PorQuem = { quem: typeof QuemFez.OPERADOR | typeof QuemFez.JILSONAI; conta: string };
 
 /** O que não deu para fazer — cada um vira um status na rota. */
-export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer" | "stripe-nao-conhece" | "assinatura-viva" | "valor-mudou" | "valor-acima" | "devolucao-falhou" | "pix-nao-aceito" | "ja-tem-acesso" | "contestacao-nao-ganha";
+export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer" | "stripe-nao-conhece" | "assinatura-viva" | "valor-mudou" | "valor-acima" | "devolucao-falhou" | "pix-nao-aceito" | "ja-tem-acesso" | "contestacao-nao-ganha" | "contestacao-nao-aberta";
 export type Resultado<T> = { resultado: "ok"; feito: T } | { resultado: NaoFeita };
 
 /** Grava a ação no registro: quem fez, em quem, o valor (quando há dinheiro) e o que a Stripe respondeu (sem dado pessoal). */
@@ -317,6 +317,23 @@ export async function liberarDeNovoPeloOperador(casoId: number, por: PorQuem): P
   const dono = (await prisma.subscription.findUnique({ where: { stripeSubscriptionId: assinatura }, select: { ownerUserId: true } }))?.ownerUserId ?? caso.userId;
   const detalhe = `a escola ganhou a contestação: o período pago voltou a valer; ${dono && (await temAcessoAtivo(dono)) ? "com acesso" : "sem acesso"} às aulas`;
   await concluirCaso(casoId, por, "liberar-de-novo", { userId: dono, assinatura }, detalhe);
+  return { resultado: "ok", feito: { detalhe } };
+}
+
+/**
+ * ACEITAR A PERDA (o conserto do caso "contestação", bloco 5, passo 5a): a escola não manda provas, e o banco encerra a
+ * contestação como perdida — o dinheiro fica com a pessoa. Só a contestação ABERTA (`needs_response`), lida na Stripe agora:
+ * o inquérito se resolve devolvendo o dinheiro (sem taxa), e a já decidida não muda. O acesso não muda aqui (o que o banco
+ * tirou, a assinatura cancelada no "dinheiro saiu", fica como está). O caso fecha.
+ */
+export async function aceitarContestacaoPeloOperador(casoId: number, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeSubscriptionId: true } });
+  if (!caso || !caso.open || !consertosDoCaso(caso.kind, caso.key).includes("aceitar-contestacao")) return { resultado: "nao-encontrada" };
+  const contestacao = caso.key.slice("du:".length);
+  if ((await statusDaContestacao(contestacao)) !== "needs_response") return { resultado: "contestacao-nao-aberta" };
+  await aceitarContestacao(contestacao);
+  const detalhe = "a escola aceitou a perda: o dinheiro fica com a pessoa";
+  await concluirCaso(casoId, por, "aceitar-contestacao", { userId: caso.userId, assinatura: caso.stripeSubscriptionId }, detalhe);
   return { resultado: "ok", feito: { detalhe } };
 }
 

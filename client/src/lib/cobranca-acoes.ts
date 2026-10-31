@@ -34,6 +34,8 @@ export function mensagemDaAcaoQueFalhou(erro: unknown): string {
       return "A pessoa já tem acesso às aulas: nada foi liberado.";
     case "ContestacaoNaoGanha":
       return "A escola ainda não ganhou esta contestação (o banco não decidiu, ou decidiu contra): nada foi liberado.";
+    case "ContestacaoNaoAberta":
+      return "Só a contestação aberta se aceita: o inquérito se resolve devolvendo o dinheiro, e a já decidida não muda.";
     case "ContaDeAdmin":
       return "A conta de um admin não se corrige por aqui.";
     case "MesmoEmail":

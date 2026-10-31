@@ -6690,7 +6690,19 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               uma contestação na área de teste (31/10/2026).*
         - [ ] **Fechamento do bloco 4.**
       - [ ] **BLOCO 5 — CONTESTAÇÃO E FRAUDE SEM O PAINEL DA STRIPE**
-        - [ ] **5a — A contestação na ficha e nos casos:** o prazo, o motivo, o valor; aceitar.
+        - [x] **5a — A contestação na ficha e nos casos:** o prazo, o motivo, o valor; aceitar. **FEITO (31/10/2026).** O prazo,
+              o motivo e o valor já vinham na ficha (a cobrança contestada, bloco 1) e no caso (o resumo "fase · motivo ·
+              prazo", com o valor — bloco 2). Novo: **"Aceitar a perda"** no caso da contestação (`aceitarContestacaoPeloOperador`,
+              `aceitarContestacao` em `stripe-reembolso.ts`): a escola não manda provas e o banco a encerra como perdida — o
+              dinheiro fica com a pessoa, e não tem volta. Só a contestação ABERTA (`needs_response`), lida na Stripe agora
+              `[FATO — context7 /websites/stripe, 31/10/2026: fechar uma contestação é aceitá-la, e só a aberta se fecha assim]`:
+              o inquérito se resolve devolvendo o dinheiro (sem taxa — "Devolver um pagamento"), e a já decidida não muda (409
+              `ContestacaoNaoAberta`). O acesso não muda aqui (o "dinheiro saiu" já cancelou). O caso fecha, com quem aceitou.
+              O caso da contestação traz os dois consertos: "Aceitar a perda" e "Liberar de novo" (passo 4d). Testes:
+              `admin-cobranca-contestacao.test.ts` (novo, 3) e "Precisa de você" (+1). **Mutação: 4 de 4 reprovaram.** **Prova
+              pela rota** (servidor local, banco de dev, o cartão de teste que abre contestação): a contestação `needs_response`
+              aceita pelo painel — na Stripe, `lost`; o caso fechado; aceitar de novo, 404; o retrato do banco igual antes e
+              depois. *Docs check (context7): Stripe → `/websites/stripe` → fechar (aceitar) uma contestação (31/10/2026).*
         - [ ] **5b — Responder com provas** (P140: o painel monta, ele envia ou aceita a perda).
         - [ ] **5c — O aviso de fraude:** devolver, cancelar e cortar sozinho, avisando (P141).
         - [ ] **Fechamento do bloco 5.**
