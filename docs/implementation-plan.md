@@ -217,7 +217,8 @@
 > de pagamento de aluno se resolve no admin, sem ir à Stripe; ele acompanha tudo e só é chamado quando precisa (a caixa
 > *Precisa de você*); e fica pronta para automatizar depois (o JilsonAI ou outra ferramenta). O mapa e os passos — 6
 > blocos, um passo por sessão, uma revisão de segurança por bloco — estão na etapa 4.7b. **A tela dos leads fica fora**
-> (decisão dele, 31/10). **Os 6 blocos entram ANTES da abertura** (decisão dele, 31/10/2026, à P146 — entre isso, os
+> (decisão dele, 31/10). **O BLOCO 1 ESTÁ NO AR desde 31/10/2026 (merge `2ce2799`)**; o 2a e o 2b estão no `dev`.
+> **Os 6 blocos entram ANTES da abertura** (decisão dele, 31/10/2026, à P146 — entre isso, os
 > blocos 1 a 4, que o agente recomendou, e só os blocos 1 e 2). **Os 6 blocos aprovados de uma vez e as 9 decisões
 > (P137 a P145) respondidas no mesmo dia** — cada uma no seu lugar, na etapa. **Como trabalhar (decisões dele, 31/10):**
 > os passos correm direto, um commit por passo com os gates; a revisão de segurança de cada bloco roda em segundo plano;
@@ -6394,7 +6395,13 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               `stripe.test.ts` (+1), a tela (novo) e a ficha (+1). **Mutação: 9 de 9 reprovaram.** **Banco de dev:**
               `migrate deploy`, *No difference detected*, nenhuma tabela sem RLS. *Docs check (context7): não
               disparado — nenhuma ida nova à Stripe (o motivo já estava nos metadados).*
-        - [ ] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele). **A revisão
+        - [x] **Fechamento do bloco 1:** a revisão de segurança, as fotos e publicar (com a ordem dele). **PUBLICADO
+              em 31/10/2026, com a ordem do operador ("Sim, pode publicar"): merge `2ce2799`** — só o bloco 1 (um ramo a
+              partir de `d4afd70` com as correções da revisão, `40b7db1`; o bloco 2 seguiu no `dev`). CI e Deploy
+              verdes. **No ar:** `/api/health` 200; a lista e a ficha recusam quem não entrou (401). **Em produção (só
+              leitura, branch `production`):** nenhuma tabela sem RLS; as migrations `20261031120000_espelho_do_painel` e
+              `20261031180000_registro_da_cobranca` aplicadas; o registro vazio (nenhum aviso desde a publicação). As
+              assinaturas que já existiam ganham o plano, o fim marcado e o código na próxima sincronia. **A revisão
               de segurança (31/10/2026, só o que mudou, `5c358cb..d4afd70`): nenhum P0 nem P1.** Os quatro menores,
               fechados com teste e mutação (4 de 4 reprovaram), sem nova rodada: (P2) a frase "acesso até" da lista era
               uma segunda cópia da regra do gate, no navegador — agora o servidor manda `daAcesso` (`assinaturaDaAcesso`,
