@@ -218,8 +218,10 @@
 > *Precisa de você*); e fica pronta para automatizar depois (o JilsonAI ou outra ferramenta). O mapa e os passos — 6
 > blocos, um passo por sessão, uma revisão de segurança por bloco — estão na etapa 4.7b. **A tela dos leads fica fora**
 > (decisão dele, 31/10). **Os 6 blocos entram ANTES da abertura** (decisão dele, 31/10/2026, à P146 — entre isso, os
-> blocos 1 a 4, que o agente recomendou, e só os blocos 1 e 2). **O próximo passo: o plano curto do 1a, aprovado por ele
-> antes do código.** As decisões de cada passo (P137 a P145) se perguntam quando o passo abrir, uma por vez. Isso muda
+> blocos 1 a 4, que o agente recomendou, e só os blocos 1 e 2). **Os 6 blocos aprovados de uma vez e as 9 decisões
+> (P137 a P145) respondidas no mesmo dia** — cada uma no seu lugar, na etapa. **Como trabalhar (decisões dele, 31/10):**
+> os passos correm direto, um commit por passo com os gates; a revisão de segurança de cada bloco roda em segundo plano;
+> no fim de cada bloco, só a pergunta "posso publicar?"; foto, só do que o aluno vê. **O próximo passo: o 1a.** Isso muda
 > *O PLANO DE LANÇAMENTO*: a 4.7b deixa de ser "depois da abertura".
 > **O DIA 30/10/2026 FECHOU A PARTE DE VENDA, menos o teste com dinheiro de verdade** — que o operador decidiu fazer **por
 > último, como um aluno de verdade, depois da 6g do Antigravity** (*"Eu nunca testei com meu cartão de verdade; iria testar
@@ -866,7 +868,7 @@
 > **as trilhas** (a tela de montar no admin, Bloco 6b, e a Trilha 1) e **a página Quem somos**
 > (simples, com o texto e a foto dele). **Depois da abertura:** ~~o painel de assinaturas (4.7b)~~, os E2E
 > da cobrança (4.10) e a vitrine fora do React (C5). **(30/10/2026: o operador trouxe o painel de assinaturas, a 4.7b,
-> para ANTES da abertura e antes do JilsonAI — o *PARA CONTINUAR*. 31/10/2026: remapeada a pedido dele — 24 passos, e
+> para ANTES da abertura e antes do JilsonAI — o *PARA CONTINUAR*. 31/10/2026: remapeada a pedido dele — 23 passos, e
 > os 6 blocos entram antes da abertura, decisão dele à P146.)**
 > **O risco, dito sem rodeio:** com o JilsonAI na abertura, o mês fica apertado — é o maior bloco e o
 > mais incerto (vem logo depois do Pix — a ordem do operador, abaixo). *Proposta do agente, a
@@ -6085,6 +6087,12 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       resolver me avisando o que fez quando for relevante para não ter prejuízos financeiros"*.
       **A tela dos leads fica FORA** *(decisão do operador, 31/10/2026, à pergunta do começo da sessão)*: entra com a
       captura do YouTube e do LinkedIn (etapa 4.7 → passo 9 → *Fora do passo 9*).
+      **COMO TRABALHAR NESTA ETAPA** *(decisões do operador, 31/10/2026: "eu aprovo logo os 6 blocos você faz tudo logo
+      de uma vez e só me chama quando for necessário"; e, à pergunta seguinte, "Publica por bloco")*: os 6 blocos estão
+      aprovados de uma vez, e as 9 decisões deles (P137 a P145) foram respondidas antes de começar — estão abaixo, cada
+      uma no seu lugar. **Os passos correm direto**, sem parar entre eles; **no fim de cada bloco, a única chamada é
+      "posso publicar?"**; **foto, só do que o aluno vê** (o bloco 6 e os e-mails) — as telas do admin ele confere
+      usando. Fora isso, o agente só chama numa surpresa que precise de decisão dele (`CLAUDE.md` → *Stop and surface*).
 
       **OS TRÊS PRINCÍPIOS** (a leitura do agente do pedido; cada passo se confere por eles):
       1. **Problema de aluno com pagamento se resolve no admin.** O painel da Stripe fica para o que não é de aluno
@@ -6121,12 +6129,14 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
          cobrança falhou, pagou a atrasada, cancelou, voltou atrás, devolveu, contestou, pagou com Pix — e quem fez (o
          aluno, a Stripe, a rodada de hora em hora ou o operador).
       5. **Os motivos de cancelamento**, contados — prometidos a este painel na etapa 4.6 (o motivo fica na Stripe,
-         `metadata.motivo`). Os outros números da cobrança são a P143.
+         `metadata.motivo`). Os números do mês: *E*.
 
       **B. PRECISA DE VOCÊ — os casos** (a tela que abre primeiro). Cada situação abaixo, que hoje vira um alerta
       pedindo o painel da Stripe, passa a abrir **um caso** (um por situação, sem repetir), com o que aconteceu, quem é
       o aluno e as ações que resolvem. O caso **fecha sozinho** quando a situação se resolve, ou pelo operador, com
-      uma nota. Como o operador é avisado de um caso novo: **P137**.
+      uma nota. **Como o operador é avisado** *(decisão dele, 31/10/2026, P137)*: **na hora**, por e-mail para a conta
+      de admin, só o urgente — quem pagou e está sem acesso, e a contestação no cartão (tem prazo para responder); **o
+      resto num resumo por dia, de manhã**, e só se houver caso aberto.
       - **Pix pago que não virou assinatura** (em conferência) — hoje em `assinaturas.ts`, `checkout.ts`,
         `checkout-do-visitante.ts`, `depois-do-aviso.ts` → Aceitar este Pix · Devolver (P117).
       - **Dinheiro recebido sem assinatura** (a tentativa cancelada já paga; a cobrança paga no instante de cancelar ou
@@ -6147,11 +6157,16 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         → Devolver a diferença · Soltar o agendamento.
       - **Contestação no banco** (aberta, com prazo; o dinheiro saiu) **e o inquérito** — `depois-do-aviso.ts` → Ver ·
         Responder com provas · Aceitar · Liberar de novo, se a escola ganhar (bloco 5).
-      - **Aviso de fraude do banco** — `depois-do-aviso.ts` → Devolver e cancelar · Manter (P141).
+      - **Aviso de fraude do banco** — `depois-do-aviso.ts` → **o sistema devolve, cancela e corta o acesso sozinho, e
+        o caso chega já resolvido**, só para ele saber *(decisão do operador, 31/10/2026, P141 — substitui o "o aviso
+        de fraude só alerta" do E7, de 29/10/2026)*.
       - **E-mail da cobrança ou de boas-vindas que não saiu** (depois das novas tentativas sozinhas) —
         `avisos-da-assinatura.ts`, `boas-vindas.ts`, `senha-depois-de-pagar.ts` → Reenviar.
-      - **Pedido de reembolso do aluno** (o fluxo da P114, abaixo: *"de forma automática após aprovação"*) — novo,
-        por onde o aluno pede é a P138 → Aprovar (devolve, encerra e corta o acesso) · Recusar, com a resposta.
+      - **Pedido de reembolso do aluno depois dos 7 dias** (o fluxo da P114, abaixo: *"de forma automática após
+        aprovação"*) — **sem botão na tela do aluno** *(decisão do operador, 31/10/2026, P138: a política é não devolver
+        depois dos 7 dias, e um botão convida o pedido que ela não dá)*. O pedido chega pelo suporte, e o operador
+        devolve pela ficha (Cancelar e devolver). **Quando o JilsonAI chegar, é ele quem abre este caso** (`jilsonai.md`
+        → item 8) → Aprovar (devolve, encerra e corta o acesso) · Recusar, com a resposta.
       **Não vira caso** (a escola resolve sozinha): a cobrança que falhou e ainda está nas tentativas da Stripe (o
       aluno recebe os e-mails e paga pela tela; aparece no filtro *Pagamento atrasado*), a tentativa que não terminou
       (o lembrete sai sozinho) e o reembolso dentro dos 7 dias pedido pelo próprio aluno.
@@ -6174,12 +6189,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Com dinheiro:**
       - **Cancelar e devolver o dinheiro** — UM clique, cartão e Pix (P114).
       - **Devolver um pagamento** — um só (a cobrança em dobro, a tentativa paga sem assinatura, a diferença da troca
-        de plano), inteiro ou em parte (**P139**); e **devolver de novo** a devolução que falhou.
+        de plano), inteiro ou em parte *(decisão do operador, 31/10/2026, P139: ele digita o valor — no máximo o que
+        ainda não foi devolvido —; a parte não corta o acesso, só a devolução inteira corta)*; e **devolver de novo** a
+        devolução que falhou.
       - **Tentar cobrar de novo agora** — a atrasada, quando o aluno avisa que resolveu o cartão.
       - **Pix em conferência:** Aceitar este Pix · Devolver (P117).
       - **Liberar acesso pago por fora** (P120) e **liberar de novo depois da contestação ganha**.
-      - **Contestação:** responder com as provas montadas dos dados da escola, ou aceitar (**P140**).
-      - **Aviso de fraude:** devolver e cancelar (**P141**: sozinho e avisando, ou só com o clique).
+      - **Contestação:** *(decisão do operador, 31/10/2026, P140)* o painel monta as provas com os dados da escola — a
+        data da compra, o nome e o e-mail, as aulas assistidas e as horas, os e-mails enviados e a política de reembolso
+        —, e ele confere e clica em **"Enviar ao banco"** ou em **"Aceitar a perda"**. Esses dados vão ao banco do
+        aluno: entram na Política de Privacidade (Fase 7).
+      - **Aviso de fraude:** devolver, cancelar e cortar **sozinho**, avisando (P141, acima).
 
       **AS DECISÕES QUE JÁ VALEM PARA AS AÇÕES** (texto de origem, do mapa de 10/10/2026 e da 4.9b):
       - **Já decidido por ele (10/10/2026), e vale para esta tela:** assinatura cancelada → o admin **envia ou copia o
@@ -6219,13 +6239,17 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         conta; a troca encerra todas as sessões; a ficha do visitante e o cliente da Stripe passam ao e-mail novo;
         fica registrado quem trocou e quando. A troca de e-mail do Better Auth continua desligada para o aluno.
 
-      **D. O ALUNO RESOLVE SOZINHO** (cada uma é tela do aluno, então é decisão do operador): ver as próprias
-      cobranças e baixar o recibo em Faturamento (**P144**) · pedir o reembolso depois dos 7 dias pela tela, que vira
-      caso (**P138**). Cada problema que o aluno resolve sozinho é um caso a menos.
+      **D. O ALUNO RESOLVE SOZINHO** (cada uma é tela do aluno, então é decisão do operador): **ver as próprias
+      cobranças e baixar o recibo em Faturamento — ENTRA** *(decisão dele, 31/10/2026, P144; os textos ele aprova pelas
+      fotos)* · pedir o reembolso depois dos 7 dias pela tela — **não entra** (P138, em *B*). Cada problema que o aluno
+      resolve sozinho é um caso a menos.
 
-      **E. TAMBÉM DÁ PARA TRAZER (só se o operador quiser):** criar, pausar e ver o uso dos códigos promocionais, hoje
-      na Stripe (`billing.md` → *Códigos promocionais*) — **P142** · os números da cobrança: assinantes, novos,
-      cancelados, atrasados, a receita do mês, o devolvido — **P143**.
+      **E. TAMBÉM ENTRAM** *(decisões do operador, 31/10/2026)*: **os códigos promocionais pelo admin** (P142) —
+      criar, pausar e ver quantos usaram, com o formulário seguindo as regras de `billing.md` → *Códigos promocionais*
+      (o de 100% nasce difícil de adivinhar e com poucos usos; o parcial tem validade e não tem limite de usos); os
+      dois tipos que esperam a P125 (o de 100% que não é para sempre e o "por N meses") ficam bloqueados até ela ser
+      respondida · **os números do mês** (P143), numa faixa no topo da Cobrança: assinantes ativos (mensal, anual e
+      Pix), novos, cancelados, atrasados agora, o que entrou e o que foi devolvido.
 
       **F. FICA NA STRIPE** (não é problema de aluno — proposta do agente, no mapa): os repasses para a conta do banco
       e o saldo · as taxas e os relatórios para o contador · impostos · a configuração da conta (as chaves, o endereço
@@ -6249,14 +6273,15 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       própria** — uma entrada com chave própria na API, que é porta nova na internet: *entra só quando o operador
       escolher automatizar fora do JilsonAI.*
 
-      **COMO SE CONSTRÓI — os passos (proposta do agente, 31/10/2026).** **Um passo por sessão e um commit por passo**
-      (os pequenos podem andar dois numa sessão), cada um com: o plano curto aprovado pelo operador antes do código; o
-      context7 da Stripe quando tocar nela (a linha *Docs check*); testes de servidor e de tela; mutação; os quatro
-      gates; e as fotos de cada estado, para ele aprovar os textos. **Uma revisão de segurança por BLOCO**, só do que
-      mudou, antes de publicar (P0 e P1 travam; P2 e P3 se fecham com teste e mutação, sem nova rodada). Bloco que
-      mexe em dinheiro tem **prova pela rota** (servidor local + banco de dev + conta descartável) e a prova da Stripe
-      na área de teste. **Publicar, só com a ordem do operador** — cada bloco pode ir ao ar sozinho, sem esperar o
-      seguinte, e nenhum passo mexe no que o aluno já usa. **Engenharia que vale para todos:** cancelar, desfazer e
+      **COMO SE CONSTRÓI — os passos (propostos pelo agente e aprovados pelo operador de uma vez, 31/10/2026).** **Um
+      commit por passo**, e os passos correm direto (*Como trabalhar nesta etapa*, acima). Cada um com: o plano curto
+      escrito no checkbox dele, no mesmo commit; o context7 da Stripe quando tocar nela (a linha *Docs check*); testes
+      de servidor e de tela; mutação; e os quatro gates. **Uma revisão de segurança por BLOCO**, só do que mudou,
+      rodando em segundo plano enquanto o bloco seguinte começa; **P0 e P1 se corrigem antes de publicar o bloco**; P2
+      e P3 se fecham com teste e mutação, sem nova rodada. Bloco que mexe em dinheiro tem **prova pela rota** (servidor
+      local + banco de dev + conta descartável) e a prova da Stripe na área de teste. **Publicar, só com a ordem do
+      operador**: no fim de cada bloco, "posso publicar?" — cada bloco vai ao ar sozinho, sem esperar o seguinte, e
+      nenhum passo mexe no que o aluno já usa. **Engenharia que vale para todos:** cancelar, desfazer e
       devolver são as operações da tela do aluno (etapa 4.6) — sem o prazo dos 7 dias quando quem faz é o operador;
       toda mudança na Stripe passa por `operarNaAssinatura`; o espelho continua com um escritor só (`sincronizar`);
       o número do cartão e o CPF inteiro nunca entram no banco da escola nem no registro.
@@ -6266,7 +6291,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               do **registro** — quem fez (o operador, o aluno, a Stripe, a rodada, o JilsonAI), quando, em quem, o quê
               e o que a Stripe respondeu —, com RLS. Sem tela.
         - [ ] **1b — A lista** (*A*, item 1): filtros, busca e a contagem no topo; a rota de admin e a tela. O "Conferir
-              na Stripe" de hoje fica até ir para a ficha, no 3a. O nome e o lugar no menu: **P145**.
+              na Stripe" de hoje fica até ir para a ficha, no 3a. **No menu: "Cobrança"**, no lugar de "Assinaturas"
+              (depois de "Alunos"), com o submenu Precisa de você · Assinaturas · Tentativas · O que aconteceu
+              *(decisão do operador, 31/10/2026, P145)*.
         - [ ] **1c — A ficha do aluno, no servidor** (*A*, item 2): a Stripe lida na hora (as cobranças de cartão e
               Pix, as devoluções, as contestações, o cartão, o CPF com parte escondida, os recibos) e o nosso banco (a
               conta, o espelho, os e-mails, o registro). Provada na área de teste.
@@ -6281,7 +6308,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               tipos de *B* (o Pix em conferência, o dinheiro sem assinatura, o pagou e está sem conta).
         - [ ] **2b — Os outros tipos de *B*.** O alerta do Sentry continua saindo: é ele que avisa até o 2d existir.
         - [ ] **2c — A tela "Precisa de você"** (a primeira que abre): os casos, fechar com nota e o link para a ficha.
-        - [ ] **2d — O aviso ao operador** (**P137**).
+        - [ ] **2d — O aviso ao operador** (P137: o urgente na hora; o resto num resumo de manhã).
         - [ ] **Fechamento do bloco 2.**
       - [ ] **BLOCO 3 — AS AÇÕES SEM DINHEIRO**
         - [ ] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
@@ -6293,29 +6320,30 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
         - [ ] **Fechamento do bloco 3.**
       - [ ] **BLOCO 4 — AS AÇÕES COM DINHEIRO** (prova pela rota em cada passo)
         - [ ] **4a — Devolver:** cancelar e devolver num clique (cartão e Pix), devolver um pagamento (inteiro ou em
-              parte — **P139**), devolver de novo a que falhou.
+              parte, P139), devolver de novo a que falhou.
         - [ ] **4b — Tentar cobrar de novo agora** (a atrasada).
         - [ ] **4c — O Pix em conferência** (aceitar, devolver) e **o dinheiro sem assinatura** (devolver, liberar).
         - [ ] **4d — Liberar acesso pago por fora** e **liberar de novo depois da contestação ganha**.
         - [ ] **Fechamento do bloco 4.**
       - [ ] **BLOCO 5 — CONTESTAÇÃO E FRAUDE SEM O PAINEL DA STRIPE**
         - [ ] **5a — A contestação na ficha e nos casos:** o prazo, o motivo, o valor; aceitar.
-        - [ ] **5b — Responder com provas** (**P140**).
-        - [ ] **5c — O aviso de fraude:** devolver e cancelar (**P141**).
+        - [ ] **5b — Responder com provas** (P140: o painel monta, ele envia ou aceita a perda).
+        - [ ] **5c — O aviso de fraude:** devolver, cancelar e cortar sozinho, avisando (P141).
         - [ ] **Fechamento do bloco 5.**
-      - [ ] **BLOCO 6 — O ALUNO SOZINHO E O OPCIONAL** (cada passo só se o operador disser que entra)
-        - [ ] **6a — Minhas cobranças e os recibos**, na tela do aluno (**P144**).
-        - [ ] **6b — O pedido de reembolso** pela tela do aluno, que vira caso (**P138**).
-        - [ ] **6c — Os números da cobrança** (**P143**).
-        - [ ] **6d — Os códigos promocionais no admin** (**P142**).
+      - [ ] **BLOCO 6 — O ALUNO SOZINHO E O QUE MAIS ENTROU** (decisões do operador, 31/10/2026)
+        - [ ] **6a — Minhas cobranças e os recibos**, na tela do aluno (P144).
+        - **6b — SAIU** *(P138, 31/10/2026: sem botão de pedir reembolso na tela do aluno; o pedido vem pelo suporte e,
+              depois, pelo JilsonAI)*. O número não se reaproveita.
+        - [ ] **6c — Os números do mês** (P143).
+        - [ ] **6d — Os códigos promocionais no admin** (P142).
+        - [ ] **Fechamento do bloco 6:** a revisão de segurança, as fotos das telas do aluno, publicar (com a ordem dele).
       - [ ] **No fim da 4.7b:** o roteiro do `billing.md` (*Quando um aluno não conseguir pagar*) reescrito sem o
             painel da Stripe; e a parte do Antigravity no `design-lab/GEMINI.md`, junto da 6g (item 38) — o *PARA
             CONTINUAR*.
       **OS 6 BLOCOS ENTRAM ANTES DA ABERTURA** *(decisão do operador, 31/10/2026, à pergunta P146 — entre isso, os
-      blocos 1 a 4 antes e o 5 e o 6 logo depois, que o agente recomendou, e só os blocos 1 e 2 antes)*. No bloco 6,
-      cada passo continua dependendo da resposta dele à sua pendência (P142 a P144, e a P138): o que ele disser que
-      não entra, sai. *A conta, dita sem rodeio:* são 24 passos (4 deles dependendo dessas respostas) e 5 revisões de
-      segurança — e o JilsonAI vem depois. *Reabre se o ponto de checagem da abertura (O PLANO DE LANÇAMENTO) mostrar
+      blocos 1 a 4 antes e o 5 e o 6 logo depois, que o agente recomendou, e só os blocos 1 e 2 antes)*. Do bloco 6,
+      respondido no mesmo dia: entram o 6a, o 6c e o 6d; o 6b saiu (P138). *A conta, dita sem rodeio:* são 23 passos e
+      6 revisões de segurança (uma por bloco) — e o JilsonAI vem depois. *Reabre se o ponto de checagem da abertura (O PLANO DE LANÇAMENTO) mostrar
       que o mês não fecha: aí ele escolhe o que vai para depois.*
       Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026, para o mapa (1 consulta): a contestação se
       responde inteira pela API — `POST /v1/disputes/{id}` com as provas (`evidence`: texto, até 150.000 caracteres no
@@ -6326,7 +6354,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       **Riscos, com gatilho:** caso que se resolve sozinho vira ruído — *se um tipo da lista B fechar sozinho na maioria
       das vezes, ele sai da lista* · a ficha lê a Stripe na hora, sem guardar as cobranças no banco da escola — *se a
       ficha passar de 3 s para abrir (medido), guardar uma cópia* · a resposta da contestação leva dados do aluno ao
-      banco dele — *entra na Política de Privacidade (Fase 7) junto da P140*.
+      banco dele — *entra na Política de Privacidade (Fase 7): P140, respondida em 31/10/2026*.
       **Em aberto:** P61 (a cláusula de reembolso abusivo nos termos de uso). O detalhe de cada assinatura mostra as
       cobranças devolvidas: é o que sustenta a análise caso a caso, já que não há bloqueio automático por reembolso
       repetido (decisão do operador, 10/10/2026).

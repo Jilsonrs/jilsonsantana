@@ -622,6 +622,9 @@ seams v2 — construir quando houver aluno usando, não antes.
    não só para as dúvidas dos alunos durante as aulas mas também relacionado à parte
    administrativa, certificados e outras informações"*. Outra ferramenta (o N8N, que ele citou)
    precisa de uma porta própria na API — decide-se quando ele escolher automatizar fora do JilsonAI.
+   **O pedido de reembolso depois dos 7 dias é do JilsonAI** *(decisão do operador, 31/10/2026, P138)*: a tela do
+   aluno não tem botão para isso; o pedido chega pelo suporte e, quando o JilsonAI existir, é ele quem abre o caso
+   na caixa *Precisa de você*.
 
 ---
 

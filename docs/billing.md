@@ -237,7 +237,9 @@ assinatura é cancelada na Stripe** *(decisão do operador, 30/10/2026: o cartã
 pessoa recebe o e-mail de sempre de assinatura encerrada, e o operador, um alerta com o valor, o motivo e o prazo para
 responder à contestação no painel da Stripe. Se a contestação for resolvida a favor da escola, o operador libera de
 novo pelo admin (4.7b — "Liberar acesso pago por fora": a cancelada não volta). O **aviso de fraude** da Stripe
-(`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *Cortar o acesso
+(`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *(Decisão do
+operador, 31/10/2026, P141: o aviso de fraude passa a devolver, cancelar e cortar o acesso sozinho, avisando o operador
+— 4.7b, passo 5c; até lá, só alerta. E a contestação passa a ser respondida pelo admin, P140 — passo 5b.)* *Cortar o acesso
 não apaga nada* (CLAUDE.md → *Churn não apaga nada*).
 
 **Um prazo só: os 7 dias da lei** *(12/10/2026 — etapa 4.6c)*. Com a escola só para o Brasil,
@@ -1789,6 +1791,9 @@ encerrada de vez com dias pagos: tem acesso e o servidor recusa cartão.
 
 ## Códigos promocionais — como criar na Stripe *(decisão do operador, 19/10/2026)*
 
+*(Decisão do operador, 31/10/2026, P142: os códigos passam a ser criados, pausados e acompanhados pelo admin, com as
+regras abaixo no formulário — 4.7b, passo 6d. Até lá, na Stripe, como está aqui.)*
+
 **A regra:** **limite de usos, só em código de 100%** (cortesia, presente): ele ativa a assinatura
 no próprio clique, então o uso é gasto em acesso de verdade. **Código de desconto parcial**
 (campanha, como "50% na Black Friday") **vai sem limite de usos, só com data de validade** —
@@ -1992,9 +1997,25 @@ acesso*, acima) e a decisão da P114 (29/10/2026: o reembolso é um clique no ad
 **O que muda nesta especificação:** cada "pelo painel da Stripe" deste documento vira uma ação no admin, conforme a
 etapa 4.7b for construída — o mapa (o que ver, os casos que chamam o operador, as ações) e os passos estão no plano →
 etapa 4.7b. **Até cada ação existir, vale o roteiro de hoje** (*Quando um aluno não conseguir pagar*, abaixo), reescrito
-no fim da 4.7b. *No mapa do agente (31/10/2026, a confirmar com o plano):* o painel da Stripe fica só para o que não é
-problema de aluno — os repasses e o saldo, as taxas, os impostos, a configuração da conta, os preços — e para
-emergência; e a **contestação** deixa de ficar lá: passa a ser respondida pelo admin (as provas, P140).
+no fim da 4.7b. *No mapa aprovado pelo operador (31/10/2026, os 6 blocos de uma vez, antes da abertura):* o painel da
+Stripe fica só para o que não é problema de aluno — os repasses e o saldo, as taxas, os impostos, a configuração da
+conta, os preços — e para emergência; a **contestação** e os **códigos promocionais** deixam de ficar lá.
+
+**As decisões dele no mesmo dia que mudam esta especificação** (cada uma vale quando o passo dela for construído; até
+lá, vale o texto de hoje):
+- **Devolver só uma parte** (P139): o operador digita o valor, no máximo o que ainda não foi devolvido. A parte **não
+  corta o acesso**; só a devolução inteira corta (a regra do "pago até", *Minha assinatura*). — 4.7b, passo 4a.
+- **A contestação se responde pelo admin** (P140): o painel monta as provas — a data da compra, o nome e o e-mail, as
+  aulas assistidas e as horas, os e-mails enviados e a política de reembolso —, e ele confere e clica em "Enviar ao
+  banco" ou em "Aceitar a perda". Esses dados vão ao banco do aluno: entram na Política de Privacidade. — passo 5b.
+- **O aviso de fraude devolve sozinho** (P141): o sistema devolve, cancela a assinatura e corta o acesso, e o caso chega
+  ao operador já resolvido. Substitui o "só alerta" de 29/10/2026 (*Reembolso*). — passo 5c.
+- **Sem botão de pedir reembolso depois dos 7 dias** (P138): a política é não devolver depois dos 7 dias, e um botão
+  convida o pedido. O pedido chega pelo suporte e, quando o JilsonAI existir, por ele, que abre o caso.
+- **O aluno vê as próprias cobranças e baixa o recibo** em Faturamento (P144). — passo 6a.
+- **Os códigos promocionais pelo admin** (P142), com as regras de *Códigos promocionais* no formulário. — passo 6d.
+- **O aviso ao operador** (P137): na hora, só o urgente (quem pagou e está sem acesso; a contestação); o resto num
+  resumo por dia, de manhã. — passo 2d.
 *Reabre se uma ação no admin custar mais que o problema que resolve (um caso raro que pede uma integração grande): aí
 ela fica no painel da Stripe, com o passo a passo escrito aqui.*
 
