@@ -205,7 +205,18 @@
 > migrations, *"No pending migrations to apply"* (48); a subida com a cobrança conferida e nenhuma linha de erro; a página,
 > 200; a versão nova do app (`mvvbqspl-b34b3a6f`); os dois jobs na mesma imagem do site.
 >
-> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `4b14900`):**
+> **Publicado em 30/10/2026: `7000a96`** — sem mudança no site: a trava da suíte (`cf14dc3`, só código de teste) e os
+> documentos (`2383085`, `4eafc8b`, `6740c72`: a P126 e a P102 fechadas, o passo 8 para o fim, a 6g no `GEMINI.md`); ordem
+> do operador: *"Publica e envia o que está pronto"*. CI e publicação com sucesso. **Revisão `jilson-prod-00055`** (100% do
+> tráfego): a subida com a cobrança conferida e nenhuma linha de erro; a página, 200; a versão do app a mesma
+> (`mvvbqspl-b34b3a6f`), como devia.
+>
+> **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 30/10/2026, depois da publicação `7000a96`):**
+> **O PRÓXIMO BLOCO (decisão do operador, 30/10/2026, ao fim do dia): "as telas administrativas da parte de cobrança que
+> estiver faltando primeiro, e depois o JilsonAI".** Começar pela **4.7b** (Admin → Assinaturas vira um PAINEL — o mapa
+> aprovado por ele em 10/10/2026, neste plano) — com o plano do bloco aprovado por ele antes de escrever código, e
+> perguntando no começo se a tela dos leads (hoje "fora do passo 9") entra junto. Isso muda *O PLANO DE LANÇAMENTO*: a 4.7b
+> deixa de ser "depois da abertura".
 > **O DIA 30/10/2026 FECHOU A PARTE DE VENDA, menos o teste com dinheiro de verdade** — que o operador decidiu fazer **por
 > último, como um aluno de verdade, depois da 6g do Antigravity** (*"Eu nunca testei com meu cartão de verdade; iria testar
 > depois de todas as etapas concluídas e o Antigravity fizer a parte dele como um aluno de verdade faria, tipo um teste
@@ -848,8 +859,9 @@
 > (decisões dele no mesmo dia, uma pergunta por vez): **o JilsonAI** (Fase 6 — o agente recomendou logo
 > depois), **o Pix recorrente** (4.9), **os certificados** (6.5 — o agente recomendou logo depois),
 > **as trilhas** (a tela de montar no admin, Bloco 6b, e a Trilha 1) e **a página Quem somos**
-> (simples, com o texto e a foto dele). **Depois da abertura:** o painel de assinaturas (4.7b), os E2E
-> da cobrança (4.10) e a vitrine fora do React (C5).
+> (simples, com o texto e a foto dele). **Depois da abertura:** ~~o painel de assinaturas (4.7b)~~, os E2E
+> da cobrança (4.10) e a vitrine fora do React (C5). **(30/10/2026: o operador trouxe o painel de assinaturas, a 4.7b,
+> para ANTES da abertura e antes do JilsonAI — o *PARA CONTINUAR*.)**
 > **O risco, dito sem rodeio:** com o JilsonAI na abertura, o mês fica apertado — é o maior bloco e o
 > mais incerto (vem logo depois do Pix — a ordem do operador, abaixo). *Proposta do agente, a
 > confirmar pelo operador: um ponto de checagem em 11/11/2026 — se o JilsonAI não estiver respondendo
