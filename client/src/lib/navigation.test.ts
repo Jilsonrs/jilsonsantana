@@ -289,7 +289,7 @@ describe("itensSecundarios — o nível 2 só aparece quando vale a pena", () =>
     expect(cobranca?.filhos?.map((f) => [f.label, f.estado ?? "ativo"])).toEqual([
       ["Precisa de você", "planejado"],
       ["Assinaturas", "ativo"],
-      ["Tentativas", "planejado"],
+      ["Tentativas", "ativo"],
       ["O que aconteceu", "planejado"],
     ]);
     expect(secoesVisiveis(Role.MEMBER).some((s) => s.to.startsWith("/admin/cobranca"))).toBe(false);

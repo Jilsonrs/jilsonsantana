@@ -5,15 +5,21 @@ import { erroSemMensagem, stripe } from "./stripe-cliente.js";
 // Stripe, como `stripe.ts` e `stripe-assinatura.ts`: só LÊ, nunca muda nada. Toda ida sobe por `erroSemMensagem` (a
 // mensagem da Stripe não vai ao registro). Quem monta o que a tela vê é `ficha-da-cobranca.ts`.
 
-/** O cliente, as 100 cobranças mais recentes dele e a contestação de cada cobrança contestada. */
+/** O cliente, as 100 cobranças mais recentes dele, a contestação de cada cobrança contestada e os Pix gerados e não pagos. */
 export type ClienteNaStripe = {
   cliente: Stripe.Customer | null;
   cobrancas: Stripe.Charge[];
   maisCobrancas: boolean;
   contestacoes: Map<string, Stripe.Dispute>;
+  pixEsperando: Stripe.PaymentIntent[];
 };
 
-const NENHUM: ClienteNaStripe = { cliente: null, cobrancas: [], maisCobrancas: false, contestacoes: new Map() };
+const NENHUM: ClienteNaStripe = { cliente: null, cobrancas: [], maisCobrancas: false, contestacoes: new Map(), pixEsperando: [] };
+
+/** O Pix gerado e não pago: o pagamento esperando, com o QR aberto (etapa 4.7b, passo 1e). Função pura. */
+export function pixEsperandoPagamento(pagamento: Stripe.PaymentIntent): boolean {
+  return pagamento.status === "requires_action" && pagamento.next_action?.type === "pix_display_qr_code";
+}
 
 function naoExiste(erro: unknown): boolean {
   return erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing";
@@ -35,7 +41,9 @@ export async function lerClienteNaStripe(clienteId: string): Promise<ClienteNaSt
       const [contestacao] = (await stripe().disputes.list({ charge: cobranca.id, limit: 1 })).data;
       if (contestacao) contestacoes.set(cobranca.id, contestacao);
     }
-    return { cliente, cobrancas: lista.data, maisCobrancas: lista.has_more, contestacoes };
+    // Os Pix gerados e não pagos não têm cobrança ainda: só o pagamento esperando (passo 1e).
+    const pagamentos = await stripe().paymentIntents.list({ customer: clienteId, limit: 20 });
+    return { cliente, cobrancas: lista.data, maisCobrancas: lista.has_more, contestacoes, pixEsperando: pagamentos.data.filter(pixEsperandoPagamento) };
   } catch (erro) {
     if (naoExiste(erro)) return NENHUM;
     throw erroSemMensagem(erro, "a leitura do cliente para a ficha");

@@ -10,7 +10,7 @@ const falsa = {
   charges: { list: vi.fn(), retrieve: vi.fn() },
   disputes: { list: vi.fn(), retrieve: vi.fn() },
   invoices: { retrieve: vi.fn() },
-  paymentIntents: { retrieve: vi.fn() },
+  paymentIntents: { retrieve: vi.fn(), list: vi.fn() },
 };
 vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./stripe-cliente.js")>()),
@@ -31,12 +31,28 @@ describe("ler o cliente para a ficha", () => {
     falsa.customers.retrieve.mockResolvedValue({ id: "cus_1" });
     falsa.charges.list.mockResolvedValue({ data: [{ id: "ch_1", disputed: false }, { id: "ch_2", disputed: true }], has_more: true });
     falsa.disputes.list.mockResolvedValue({ data: [{ id: "du_1" }] });
+    falsa.paymentIntents.list.mockResolvedValue({ data: [] });
     const lido = await lerClienteNaStripe("cus_1");
     expect(falsa.customers.retrieve.mock.calls).toEqual([["cus_1", { expand: ["tax_ids", "invoice_settings.default_payment_method"] }]]);
     expect(falsa.charges.list.mock.calls).toEqual([[{ customer: "cus_1", limit: 100 }]]);
     expect(falsa.disputes.list.mock.calls).toEqual([[{ charge: "ch_2", limit: 1 }]]);
     expect(lido.maisCobrancas).toBe(true);
     expect(lido.contestacoes.get("ch_2")).toEqual({ id: "du_1" });
+    expect(falsa.paymentIntents.list.mock.calls).toEqual([[{ customer: "cus_1", limit: 20 }]]);
+  });
+
+  it("os Pix gerados e não pagos: só o pagamento esperando com o QR aberto (nem o 3DS, nem o pago)", async () => {
+    falsa.customers.retrieve.mockResolvedValue({ id: "cus_1" });
+    falsa.charges.list.mockResolvedValue({ data: [], has_more: false });
+    falsa.paymentIntents.list.mockResolvedValue({
+      data: [
+        { id: "pi_qr", status: "requires_action", next_action: { type: "pix_display_qr_code" } },
+        { id: "pi_3ds", status: "requires_action", next_action: { type: "use_stripe_sdk" } },
+        { id: "pi_pago", status: "succeeded", next_action: null },
+        { id: "pi_vencido", status: "requires_payment_method", next_action: null },
+      ],
+    });
+    expect((await lerClienteNaStripe("cus_1")).pixEsperando.map((p) => p.id)).toEqual(["pi_qr"]);
   });
 
   it("o cliente apagado, ou que a Stripe não conhece: vazio, sem pedir as cobranças", async () => {

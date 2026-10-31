@@ -1,10 +1,11 @@
 import type Stripe from "stripe";
-import type { CobrancaDaFicha, EmailDaFicha, FichaDaCobranca, FichaQuery, OndeLeva } from "@jilson/core";
+import { TENTATIVAS_NA_LISTA, type CobrancaDaFicha, type EmailDaFicha, type FichaDaCobranca, type FichaQuery, type ListaDeTentativas, type OndeLeva, type TentativaDaLista, type VisitanteDaFicha } from "@jilson/core";
 import { prisma } from "./prisma.js";
 import { temAcessoAtivo } from "./acesso.js";
 import { paraCartao } from "./stripe-assinatura.js";
 import { clienteDoCodigo, lerClienteNaStripe, type ClienteNaStripe } from "./stripe-ficha.js";
 import { paraAssinaturaDaLista } from "./painel-da-cobranca.js";
+import { PRAZO_DA_FICHA_EM_MS } from "./quem-nao-terminou.js";
 
 // A FICHA DO ALUNO NO PAINEL DA COBRANÇA (Fase 4, etapa 4.7b, passo 1c — o mapa aprovado pelo operador, 31/10/2026).
 // A conta, as assinaturas e os e-mails vêm do NOSSO banco; as cobranças (cartão e Pix), o cartão em uso e o CPF ou
@@ -59,6 +60,23 @@ export function cartaoDoCliente(cliente: Stripe.Customer | null) {
   return paraCartao(cliente?.invoice_settings?.default_payment_method ?? null);
 }
 
+type FichaDeEspera = { id: string; nome: string | null; email: string; ultimaTentativaEm: Date; lembreteEnviadoEm: Date | null; novidades: boolean; naoApagadaEm: Date | null };
+
+/** A ficha de espera do visitante no formato da ficha da cobrança. Função pura. */
+export function paraVisitanteDaFicha(ficha: FichaDeEspera): VisitanteDaFicha {
+  return {
+    id: ficha.id,
+    nome: ficha.nome,
+    email: ficha.email,
+    ultimaTentativaEm: ficha.ultimaTentativaEm.toISOString(),
+    lembreteEm: ficha.lembreteEnviadoEm?.toISOString() ?? null,
+    someEm: new Date(ficha.ultimaTentativaEm.getTime() + PRAZO_DA_FICHA_EM_MS).toISOString(),
+    novidades: ficha.novidades,
+    naoApagada: ficha.naoApagadaEm !== null,
+  };
+}
+const DA_FICHA_DE_ESPERA = { id: true, nome: true, email: true, ultimaTentativaEm: true, lembreteEnviadoEm: true, novidades: true, naoApagadaEm: true, userId: true, stripeCustomerId: true } as const;
+
 /** Os clientes da Stripe de uma conta: o do checkout logado, o da ficha do visitante e os das assinaturas. */
 async function clientesDaConta(conta: string | null, dasAssinaturas: (string | null)[]): Promise<string[]> {
   const ids = new Set<string>(dasAssinaturas.filter((id): id is string => id !== null));
@@ -71,11 +89,19 @@ async function clientesDaConta(conta: string | null, dasAssinaturas: (string | n
   return [...ids].slice(0, CLIENTES_POR_FICHA);
 }
 
-/** A ficha de uma conta, ou de uma assinatura sem conta. Vazio = não existe. */
+/** A ficha de uma conta, de uma assinatura sem conta, ou de um visitante que não terminou de assinar. Vazio = não existe. */
 export async function montarFicha(quem: FichaQuery): Promise<FichaDaCobranca | null> {
   let conta: { id: string; name: string | null; email: string; createdAt: Date } | null = null;
-  let filtro: { ownerUserId: string } | { id: number };
-  if ("conta" in quem) {
+  let visitante: VisitanteDaFicha | null = null;
+  let filtro: { ownerUserId: string } | { id: number } | { stripeCustomerId: string };
+  if ("visitante" in quem) {
+    const ficha = await prisma.guestCheckout.findUnique({ where: { id: quem.visitante }, select: DA_FICHA_DE_ESPERA });
+    if (!ficha) return null;
+    // A ficha que já virou conta: a ficha é a da conta.
+    if (ficha.userId) return montarFicha({ conta: ficha.userId });
+    visitante = paraVisitanteDaFicha(ficha);
+    filtro = { stripeCustomerId: ficha.stripeCustomerId };
+  } else if ("conta" in quem) {
     conta = await prisma.user.findUnique({ where: { id: quem.conta }, select: { id: true, name: true, email: true, createdAt: true } });
     if (!conta) return null;
     filtro = { ownerUserId: conta.id };
@@ -99,6 +125,8 @@ export async function montarFicha(quem: FichaQuery): Promise<FichaDaCobranca | n
 
   const ficha: FichaDaCobranca = {
     conta: conta ? { id: conta.id, nome: conta.name, email: conta.email, criadaEm: conta.createdAt.toISOString() } : null,
+    visitante,
+    pixEsperando: [],
     temAcesso: conta ? await temAcessoAtivo(conta.id) : false,
     assinaturas,
     cobrancas: [],
@@ -109,7 +137,8 @@ export async function montarFicha(quem: FichaQuery): Promise<FichaDaCobranca | n
     stripeIndisponivel: false,
   };
 
-  const clientes = await clientesDaConta(conta?.id ?? null, linhas.map((l) => l.stripeCustomerId));
+  const doVisitante = "stripeCustomerId" in filtro ? [filtro.stripeCustomerId] : [];
+  const clientes = await clientesDaConta(conta?.id ?? null, [...doVisitante, ...linhas.map((l) => l.stripeCustomerId)]);
   let naStripe: ClienteNaStripe[];
   try {
     naStripe = [];
@@ -123,17 +152,18 @@ export async function montarFicha(quem: FichaQuery): Promise<FichaDaCobranca | n
   ficha.maisCobrancas = naStripe.some((c) => c.maisCobrancas);
   ficha.cartao = naStripe.map((c) => cartaoDoCliente(c.cliente)).find((c) => c !== null) ?? null;
   ficha.documento = naStripe.map((c) => documentoEscondido(c.cliente)).find((d) => d !== null) ?? null;
+  ficha.pixEsperando = naStripe.flatMap((c) => c.pixEsperando.map((p) => ({ id: p.id, em: data(p.created), centavos: p.amount, moeda: p.currency })));
   return ficha;
 }
 
 /** Onde leva um cliente da Stripe: a conta dele (pelo checkout logado, pela ficha do visitante ou por uma assinatura com dono), ou a assinatura sem conta. */
 async function ondeLevaOCliente(clienteId: string): Promise<OndeLeva | null> {
   const logado = await prisma.stripeCustomer.findUnique({ where: { stripeCustomerId: clienteId }, select: { userId: true } });
-  if (logado) return { conta: logado.userId, assinatura: null };
-  const visitante = await prisma.guestCheckout.findUnique({ where: { stripeCustomerId: clienteId }, select: { userId: true } });
-  if (visitante?.userId) return { conta: visitante.userId, assinatura: null };
+  if (logado) return { conta: logado.userId, assinatura: null, visitante: null };
+  const visitante = await prisma.guestCheckout.findUnique({ where: { stripeCustomerId: clienteId }, select: { id: true, userId: true } });
+  if (visitante) return visitante.userId ? { conta: visitante.userId, assinatura: null, visitante: null } : { conta: null, assinatura: null, visitante: visitante.id };
   const assinatura = await prisma.subscription.findFirst({ where: { stripeCustomerId: clienteId }, orderBy: { createdAt: "desc" }, select: { id: true, ownerUserId: true } });
-  if (assinatura) return { conta: assinatura.ownerUserId, assinatura: assinatura.ownerUserId ? null : assinatura.id };
+  if (assinatura) return { conta: assinatura.ownerUserId, assinatura: assinatura.ownerUserId ? null : assinatura.id, visitante: null };
   return null;
 }
 
@@ -144,12 +174,37 @@ async function ondeLevaOCliente(clienteId: string): Promise<OndeLeva | null> {
 export async function acharPeloCodigo(codigo: string): Promise<OndeLeva | null> {
   if (codigo.startsWith("sub_")) {
     const linha = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: codigo }, select: { id: true, ownerUserId: true } });
-    return linha ? { conta: linha.ownerUserId, assinatura: linha.ownerUserId ? null : linha.id } : null;
+    return linha ? { conta: linha.ownerUserId, assinatura: linha.ownerUserId ? null : linha.id, visitante: null } : null;
   }
   if (codigo.startsWith("pi_")) {
     const prePaga = await prisma.subscription.findUnique({ where: { pixPaymentIntentId: codigo }, select: { id: true, ownerUserId: true } });
-    if (prePaga) return { conta: prePaga.ownerUserId, assinatura: prePaga.ownerUserId ? null : prePaga.id };
+    if (prePaga) return { conta: prePaga.ownerUserId, assinatura: prePaga.ownerUserId ? null : prePaga.id, visitante: null };
   }
   const cliente = codigo.startsWith("cus_") ? codigo : await clienteDoCodigo(codigo);
   return cliente ? ondeLevaOCliente(cliente) : null;
+}
+
+const TRINTA_DIAS_EM_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * AS TENTATIVAS QUE NÃO TERMINARAM (passo 1e), da mais recente para a mais antiga: os visitantes cuja ficha de
+ * espera ainda não virou conta (ela some sozinha 7 dias depois da última tentativa) e as contas com a assinatura
+ * esperando — ou que expirou sem — o primeiro pagamento, dos últimos 30 dias. Só o NOSSO banco: o que aconteceu em
+ * cada uma (o cartão recusado, o Pix aberto) a ficha mostra, pela Stripe.
+ */
+export async function listarTentativas(agora: Date = new Date()): Promise<ListaDeTentativas> {
+  const visitantes = await prisma.guestCheckout.findMany({ where: { userId: null }, orderBy: { ultimaTentativaEm: "desc" }, take: TENTATIVAS_NA_LISTA + 1, select: DA_FICHA_DE_ESPERA });
+  const contas = await prisma.subscription.findMany({
+    where: { status: { in: ["incomplete", "incomplete_expired"] }, ownerUserId: { not: null }, createdAt: { gte: new Date(agora.getTime() - TRINTA_DIAS_EM_MS) } },
+    orderBy: { createdAt: "desc" },
+    take: TENTATIVAS_NA_LISTA + 1,
+    select: { id: true, status: true, createdAt: true, owner: { select: { id: true, name: true, email: true } } },
+  });
+  const todas: { em: Date; tentativa: TentativaDaLista }[] = [
+    ...visitantes.map((v) => ({ em: v.ultimaTentativaEm, tentativa: { tipo: "visitante" as const, visitante: paraVisitanteDaFicha(v) } })),
+    ...contas.flatMap((c) =>
+      c.owner ? [{ em: c.createdAt, tentativa: { tipo: "conta" as const, assinatura: c.id, conta: { id: c.owner.id, nome: c.owner.name, email: c.owner.email }, situacao: c.status === "incomplete" ? ("aguardando" as const) : ("expirou" as const), em: c.createdAt.toISOString() } }] : [],
+    ),
+  ].sort((a, b) => b.em.getTime() - a.em.getTime());
+  return { tentativas: todas.slice(0, TENTATIVAS_NA_LISTA).map((t) => t.tentativa), temMais: todas.length > TENTATIVAS_NA_LISTA };
 }

@@ -6,19 +6,25 @@ import { dataCurta } from "@/lib/cobranca-admin";
 // A FICHA DO ALUNO NO PAINEL DA COBRANÇA (Fase 4, etapa 4.7b, passo 1d). Admin fica em português, com o texto aqui
 // (decisão do operador, 23/09/2026); o operador confere usando (31/10/2026).
 
-/** Quem a ficha mostra, tirado do endereço: `?conta=` ou `?assinatura=`. Nenhum dos dois (ou os dois): nada. */
-export function quemDaFicha(parametros: URLSearchParams): { conta: string } | { assinatura: number } | null {
+export type QuemDaFicha = { conta: string } | { assinatura: number } | { visitante: string };
+
+/** Quem a ficha mostra, tirado do endereço: `?conta=`, `?assinatura=` ou `?visitante=` — um só; senão, nada. */
+export function quemDaFicha(parametros: URLSearchParams): QuemDaFicha | null {
   const conta = parametros.get("conta");
   const assinatura = parametros.get("assinatura");
-  if (conta && !assinatura) return { conta };
-  if (assinatura && !conta && /^[1-9][0-9]*$/.test(assinatura)) return { assinatura: Number(assinatura) };
+  const visitante = parametros.get("visitante");
+  if ([conta, assinatura, visitante].filter(Boolean).length !== 1) return null;
+  if (conta) return { conta };
+  if (visitante) return { visitante };
+  if (assinatura && /^[1-9][0-9]*$/.test(assinatura)) return { assinatura: Number(assinatura) };
   return null;
 }
 
-/** O endereço da ficha de uma conta, ou de uma assinatura sem conta. */
-export function enderecoDaFicha(quem: { conta: string | null; assinatura: number | null }): string | null {
+/** O endereço da ficha de uma conta, de uma assinatura sem conta ou de um visitante que não terminou de assinar. */
+export function enderecoDaFicha(quem: { conta: string | null; assinatura: number | null; visitante?: string | null }): string | null {
   if (quem.conta) return `/admin/cobranca/assinaturas/ficha?conta=${encodeURIComponent(quem.conta)}`;
   if (quem.assinatura) return `/admin/cobranca/assinaturas/ficha?assinatura=${quem.assinatura}`;
+  if (quem.visitante) return `/admin/cobranca/assinaturas/ficha?visitante=${encodeURIComponent(quem.visitante)}`;
   return null;
 }
 
@@ -27,7 +33,7 @@ export function precisaAcharNaStripe(busca: string): boolean {
   return /^(ch|in|du)_[A-Za-z0-9_]+$/.test(busca);
 }
 
-export function useFichaDoAdmin(quem: { conta: string } | { assinatura: number } | null) {
+export function useFichaDoAdmin(quem: QuemDaFicha | null) {
   return useQuery({ queryKey: ["admin", "cobranca", "ficha", quem], queryFn: () => api.adminFichaDaCobranca(quem ?? { conta: "" }), enabled: quem !== null });
 }
 

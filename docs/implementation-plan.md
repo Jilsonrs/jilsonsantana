@@ -6356,7 +6356,21 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               `CobrancasDaFicha`, `ResumoDaFicha`; os textos em `lib/cobranca-ficha.ts`. Testes: a ficha (novo, 9) e
               a lista (+3). **Mutação: 8 de 8 reprovaram.** *Docs check (context7): não disparado — nada novo vai à
               Stripe (a tela lê as rotas do 1c).*
-        - [ ] **1e — As tentativas que não terminaram** (*A*, item 3).
+        - [x] **1e — As tentativas que não terminaram** (*A*, item 3). **FEITO (31/10/2026).** `GET
+              /api/admin/cobranca/tentativas` (só admin, só o banco; `listarTentativas`): os visitantes cuja ficha de
+              espera ainda não virou conta (com o nome, o lembrete, quando a ficha some — os 7 dias — e se a limpeza
+              achou pagamento e não apagou) e as contas com a assinatura esperando, ou que expirou sem, o primeiro
+              pagamento, dos últimos 30 dias; da mais recente para a mais antiga, até 200. **"O que aconteceu" mora na
+              ficha**, que agora abre também pelo visitante (`?visitante=…`; a ficha que já virou conta leva à da
+              conta): as cobranças recusadas, com o motivo, e os **Pix gerados e não pagos** (o pagamento esperando com
+              o QR aberto — `pixEsperandoPagamento`; vale para toda ficha). O "achar" leva o `cus_` do visitante à ficha
+              dele. A tela `/admin/cobranca/tentativas` (o item "Tentativas" do submenu deixou de ser "em breve"): cada
+              linha diz o que aconteceu e leva à ficha; carregando, erro e vazio ("Ninguém deixou uma assinatura pela
+              metade"). **Não é a lista dos leads.** Testes: `admin-cobranca-tentativas.test.ts` (novo),
+              `stripe-ficha-rede.test.ts` (+1), a tela das tentativas (novo) e a ficha (+2). **Mutação: 8 de 8
+              reprovaram.** **Provado na área de teste da Stripe:** o Pix gerado e não pago (o `fill_never`) aparece
+              como esperando, e some ao ser cancelado. *Docs check (context7): não disparado — os tipos da
+              `stripe@23.0.1` (`next_action.type = pix_display_qr_code`) e a prova na área de teste.*
         - [ ] **1f — O que aconteceu** (*A*, itens 4 e 5): a tabela do **registro** (veio do 1a) — quem fez (o
               operador, o aluno, a Stripe, a rodada, o JilsonAI), quando, em quem, o quê e o que a Stripe respondeu —,
               com RLS; cada aviso da Stripe processado e cada ação passam a escrever nela; a linha do tempo, da escola

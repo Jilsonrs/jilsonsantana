@@ -46,7 +46,7 @@ const achar = (codigo: string, cookies: string[] = admin) => request(servidor).g
 const cobranca = (id: string, segundos: number, extra: Record<string, unknown> = {}) =>
   ({ id, created: segundos, amount: 9990, currency: "brl", status: "succeeded", disputed: false, refunded: false, amount_refunded: 0, outcome: null, failure_code: null, receipt_url: null, payment_method_details: { type: "card", card: { brand: "visa", last4: "4242" } }, ...extra }) as unknown as Stripe.Charge;
 const cliente = (extra: Record<string, unknown>) => ({ id: "cus_x", tax_ids: { data: [] }, invoice_settings: { default_payment_method: null }, ...extra }) as unknown as Stripe.Customer;
-const naStripe = (dados: Partial<ClienteNaStripe>): ClienteNaStripe => ({ cliente: null, cobrancas: [], maisCobrancas: false, contestacoes: new Map(), ...dados });
+const naStripe = (dados: Partial<ClienteNaStripe>): ClienteNaStripe => ({ cliente: null, cobrancas: [], maisCobrancas: false, contestacoes: new Map(), pixEsperando: [], ...dados });
 
 beforeAll(async () => {
   admin = await entrar(process.env.SEED_ADMIN_EMAIL, process.env.SEED_ADMIN_PASSWORD);
@@ -143,15 +143,15 @@ describe("a ficha de uma assinatura sem conta", () => {
 
 describe("achar pelo código do alerta", () => {
   it("a assinatura, o cliente e o Pix pré-pago se acham no banco, sem ir à Stripe", async () => {
-    expect((await achar(`sub_${S}_aluna`)).body).toEqual({ conta: aluna, assinatura: null });
-    expect((await achar(`sub_${S}_semconta`)).body).toEqual({ conta: null, assinatura: assinaturaSemConta });
-    expect((await achar(CLIENTE_VISITANTE)).body).toEqual({ conta: aluna, assinatura: null });
+    expect((await achar(`sub_${S}_aluna`)).body).toEqual({ conta: aluna, assinatura: null, visitante: null });
+    expect((await achar(`sub_${S}_semconta`)).body).toEqual({ conta: null, assinatura: assinaturaSemConta, visitante: null });
+    expect((await achar(CLIENTE_VISITANTE)).body).toEqual({ conta: aluna, assinatura: null, visitante: null });
     expect(clienteDoCodigo).not.toHaveBeenCalled();
   });
 
   it("a cobrança vai à Stripe pelo cliente; o que ninguém da escola tem: 404", async () => {
     clienteDoCodigo.mockResolvedValueOnce(CLIENTE_LOGADO).mockResolvedValueOnce(null).mockResolvedValueOnce(`cus_${S}_de_ninguem`);
-    expect((await achar("ch_123")).body).toEqual({ conta: aluna, assinatura: null });
+    expect((await achar("ch_123")).body).toEqual({ conta: aluna, assinatura: null, visitante: null });
     expect((await achar("ch_456")).status).toBe(404);
     expect((await achar("du_789")).status).toBe(404);
   });

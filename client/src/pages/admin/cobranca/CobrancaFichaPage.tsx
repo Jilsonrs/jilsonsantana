@@ -1,13 +1,21 @@
 import { Link, useSearchParams } from "react-router";
 import { codigoDoErro } from "@/lib/course-form";
+import type { FichaDaCobranca } from "@jilson/core";
 import { dataCurta } from "@/lib/cobranca-admin";
-import { quemDaFicha, useFichaDoAdmin } from "@/lib/cobranca-ficha";
+import { dinheiro, quemDaFicha, useFichaDoAdmin } from "@/lib/cobranca-ficha";
 import { LinhaDaAssinatura } from "@/components/admin/cobranca/LinhaDaAssinatura";
 import { CobrancasDaFicha } from "@/components/admin/cobranca/CobrancasDaFicha";
 import { ResumoDaFicha } from "@/components/admin/cobranca/ResumoDaFicha";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
+
+/** O título e a frase de baixo: a conta, o visitante que não terminou de assinar, ou a assinatura sem conta. */
+function cabecalho({ conta, visitante }: FichaDaCobranca): { titulo: string; descricao: string } {
+  if (conta) return { titulo: conta.nome ?? conta.email, descricao: `${conta.email} · conta criada em ${dataCurta(conta.criadaEm)}` };
+  if (visitante) return { titulo: visitante.nome ?? visitante.email, descricao: `${visitante.email} · começou a assinar sem conta e não terminou · última tentativa em ${dataCurta(visitante.ultimaTentativaEm)}` };
+  return { titulo: "Assinatura sem conta", descricao: "A Stripe não diz de que conta ela é." };
+}
 
 /**
  * ADMIN → COBRANÇA → A FICHA DO ALUNO (Fase 4, etapa 4.7b, passo 1d — o mapa aprovado pelo operador, 10/10 e
@@ -50,15 +58,24 @@ export function CobrancaFichaPage() {
     );
   }
 
-  const { conta, temAcesso, assinaturas, stripeIndisponivel } = ficha.data;
+  const { visitante, temAcesso, assinaturas, stripeIndisponivel, pixEsperando } = ficha.data;
+  const { titulo, descricao } = cabecalho(ficha.data);
   return (
     <PageContainer>
-      <PageHeader title={conta ? (conta.nome ?? conta.email) : "Assinatura sem conta"} description={conta ? `${conta.email} · conta criada em ${dataCurta(conta.criadaEm)}` : "A Stripe não diz de que conta ela é."} />
+      <PageHeader title={titulo} description={descricao} />
       <div className="space-y-12">
         <div className="flex flex-wrap items-center gap-3">
           <Badge variant={temAcesso ? "default" : "secondary"}>{temAcesso ? "Com acesso às aulas" : "Sem acesso às aulas"}</Badge>
           {voltar}
         </div>
+        {visitante ? (
+          <div className="space-y-1">
+            <p className="text-foreground">
+              {[visitante.lembreteEm ? `O lembrete saiu em ${dataCurta(visitante.lembreteEm)}` : "O lembrete ainda não saiu", visitante.naoApagada ? null : `a ficha some em ${dataCurta(visitante.someEm)}`, visitante.novidades ? "quer receber novidades" : null].filter((parte): parte is string => parte !== null).join(" · ")}
+            </p>
+            {visitante.naoApagada ? <p className="font-medium text-destructive">A limpeza dos 7 dias achou um pagamento e não apagou: alguém pagou e ficou sem conta.</p> : null}
+          </div>
+        ) : null}
         {stripeIndisponivel ? (
           <div role="status" className="space-y-2">
             <p className="text-foreground">A Stripe não respondeu: as cobranças, o cartão e o CPF não aparecem agora.</p>
@@ -78,6 +95,17 @@ export function CobrancaFichaPage() {
             </ul>
           )}
         </PageSection>
+        {pixEsperando.length > 0 ? (
+          <PageSection title="Pix esperando pagamento">
+            <ul aria-label="Pix esperando pagamento" className="space-y-1">
+              {pixEsperando.map((pix) => (
+                <li key={pix.id} className="text-foreground">
+                  {dinheiro(pix.centavos, pix.moeda)} · {dataCurta(pix.em)} · Pix gerado e não pago
+                </li>
+              ))}
+            </ul>
+          </PageSection>
+        ) : null}
         <PageSection title="Cobranças">
           <CobrancasDaFicha cobrancas={ficha.data.cobrancas} maisCobrancas={ficha.data.maisCobrancas} stripeIndisponivel={stripeIndisponivel} />
         </PageSection>

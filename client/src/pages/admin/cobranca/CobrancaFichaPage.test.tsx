@@ -4,7 +4,7 @@ import { screen, fireEvent } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
 import type { AssinaturaDaLista, CobrancaDaFicha, FichaDaCobranca } from "@jilson/core";
 
-type Quem = { conta: string } | { assinatura: number };
+type Quem = { conta: string } | { assinatura: number } | { visitante: string };
 const adminFichaDaCobranca = vi.fn<(quem: Quem) => Promise<FichaDaCobranca>>();
 vi.mock("@/lib/api", () => ({ adminFichaDaCobranca: (quem: Quem) => adminFichaDaCobranca(quem) }));
 
@@ -21,6 +21,8 @@ const assinatura: AssinaturaDaLista = { id: 7, aluno: { id: "u-1", nome: "Ana So
 const cobranca = (extra: Partial<CobrancaDaFicha>): CobrancaDaFicha => ({ id: "ch_1", em: "2026-11-20T15:00:00.000Z", centavos: 9990, moeda: "brl", forma: "cartao", cartao: { bandeira: "visa", final: "4242" }, situacao: "paga", devolvido: 0, motivoDaFalha: null, recibo: null, contestacao: null, ...extra });
 const ficha = (extra: Partial<FichaDaCobranca> = {}): FichaDaCobranca => ({
   conta: { id: "u-1", nome: "Ana Souza", email: "ana@exemplo.com", criadaEm: "2026-10-01T15:00:00.000Z" },
+  visitante: null,
+  pixEsperando: [],
   temAcesso: true,
   assinaturas: [assinatura],
   cobrancas: [],
@@ -130,5 +132,34 @@ describe("a ficha — o que ela diz", () => {
     expect(screen.getByText("Nenhum cartão salvo.")).toBeTruthy();
     expect(screen.getByText("Não informado.")).toBeTruthy();
     expect(screen.getByText("Nenhum e-mail da cobrança para esta pessoa.")).toBeTruthy();
+  });
+});
+
+describe("a ficha do visitante e o Pix aberto (passo 1e)", () => {
+  it("pela ficha de espera: quem é, quando tentou, o lembrete, quando some — e o Pix gerado e não pago", async () => {
+    adminFichaDaCobranca.mockResolvedValue(
+      ficha({
+        conta: null,
+        temAcesso: false,
+        assinaturas: [],
+        visitante: { id: "ficha-1", nome: "Vera Visitante", email: "vera@exemplo.com", ultimaTentativaEm: "2026-11-20T15:00:00.000Z", lembreteEm: null, someEm: "2026-11-27T15:00:00.000Z", novidades: true, naoApagada: false },
+        pixEsperando: [{ id: "pi_qr", em: "2026-11-20T15:00:00.000Z", centavos: 9990, moeda: "brl" }],
+      }),
+    );
+    abrir("?visitante=ficha-1");
+    expect(await screen.findByRole("heading", { name: "Vera Visitante" })).toBeTruthy();
+    expect(adminFichaDaCobranca.mock.calls).toEqual([[{ visitante: "ficha-1" }]]);
+    expect(screen.getByText("vera@exemplo.com · começou a assinar sem conta e não terminou · última tentativa em 20/11/2026")).toBeTruthy();
+    expect(screen.getByText("O lembrete ainda não saiu · a ficha some em 27/11/2026 · quer receber novidades")).toBeTruthy();
+    expect(screen.getByText("R$ 99,90 · 20/11/2026 · Pix gerado e não pago")).toBeTruthy();
+  });
+
+  it("a limpeza achou pagamento e não apagou: a ficha avisa", async () => {
+    adminFichaDaCobranca.mockResolvedValue(
+      ficha({ conta: null, temAcesso: false, assinaturas: [], visitante: { id: "ficha-2", nome: null, email: "sem@exemplo.com", ultimaTentativaEm: "2026-11-01T15:00:00.000Z", lembreteEm: "2026-11-01T17:00:00.000Z", someEm: "2026-11-08T15:00:00.000Z", novidades: false, naoApagada: true } }),
+    );
+    abrir("?visitante=ficha-2");
+    expect(await screen.findByRole("heading", { name: "sem@exemplo.com" })).toBeTruthy();
+    expect(screen.getByText("A limpeza dos 7 dias achou um pagamento e não apagou: alguém pagou e ficou sem conta.")).toBeTruthy();
   });
 });

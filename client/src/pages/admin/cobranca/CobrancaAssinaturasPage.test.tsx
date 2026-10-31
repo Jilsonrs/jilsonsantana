@@ -162,7 +162,7 @@ describe("Cobrança → Assinaturas — da lista para a ficha (passo 1d)", () =>
   });
 
   it("o código de uma cobrança (ch_): pergunta de quem é e abre a ficha — sem buscar na lista", async () => {
-    adminAcharCodigo.mockResolvedValue({ conta: "u-9", assinatura: null });
+    adminAcharCodigo.mockResolvedValue({ conta: "u-9", assinatura: null, visitante: null });
     renderWithProviders(<CobrancaAssinaturasPage />, { route: "/admin/cobranca/assinaturas", path: "/admin/cobranca/assinaturas", extraRoutes: [{ path: "/admin/cobranca/assinaturas/ficha", element: <p>A FICHA ABRIU</p> }] });
     await screen.findByText("Ana Souza");
     fireEvent.change(screen.getByLabelText("Buscar assinaturas"), { target: { value: " ch_123 " } });

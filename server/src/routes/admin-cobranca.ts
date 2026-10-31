@@ -2,7 +2,7 @@ import { Router } from "express";
 import { acharQuerySchema, fichaQuerySchema } from "@jilson/core";
 import { requireAdmin } from "../middleware/auth.js";
 import { validate } from "../lib/http.js";
-import { acharPeloCodigo, montarFicha } from "../lib/ficha-da-cobranca.js";
+import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
 
 // O PAINEL DA COBRANÇA — A FICHA DO ALUNO E O "ACHAR PELO CÓDIGO" (Fase 4, etapa 4.7b, passo 1c). Só admin, só
 // leitura: nenhuma destas rotas muda nada na Stripe nem no banco. As operações moram em `lib/ficha-da-cobranca.ts`.
@@ -20,6 +20,12 @@ router.get("/admin/cobranca/ficha", requireAdmin, async (req, res) => {
     return;
   }
   res.json(ficha);
+});
+
+// GET /api/admin/cobranca/tentativas — quem começou a assinar e não terminou (passo 1e).
+router.get("/admin/cobranca/tentativas", requireAdmin, async (_req, res) => {
+  res.set("Cache-Control", "private, no-store");
+  res.json(await listarTentativas());
 });
 
 // GET /api/admin/cobranca/achar?codigo=<sub_|cus_|pi_|ch_|in_|du_…> — de quem é o código que veio num alerta.
