@@ -54,6 +54,7 @@ import type {
   CodigoDoEmailEnviado,
   EmailCorrigido,
   PreviaDaDevolucao,
+  Plano,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1240,6 +1241,12 @@ export async function adminCancelar(assinatura: number): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cancelar", { assinatura });
   return data;
 }
+/** Liberar acesso pago por fora (passo 4d — P120): a pré-paga paga por fora, para a conta e o plano. */
+export async function adminLiberarPagoPorFora(conta: string, plano: Plano): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/liberar-pago-por-fora", { conta, plano });
+  return data;
+}
+
 /** Tentar cobrar de novo agora a cobrança em aberto da atrasada (passo 4b). */
 export async function adminCobrarDeNovo(assinatura: number): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cobrar-de-novo", { assinatura });

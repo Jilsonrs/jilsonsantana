@@ -47,6 +47,13 @@ export type AvisoDeFraude = { id: string; cobranca: string; pagamento: string | 
 export const METADADO_DA_CONTESTACAO = "contestacao";
 
 /**
+ * Nos metadados da assinatura PAGA POR FORA (o "Liberar acesso pago por fora" do painel — decisão do operador, 29/10/2026,
+ * P120): a conta do operador que liberou. Com ela, a assinatura é PRÉ-PAGA como a do Pix — não renova e não tem cartão —, e o
+ * espelho guarda isso (`paidOutOfBand`): é o que a tela do aluno, o painel e os e-mails da pré-paga leem.
+ */
+export const METADADO_PAGO_POR_FORA = "pago_por_fora";
+
+/**
  * O comentário do ENCERRAMENTO da assinatura atrasada que a pessoa trocou pelo Pix (4.9b, E14 — decisão do operador, P118):
  * com ele, o "sua assinatura terminou — reative" não sai (`avisos-da-assinatura.ts`), porque ela está pagando agora. Vai NO
  * PRÓPRIO encerramento, e não numa marca gravada antes (achado P2 da revisão do grupo 4, 30/10/2026): uma marca que ficasse
@@ -136,6 +143,8 @@ export type AssinaturaNaStripe = {
   codigoPromocional?: string | null;
   /** O motivo que o aluno escolheu ao cancelar (`metadata.motivo`, só os da lista do `core`) — o painel conta (passo 1f). */
   motivoDoCancelamento?: MotivoDoCancelamento | null;
+  /** PAGA POR FORA pelo operador (`METADADO_PAGO_POR_FORA` — 4.7b, passo 4d, P120): pré-paga, como a do Pix, sem Pix. */
+  pagoPorFora?: boolean;
 };
 
 /**
@@ -926,7 +935,7 @@ export function paraAssinaturaNaStripe(assinatura: Stripe.Subscription, devolvid
   const precoDeAgora = itens[0]?.price;
   const planoAtual = precoDeAgora ? planoDoPreco(precoDeAgora) : null;
   const motivoDoCancelamento = MOTIVOS_DE_CANCELAMENTO.find((m) => m === assinatura.metadata.motivo) ?? null;
-  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano, planoAtual, acabaEm: quandoAcaba(assinatura), codigoPromocional: codigoDaAssinatura(assinatura), motivoDoCancelamento };
+  return { id: assinatura.id, status, pagoAte, clienteId, userId, pedido, doVisitante, livemode: assinatura.livemode, proximaTentativa, encerradaSemPagamento, trocadaPorPix, pixPaymentIntentId, resumoDaTentativa, plano, planoAtual, acabaEm: quandoAcaba(assinatura), codigoPromocional: codigoDaAssinatura(assinatura), motivoDoCancelamento, pagoPorFora: Boolean(assinatura.metadata[METADADO_PAGO_POR_FORA]) };
 }
 
 /**

@@ -153,6 +153,8 @@ export function consertosDoCaso(tipo: TipoDeCasoDaLista, chave: string): Consert
   if (tipo === "DEVOLUCAO_FALHOU" && (chave.startsWith("sub:") || chave.startsWith("pagamento:pi_"))) return ["devolver-de-novo"];
   if (tipo === "PIX_EM_CONFERENCIA" && chave.startsWith("pix:pi_")) return ["aceitar-pix", "devolver-pix"];
   if (tipo === "PAGO_SEM_ASSINATURA" && (chave.startsWith("sub:") || chave.startsWith("fatura:in_"))) return ["devolver-este-pagamento"];
+  // A contestação que a escola GANHOU: o período pago volta a valer (passo 4d). O servidor confere na Stripe que ela foi ganha.
+  if (tipo === "CONTESTACAO" && chave.startsWith("du:")) return ["liberar-de-novo"];
   if (tipo === "COBRANCA_EM_ABERTO") return ["anular-cobranca"];
   if (tipo === "TROCA_DE_PLANO" && chave.startsWith("agendamento:")) return ["soltar-agendamento"];
   if (tipo === "ATIVA_SEM_PERIODO_PAGO") return ["encerrar-na-hora"];

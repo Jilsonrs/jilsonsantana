@@ -12,8 +12,8 @@ const ATIVAS = Prisma.sql`s."status" IN ('active', 'trialing')`;
 const CONDICAO: Record<FiltroDasAssinaturas, Prisma.Sql> = {
   todas: Prisma.sql`TRUE`,
   ativas: ATIVAS,
-  // A pré-paga do Pix sempre tem data de fim (ela nunca renova): não é "vai cancelar".
-  "vao-cancelar": Prisma.sql`${ATIVAS} AND s."cancelAt" IS NOT NULL AND s."pixPaymentIntentId" IS NULL`,
+  // A pré-paga (do Pix, ou paga por fora — passo 4d) sempre tem data de fim (ela nunca renova): não é "vai cancelar".
+  "vao-cancelar": Prisma.sql`${ATIVAS} AND s."cancelAt" IS NOT NULL AND s."pixPaymentIntentId" IS NULL AND NOT s."paidOutOfBand"`,
   atrasadas: Prisma.sql`s."status" IN ('past_due', 'unpaid')`,
   canceladas: Prisma.sql`s."status" = 'canceled'`,
   aguardando: Prisma.sql`s."status" = 'incomplete'`,
@@ -36,11 +36,11 @@ export function condicaoDaBusca(busca: string | undefined): Prisma.Sql {
 }
 
 /** A situação de uma linha do espelho na lista. A MESMA regra dos filtros, acima. Função pura. */
-export function situacaoNaLista(linha: { status: string; cancelAt: Date | null; pixPaymentIntentId: string | null }): SituacaoNaLista {
+export function situacaoNaLista(linha: { status: string; cancelAt: Date | null; pixPaymentIntentId: string | null; paidOutOfBand: boolean }): SituacaoNaLista {
   switch (linha.status) {
     case "active":
     case "trialing":
-      return linha.pixPaymentIntentId ? "pre-paga" : linha.cancelAt ? "vai-cancelar" : "ativa";
+      return linha.pixPaymentIntentId || linha.paidOutOfBand ? "pre-paga" : linha.cancelAt ? "vai-cancelar" : "ativa";
     case "past_due":
     case "unpaid":
       return "atrasada";
@@ -64,6 +64,7 @@ export type LinhaDoEspelho = {
   plan: string | null;
   promotionCode: string | null;
   pixPaymentIntentId: string | null;
+  paidOutOfBand: boolean;
   livemode: boolean;
   createdAt: Date;
   ownerUserId: string | null;
@@ -76,7 +77,7 @@ export function paraAssinaturaDaLista(linha: LinhaDoEspelho): AssinaturaDaLista 
     id: linha.id,
     aluno: linha.ownerUserId && linha.email !== null ? { id: linha.ownerUserId, nome: linha.name, email: linha.email } : null,
     plano: linha.plan === "mensal" || linha.plan === "anual" ? linha.plan : null,
-    prePaga: linha.pixPaymentIntentId !== null,
+    prePaga: linha.pixPaymentIntentId !== null || linha.paidOutOfBand,
     situacao: situacaoNaLista(linha),
     status: linha.status,
     pagoAte: linha.currentPeriodEnd?.toISOString() ?? null,
@@ -93,7 +94,7 @@ export function paraAssinaturaDaLista(linha: LinhaDoEspelho): AssinaturaDaLista 
 export async function listarAssinaturas({ filtro, busca, pagina }: ListaDeAssinaturasQuery): Promise<ListaDeAssinaturas> {
   const linhas = await prisma.$queryRaw<LinhaDoEspelho[]>`
     SELECT s."id", s."status", s."currentPeriodEnd", s."cancelAt", s."plan"::text AS "plan", s."promotionCode",
-           s."pixPaymentIntentId", s."livemode", s."createdAt", s."ownerUserId", u."name", u."email"
+           s."pixPaymentIntentId", s."paidOutOfBand", s."livemode", s."createdAt", s."ownerUserId", u."name", u."email"
       FROM "subscription" s
       LEFT JOIN "user" u ON u."id" = s."ownerUserId"
      WHERE ${DA_LISTA} AND ${CONDICAO[filtro]} AND ${condicaoDaBusca(busca)}

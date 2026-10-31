@@ -785,6 +785,9 @@ model Subscription {
   // O motivo que o aluno escolheu ao cancelar (`metadata.motivo` na Stripe — os valores de `MOTIVOS_DE_CANCELAMENTO`
   // do `core`), para o painel contar (passo 1f). Some quando ele volta atrás. Vazio = sem motivo, ou não cancelou.
   cancelReason         String?
+  // PAGA POR FORA pelo operador (etapa 4.7b, passo 4d — P120: "Liberar acesso pago por fora"): pré-paga como a do Pix,
+  // sem Pix — não renova e não tem cartão. Vem da marca `pago_por_fora` nos metadados da assinatura (`METADADO_PAGO_POR_FORA`).
+  paidOutOfBand        Boolean   @default(false)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   // Os e-mails da cobrança já tomados para esta assinatura (etapa 4.7, passo 7).

@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, corrigirEmailSchema, devolverPagamentoSchema, devolverTudoSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
+import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, corrigirEmailSchema, devolverPagamentoSchema, devolverTudoSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, liberarPagoPorForaSchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
 import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
-import { aceitarPixPeloOperador, cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
+import { aceitarPixPeloOperador, cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, liberarDeNovoPeloOperador, liberarPagoPorForaPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
 import { limiteDoCodigoDoEmailNovo } from "../lib/limite-de-tentativas.js";
 import { QuemFez } from "../lib/prisma.js";
@@ -84,6 +84,8 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "valor-acima": [409, "ValorAcimaDoQueFalta"],
   "devolucao-falhou": [502, "DevolucaoFalhou"],
   "pix-nao-aceito": [409, "PixNaoAceito"],
+  "ja-tem-acesso": [409, "JaTemAcesso"],
+  "contestacao-nao-ganha": [409, "ContestacaoNaoGanha"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {
@@ -137,6 +139,15 @@ router.post("/admin/cobranca/acoes/cobrar-de-novo", requireAdmin, async (req, re
   responder(res, await cobrarDeNovoPeloOperador(corpo.assinatura, por));
 });
 
+// POST /api/admin/cobranca/acoes/liberar-pago-por-fora — { conta, plano }: a pré-paga paga por fora (passo 4d — P120).
+router.post("/admin/cobranca/acoes/liberar-pago-por-fora", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(liberarPagoPorForaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await liberarPagoPorForaPeloOperador(corpo.conta, corpo.plano, por));
+});
+
 // POST /api/admin/cobranca/acoes/desfazer-cancelamento — { assinatura }: a mesma operação de voltar atrás (passo 3a).
 router.post("/admin/cobranca/acoes/desfazer-cancelamento", requireAdmin, async (req, res) => {
   const por = operador(req, res);
@@ -175,7 +186,9 @@ router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res)
           ? await devolverEstePagamentoPeloOperador(id, por)
           : acao === "aceitar-pix"
             ? await aceitarPixPeloOperador(id, por)
-            : await resolverCasoPeloOperador(id, acao, por),
+            : acao === "liberar-de-novo"
+              ? await liberarDeNovoPeloOperador(id, por)
+              : await resolverCasoPeloOperador(id, acao, por),
   );
 });
 

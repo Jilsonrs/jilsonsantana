@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 import type { Plano } from "@jilson/core";
 import { erroSemMensagem, stripe } from "./stripe-cliente.js";
-import { MARCA_DO_PREPAGO, METADADO_DO_PIX, METADADOS_DO_VISITANTE, metadadosDoVisitante, pagamentoPrePagoDe, type PagamentoPrePago, type TentativaDoVisitante } from "./stripe.js";
+import { MARCA_DO_PREPAGO, METADADO_DO_PIX, METADADO_PAGO_POR_FORA, METADADOS_DO_VISITANTE, metadadosDoVisitante, pagamentoPrePagoDe, type PagamentoPrePago, type TentativaDoVisitante } from "./stripe.js";
 
 // O PIX PRÉ-PAGO (Fase 4, etapa 4.9 — billing.md → *Formas de pagamento*; decisão do operador,
 // 28/10/2026). Numa conta do Brasil a Stripe não cobra Pix de novo sozinha (sem Pix Automático) e
@@ -122,6 +122,35 @@ export async function criarAssinaturaPrePaga(pagamento: PagamentoPrePago, quem: 
     assinatura = await stripe().subscriptions.create(paraPedidoDeAssinaturaPrePaga(pagamento), { idempotencyKey: chaveDoPrePago(quem === "operador" ? "aceitar" : "criar", pagamento.id) });
   } catch (erro) {
     throw erroSemMensagem(erro, "a assinatura pré-paga do Pix");
+  }
+  const fatura = await garantirFaturaPaga(assinatura.id, assinatura.latest_invoice);
+  return { id: assinatura.id, faturaPaga: fatura.status === "paid" };
+}
+
+/**
+ * A ASSINATURA PAGA POR FORA (o "Liberar acesso pago por fora" do painel — decisão do operador, 29/10/2026, P120): o operador
+ * recebeu fora da Stripe (um Pix direto, uma transferência), e o acesso sai de uma assinatura DE VERDADE — pré-paga como a
+ * do Pix (`cancel_at_period_end`, sem cartão, a primeira fatura paga por fora), com a marca `pago_por_fora` (a conta do
+ * operador) —, gravada pelo `sincronizar`. Nunca um desvio no gate. A chave de repetição (a conta e o plano, na janela)
+ * segura o clique duplo.
+ */
+export async function criarAssinaturaPagaPorFora(pedido: { clienteId: string; precoId: string; plano: Plano; userId: string; operador: string }, agora: Date = new Date()): Promise<{ id: string; faturaPaga: boolean }> {
+  let assinatura: Stripe.Subscription;
+  try {
+    assinatura = await stripe().subscriptions.create(
+      {
+        customer: pedido.clienteId,
+        items: [{ price: pedido.precoId, quantity: 1 }],
+        payment_behavior: "default_incomplete",
+        cancel_at_period_end: true,
+        payment_settings: { payment_method_types: ["card"], save_default_payment_method: "off" },
+        metadata: { userId: pedido.userId, plano: pedido.plano, [METADADO_PAGO_POR_FORA]: pedido.operador },
+        expand: ["latest_invoice"],
+      },
+      { idempotencyKey: `pago-por-fora:${pedido.userId}:${pedido.plano}:${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}` },
+    );
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a assinatura paga por fora");
   }
   const fatura = await garantirFaturaPaga(assinatura.id, assinatura.latest_invoice);
   return { id: assinatura.id, faturaPaga: fatura.status === "paid" };

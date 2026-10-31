@@ -236,7 +236,8 @@ devolver sem taxa; se ele virar contestação, o corte vem com o dinheiro que sa
 assinatura é cancelada na Stripe** *(decisão do operador, 30/10/2026: o cartão contestado nunca mais é cobrado)*; a
 pessoa recebe o e-mail de sempre de assinatura encerrada, e o operador, um alerta com o valor, o motivo e o prazo para
 responder à contestação no painel da Stripe. Se a contestação for resolvida a favor da escola, o operador libera de
-novo pelo admin (4.7b — "Liberar acesso pago por fora": a cancelada não volta). O **aviso de fraude** da Stripe
+novo pelo admin — **"Liberar de novo"**, no caso da contestação (no código desde 31/10/2026, 4.7b, passo 4d): o servidor
+confere na Stripe que ela foi GANHA, tira a marca e o período pago volta a valer até o fim; a cancelada não volta. O **aviso de fraude** da Stripe
 (`radar.early_fraud_warning`) só alerta — devolver o dinheiro logo evita a contestação e a taxa dela. *(Decisão do
 operador, 31/10/2026, P141: o aviso de fraude passa a devolver, cancelar e cortar o acesso sozinho, avisando o operador
 — 4.7b, passo 5c; até lá, só alerta. E a contestação passa a ser respondida pelo admin, P140 — passo 5b.)* *Cortar o acesso
@@ -2078,9 +2079,11 @@ desistiu (só no painel da Stripe → Pagamentos); o segredo do endereço de avi
    - cobrança atrasada e sem outro cartão: Faturamento e Assinatura → Cancelar (termina na hora; nada mais é
      cobrado) → Reativar assinatura → Pix (até o "Pagar com Pix" na própria cobrança atrasada — P118, E14);
    - "muitas tentativas": esperar 15 minutos.
-5. **Receber por fora, numa emergência:** *decisão do operador, 29/10/2026 (P120)* — vira uma ação no admin,
-   **"Liberar acesso pago por fora"** (a etapa 4.7b): você recebe (Pix direto, transferência) e libera por um
-   clique, com o período. **Até ela existir, não use o painel da Stripe para isso:** a assinatura criada lá no
+5. **Receber por fora, numa emergência:** *decisão do operador, 29/10/2026 (P120)* — é uma ação no admin desde
+   31/10/2026, **"Liberar acesso pago por fora"**, na ficha da conta (4.7b, passo 4d): você recebe (Pix direto,
+   transferência) e libera um mês ou um ano, com confirmação. É uma assinatura PRÉ-PAGA de verdade na Stripe, paga por
+   fora (não renova, não cobra cartão — a tela do aluno e os e-mails a tratam como a do Pix), e fica no registro quem
+   liberou. Só para a conta sem acesso. **Até ela existir, não use o painel da Stripe para isso:** a assinatura criada lá no
    cliente que o site criou libera o acesso quando a fatura fica paga, mas "enviar fatura por e-mail" libera
    **antes** de pagar, o link de pagamento avulso não libera nada, e quem nem chegou ao campo de pagamento não
    tem cliente — nunca foi testado.

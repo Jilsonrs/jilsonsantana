@@ -141,7 +141,7 @@ beforeEach(async () => {
   pago = UMA_COBRANCA();
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     if (id !== SUB) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
+    return { id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
   });
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
   buscarOQueFoiPago.mockReset().mockImplementation(async () => ({ moeda: pago.moeda, pagamentos: pago.pagamentos.map((p) => ({ ...p })) }));
@@ -323,7 +323,7 @@ describe("POST /api/billing/minha-assinatura/reembolso — quando não devolve",
 
   it("o prazo venceu entre o clique e a trava: vale o de AGORA — 409, nada é encerrado", async () => {
     // A primeira leitura (achar a assinatura da conta) ainda está no prazo; a segunda, com a trava, não.
-    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: null, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null }));
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_28_DIAS, plano: "mensal", preco: null, fimDoPeriodo: EM_28_DIAS, comecouEm: HA_2_DIAS, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null }));
     detalhes = { comecouEm: HA_8_DIAS };
     const res = await reembolsar(member, {});
     expect([res.status, res.body]).toEqual([409, { error: "ForaDoPrazo" }]);

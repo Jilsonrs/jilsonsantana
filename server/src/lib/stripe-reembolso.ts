@@ -205,6 +205,31 @@ export async function oQueFoiPagoNaFatura(faturaId: string): Promise<OQueFoiPago
   return { moeda: fatura.currency, pagamentos };
 }
 
+/**
+ * A CONTESTAÇÃO, como a Stripe diz AGORA (o "Liberar de novo" do painel, 4.7b, passo 4d): o status dela — `won` quando o banco
+ * deu razão à escola. Nenhum: a Stripe não a conhece.
+ */
+export async function statusDaContestacao(contestacaoId: string): Promise<string | null> {
+  try {
+    return (await stripe().disputes.retrieve(contestacaoId)).status;
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") return null;
+    throw erroSemMensagem(erro, "a leitura da contestação");
+  }
+}
+
+/**
+ * TIRA A MARCA DA CONTESTAÇÃO da assinatura (E7 — liberar de novo a contestação GANHA): sem ela, o período que a pessoa pagou
+ * volta a contar como pago (`paraAssinaturaNaStripe`). A assinatura continua cancelada: para seguir depois, ela assina de novo.
+ */
+export async function tirarMarcaDeContestacao(assinaturaId: string): Promise<void> {
+  try {
+    await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: "" } });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a saída da marca da contestação");
+  }
+}
+
 /** Uma cobrança que o painel devolve (passo 4a): de quem é, quanto foi e quanto já voltou. */
 export type CobrancaParaDevolver = { id: string; cliente: string | null; pagamentoId: string | null; centavos: number; devolvido: number; moeda: string; paga: boolean };
 

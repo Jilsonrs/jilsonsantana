@@ -301,6 +301,16 @@ describe("a ficha — o CPF e o link por e-mail (passo 3b)", () => {
     expect(screen.queryByRole("button", { name: "Devolver" })).toBeNull();
   });
 
+  it("com a conta, a ficha tem 'Liberar acesso pago por fora' (passo 4d); a assinatura sem conta, não", async () => {
+    const { unmount } = abrir();
+    expect(await screen.findByRole("button", { name: "Liberar acesso pago por fora" })).toBeTruthy();
+    unmount();
+    adminFichaDaCobranca.mockResolvedValue(ficha({ conta: null, temAcesso: false }));
+    abrir("?assinatura=7");
+    await screen.findByRole("heading", { name: "Assinatura sem conta" });
+    expect(screen.queryByRole("button", { name: "Liberar acesso pago por fora" })).toBeNull();
+  });
+
   it("com a conta, a ficha tem 'Corrigir o e-mail' (passo 3c)", async () => {
     abrir();
     expect(await screen.findByRole("button", { name: "Corrigir o e-mail" })).toBeTruthy();

@@ -13,6 +13,7 @@ const DO_CONSERTO: Record<Conserto, { rotulo: string; efeito: string }> = {
   "aceitar-pix": { rotulo: "Aceitar este Pix", efeito: "O Pix que a pessoa pagou vira a assinatura pré-paga, no preço de hoje do plano: as aulas abrem agora." },
   "devolver-pix": { rotulo: "Devolver o Pix", efeito: "O Pix volta inteiro para a pessoa, e ela pode pagar de novo pela tela." },
   "devolver-este-pagamento": { rotulo: "Devolver este pagamento", efeito: "O dinheiro que entrou volta inteiro para a pessoa." },
+  "liberar-de-novo": { rotulo: "Liberar de novo", efeito: "Só se a escola ganhou a contestação: o período que a pessoa pagou volta a valer até o fim. A assinatura continua cancelada." },
 };
 
 /** O conserto de um caso (etapa 4.7b, passo 3b): o botão, a confirmação dizendo o efeito, e o que a Stripe respondeu. */

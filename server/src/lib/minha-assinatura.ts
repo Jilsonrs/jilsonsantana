@@ -44,8 +44,9 @@ const RENOVAM: ReadonlySet<string> = new Set(["active", "trialing"]);
  * Parar, manter, mudar de plano e trocar o cartão não cabem; o reembolso dos 7 dias devolve o Pix. Uma regra
  * só, para a tela (que não mostra os botões) e para as operações (que recusam com `pre-paga`).
  */
-export function prePaga(detalhes: Pick<DetalhesDaAssinatura, "pixPaymentIntentId">): boolean {
-  return detalhes.pixPaymentIntentId !== null;
+export function prePaga(detalhes: Pick<DetalhesDaAssinatura, "pixPaymentIntentId" | "pagoPorFora">): boolean {
+  // A do Pix e a paga por fora pelo operador (4.7b, passo 4d — P120): as duas não renovam e não têm cartão.
+  return detalhes.pixPaymentIntentId !== null || detalhes.pagoPorFora;
 }
 
 const iso = (data: Date | null): string | null => (data ? data.toISOString() : null);

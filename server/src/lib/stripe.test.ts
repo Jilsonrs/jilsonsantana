@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
 import { codigoDaAssinatura, quandoAcaba } from "./stripe.js";
-import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, METADADO_DA_CONTESTACAO, paraAviso, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, METADADO_DA_CONTESTACAO, METADADO_PAGO_POR_FORA, paraAviso, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -78,6 +78,13 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     const contestada = assinatura({ status: "canceled", metadata: { [METADADO_DA_CONTESTACAO]: "dp_1" } });
     expect(paraAssinaturaNaStripe(contestada).pagoAte?.getTime()).toBe(inicio * 1000);
     expect(paraAssinaturaNaStripe(assinatura({ status: "canceled", metadata: { [METADADO_DA_CONTESTACAO]: "" } })).pagoAte?.getTime()).toBe(fim * 1000);
+  });
+
+  // A PAGA POR FORA (4.7b, passo 4d — P120): a marca de quem liberou faz dela pré-paga; sem a marca (ou vazia), não.
+  it("a assinatura PAGA POR FORA: a marca a faz pré-paga; sem ela, ou vazia, não", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { [METADADO_PAGO_POR_FORA]: "admin-1" } })).pagoPorFora).toBe(true);
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { [METADADO_PAGO_POR_FORA]: "" } })).pagoPorFora).toBe(false);
+    expect(paraAssinaturaNaStripe(assinatura({})).pagoPorFora).toBe(false);
   });
 
   // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7): a data da próxima tentativa vem da última fatura,

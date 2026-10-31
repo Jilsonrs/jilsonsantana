@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { MotivoDoCancelamento } from "../constants/billing.js";
+import { PLANOS, type MotivoDoCancelamento } from "../constants/billing.js";
 import { enderecoDeEmailSchema } from "./billing.js";
 
 // O PAINEL DA COBRANÇA DO ADMIN (Fase 4, etapa 4.7b — decisões do operador, 31/10/2026). Só ADMIN lê e usa estes
@@ -270,7 +270,7 @@ export type AcaoFeita = { detalhe: string };
 export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };
 
 /** Os consertos que hoje só o painel da Stripe faz, a partir de um caso (passo 3b). */
-export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo", "aceitar-pix", "devolver-pix", "devolver-este-pagamento"] as const;
+export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo", "aceitar-pix", "devolver-pix", "devolver-este-pagamento", "liberar-de-novo"] as const;
 export type ConsertoDoCaso = (typeof CONSERTOS_DO_CASO)[number];
 export const resolverCasoSchema = z.object({ acao: z.enum(CONSERTOS_DO_CASO) });
 
@@ -304,6 +304,12 @@ export const devolverPagamentoSchema = z.union([
   z.object({ visitante: z.string().min(1).max(100), ...doPagamento }).strict(),
 ]);
 export type DevolverPagamentoInput = z.infer<typeof devolverPagamentoSchema>;
+
+/**
+ * LIBERAR ACESSO PAGO POR FORA (bloco 4, passo 4d — decisão do operador P120): a conta e o plano. O operador recebeu fora da
+ * Stripe; o acesso sai de uma assinatura pré-paga de verdade, paga por fora — nunca de um desvio no gate.
+ */
+export const liberarPagoPorForaSchema = z.object({ conta: z.string().min(1).max(100), plano: z.enum(PLANOS) }).strict();
 
 /** CORRIGIR O E-MAIL (passo 3c — decisão do operador P121): o e-mail certo da conta, para onde o código vai. */
 export const pedirCodigoDoEmailSchema = z.object({ conta: z.string().min(1).max(100), email: enderecoDeEmailSchema }).strict();

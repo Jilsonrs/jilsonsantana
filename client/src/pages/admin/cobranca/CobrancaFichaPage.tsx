@@ -13,6 +13,7 @@ import { LinksParaOAluno } from "@/components/admin/cobranca/LinksParaOAluno";
 import { CorrigirDocumento } from "@/components/admin/cobranca/CorrigirDocumento";
 import { CorrigirEmail } from "@/components/admin/cobranca/CorrigirEmail";
 import { DevolverTudo } from "@/components/admin/cobranca/DevolverTudo";
+import { LiberarPagoPorFora } from "@/components/admin/cobranca/LiberarPagoPorFora";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader, PageSection } from "@/components/layout/PageLayout";
@@ -93,18 +94,21 @@ export function CobrancaFichaPage() {
           </div>
         ) : null}
         <PageSection title="Assinaturas">
-          {assinaturas.length === 0 ? (
-            <p className="text-muted-foreground">Nenhuma assinatura.</p>
-          ) : (
-            <ul aria-label="Assinaturas" className="divide-y divide-border rounded-2xl border border-border/60">
-              {assinaturas.map((assinatura) => (
-                <LinhaDaAssinatura key={assinatura.id} assinatura={assinatura}>
-                  <AcoesDaAssinatura assinatura={assinatura} quem={titulo} />
-                  <DevolverTudo assinatura={assinatura} quem={titulo} />
-                </LinhaDaAssinatura>
-              ))}
-            </ul>
-          )}
+          <div className="space-y-4">
+            {assinaturas.length === 0 ? (
+              <p className="text-muted-foreground">Nenhuma assinatura.</p>
+            ) : (
+              <ul aria-label="Assinaturas" className="divide-y divide-border rounded-2xl border border-border/60">
+                {assinaturas.map((assinatura) => (
+                  <LinhaDaAssinatura key={assinatura.id} assinatura={assinatura}>
+                    <AcoesDaAssinatura assinatura={assinatura} quem={titulo} />
+                    <DevolverTudo assinatura={assinatura} quem={titulo} />
+                  </LinhaDaAssinatura>
+                ))}
+              </ul>
+            )}
+            {ficha.data.conta ? <LiberarPagoPorFora conta={ficha.data.conta.id} quem={titulo} /> : null}
+          </div>
         </PageSection>
         {pixEsperando.length > 0 ? (
           <PageSection title="Pix esperando pagamento">

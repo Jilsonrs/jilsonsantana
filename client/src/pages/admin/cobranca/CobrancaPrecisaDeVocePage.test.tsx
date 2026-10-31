@@ -191,6 +191,17 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     expect((await screen.findByRole("alert")).textContent).toBe("Não deu para aceitar este Pix: o plano não está à venda, ou a fatura não se pagou por fora. Devolva o Pix.");
   });
 
+  it("a contestação (passo 4d): 'Liberar de novo', com o efeito; a que a escola não ganhou diz isso", async () => {
+    adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "ContestacaoNaoGanha" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 18, tipo: "CONTESTACAO", urgente: true, consertos: ["liberar-de-novo"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Liberar de novo" }));
+    expect(screen.getByText("Só se a escola ganhou a contestação: o período que a pessoa pagou volta a valer até o fim. A assinatura continua cancelada.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("A escola ainda não ganhou esta contestação (o banco não decidiu, ou decidiu contra): nada foi liberado.");
+    expect(adminResolverCaso.mock.calls).toEqual([[18, "liberar-de-novo"]]);
+  });
+
   it("a assinatura ainda viva: diz por que não anula", async () => {
     adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "AssinaturaViva" } } });
     adminListarCasos.mockResolvedValue(lista([caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, consertos: ["anular-cobranca"] })]));

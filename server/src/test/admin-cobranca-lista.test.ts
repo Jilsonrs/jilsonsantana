@@ -114,6 +114,23 @@ describe("a lista da Cobrança — os filtros e a contagem", () => {
     expect(idsDe(await pegar({ busca }))).toEqual(esperados("ativa", "vai", "pix", "atrasada", "cancelada", "aguardando"));
   });
 
+  // A paga por fora pelo operador (4.7b, passo 4d — P120) é pré-paga como a do Pix.
+  it("a paga POR FORA é pré-paga: ativa, nunca 'vai cancelar' — e a linha diz 'pré-paga'", async () => {
+    const dono = `lista-${S}-porfora`;
+    await prisma.user.create({ data: { id: dono, email: `${dono}@teste.local`, name: "Por Fora" } });
+    const criada = await prisma.subscription.create({ data: { ownerUserId: dono, status: "active", plan: "mensal", cancelAt: new Date(Date.now() + 25 * DIA), paidOutOfBand: true, stripeSubscriptionId: `sub_${S}_porfora`, currentPeriodEnd: new Date(Date.now() + 25 * DIA) } });
+    try {
+      const busca = `${dono}@`;
+      expect(idsDe(await pegar({ filtro: "ativas", busca }))).toEqual([criada.id]);
+      expect(idsDe(await pegar({ filtro: "vao-cancelar", busca }))).toEqual([]);
+      const [linha] = (await pegar({ busca })).assinaturas;
+      expect([linha?.situacao, linha?.prePaga]).toEqual(["pre-paga", true]);
+    } finally {
+      await prisma.subscription.deleteMany({ where: { id: criada.id } });
+      await prisma.user.deleteMany({ where: { id: dono } });
+    }
+  });
+
   it("cada linha diz a situação, o plano, o código e o aluno — a mais recente primeiro", async () => {
     const todas = (await pegar({ busca: `lista-${S}` })).assinaturas;
     expect(todas.map((a) => a.id)).toEqual([ids.aguardando, ids.cancelada, ids.atrasada, ids.pix, ids.vai, ids.ativa]);

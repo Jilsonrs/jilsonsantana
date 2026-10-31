@@ -36,6 +36,8 @@ export type DetalhesDaAssinatura = {
   userId: string | null;
   /** O Pix PRÉ-PAGO de que ela nasceu (etapa 4.9): vazio na recorrente. É ele que diz "pré-paga" à tela e às operações. Não sai do servidor. */
   pixPaymentIntentId: string | null;
+  /** PAGA POR FORA pelo operador (4.7b, passo 4d — P120): pré-paga como a do Pix, sem Pix. Não sai do servidor. */
+  pagoPorFora: boolean;
   /** A última fatura, se ainda está em aberto (a cobrança falhou): é a que o cartão novo paga. Não sai do servidor. */
   faturaEmAbertoId: string | null;
   /** O item da assinatura (ela tem um só): é nele que o preço troca. Não sai do servidor. */
@@ -64,7 +66,7 @@ export function paraCartao(forma: string | Stripe.PaymentMethod | null | undefin
  * espelho (`paraAssinaturaNaStripe`), para a tela e o gate nunca discordarem.
  */
 export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolvida: boolean = false): DetalhesDaAssinatura {
-  const { status, pagoAte, clienteId, userId, pixPaymentIntentId } = paraAssinaturaNaStripe(assinatura, devolvida);
+  const { status, pagoAte, clienteId, userId, pixPaymentIntentId, pagoPorFora } = paraAssinaturaNaStripe(assinatura, devolvida);
   const daAssinatura = assinatura.default_payment_method;
   const fatura = assinatura.latest_invoice;
   const itens = assinatura.items.data;
@@ -93,6 +95,7 @@ export function paraDetalhesDaAssinatura(assinatura: Stripe.Subscription, devolv
     clienteId,
     userId,
     pixPaymentIntentId: pixPaymentIntentId ?? null,
+    pagoPorFora: pagoPorFora === true,
     faturaEmAbertoId: typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null,
     itemId: itens[0]?.id ?? null,
     agendamentoId: typeof assinatura.schedule === "string" ? assinatura.schedule : (assinatura.schedule?.id ?? null),

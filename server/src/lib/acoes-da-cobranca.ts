@@ -1,16 +1,18 @@
-import { entrarPara, lerDocumentoFiscal, TELA_DE_PAGAR_COM_PIX, type AcaoFeita, type ConferenciaPelaFicha, type ConsertoDoCaso, type FichaQuery, type LinkParaOAluno } from "@jilson/core";
+import { entrarPara, lerDocumentoFiscal, TELA_DE_PAGAR_COM_PIX, type Plano, type AcaoFeita, type ConferenciaPelaFicha, type ConsertoDoCaso, type FichaQuery, type LinkParaOAluno } from "@jilson/core";
 import { prisma, QuemFez, TipoDeCaso } from "./prisma.js";
 import { consertosDoCaso } from "./casos.js";
-import { AssinaturaNaoEncontrada, buscarAssinatura, DocumentoRecusado, trocarNumeroFiscal } from "./stripe.js";
+import { AssinaturaNaoEncontrada, buscarAssinatura, buscarPrecos, DocumentoRecusado, trocarNumeroFiscal } from "./stripe.js";
 import { buscarDetalhes, pagarFatura, type CobrancaDaFatura, type DetalhesDaAssinatura } from "./stripe-assinatura.js";
 import { anularFatura, assinaturaDaFatura, soltarAgendamento } from "./stripe-plano.js";
-import { cancelarNaHora } from "./stripe-reembolso.js";
-import { pixConfigurado } from "./stripe-pix.js";
+import { cancelarNaHora, statusDaContestacao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
+import { criarAssinaturaPagaPorFora, pixConfigurado } from "./stripe-pix.js";
 import { enviarEmail } from "./email.js";
 import { getDict } from "./dict.js";
 import { enderecoDoSite } from "./endereco-do-site.js";
 import { manterAssinaturaDe, pararRenovacaoDe } from "./minha-assinatura.js";
-import { aceitarPixEmConferencia, operarNaAssinatura, sincronizarAssinatura, sincronizarConta, sincronizarPedido, type Conferida } from "./assinaturas.js";
+import { aceitarPixEmConferencia, operarNaAssinatura, sincronizarAssinatura, sincronizarConta, sincronizarPedido, sincronizarSeLivre, type Conferida } from "./assinaturas.js";
+import { clienteDaConta, travarSeLivre } from "./checkout.js";
+import { transacaoDaCobranca } from "./casos.js";
 import { cobrancaAtrasada, temAcessoAtivo } from "./acesso.js";
 import { mandarBoasVindasDaAssinatura } from "./boas-vindas.js";
 import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
@@ -25,7 +27,7 @@ import { avisarSobreAAssinatura } from "./avisos-da-assinatura.js";
 export type PorQuem = { quem: typeof QuemFez.OPERADOR | typeof QuemFez.JILSONAI; conta: string };
 
 /** O que não deu para fazer — cada um vira um status na rota. */
-export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer" | "stripe-nao-conhece" | "assinatura-viva" | "valor-mudou" | "valor-acima" | "devolucao-falhou" | "pix-nao-aceito";
+export type NaoFeita = "nao-encontrada" | "ocupada" | "pre-paga" | "nada-a-fazer" | "stripe-nao-conhece" | "assinatura-viva" | "valor-mudou" | "valor-acima" | "devolucao-falhou" | "pix-nao-aceito" | "ja-tem-acesso" | "contestacao-nao-ganha";
 export type Resultado<T> = { resultado: "ok"; feito: T } | { resultado: NaoFeita };
 
 /** Grava a ação no registro: quem fez, em quem, o valor (quando há dinheiro) e o que a Stripe respondeu (sem dado pessoal). */
@@ -265,6 +267,56 @@ export async function aceitarPixPeloOperador(casoId: number, por: PorQuem): Prom
   const comAcesso = dono ? await temAcessoAtivo(dono) : false;
   const detalhe = `o Pix virou a assinatura pré-paga; ${comAcesso ? "com acesso" : "sem acesso"} às aulas`;
   await concluirCaso(casoId, por, "aceitar-pix", { userId: dono, assinatura: assinatura?.id ?? null }, detalhe);
+  return { resultado: "ok", feito: { detalhe } };
+}
+
+/**
+ * LIBERAR ACESSO PAGO POR FORA (bloco 4, passo 4d — decisão do operador, 29/10/2026, P120): o operador recebeu fora da
+ * Stripe (um Pix direto, uma transferência). O acesso sai de uma assinatura PRÉ-PAGA de verdade, paga por fora
+ * (`criarAssinaturaPagaPorFora`) e gravada pela sincronia — nunca de um desvio no gate. Não é cortesia (a decisão de 10/10
+ * continua): fica no registro quem liberou, o plano e até quando. Com a trava da conta (a do checkout), e só para a conta
+ * SEM acesso agora — a que tem não ganha uma segunda assinatura.
+ */
+export async function liberarPagoPorForaPeloOperador(contaId: string, plano: Plano, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  const conta = await prisma.user.findUnique({ where: { id: contaId }, select: { id: true, email: true, name: true, deletedAt: true } });
+  if (!conta || conta.deletedAt) return { resultado: "nao-encontrada" };
+  if (await temAcessoAtivo(conta.id)) return { resultado: "ja-tem-acesso" };
+  const preco = (await buscarPrecos()).find((p) => p.plano === plano);
+  if (!preco) return { resultado: "nada-a-fazer" };
+  const clienteId = await clienteDaConta({ id: conta.id, email: conta.email, nome: conta.name });
+  if (!clienteId) return { resultado: "ocupada" };
+  const criada = await transacaoDaCobranca(async (tx) => {
+    if (!(await travarSeLivre(tx, conta.id))) return "ocupada" as const;
+    // De novo, com a trava e pela mesma ligação: outro pedido pode ter liberado (ou o aluno pagado) no meio.
+    if (await temAcessoAtivo(conta.id, tx)) return "ja-tem-acesso" as const;
+    return criarAssinaturaPagaPorFora({ clienteId, precoId: preco.precoId, plano, userId: conta.id, operador: por.conta });
+  });
+  if (criada === "ocupada" || criada === "ja-tem-acesso") return { resultado: criada };
+  if (!criada.faturaPaga) {
+    console.warn(`[stripe] painel: a fatura da assinatura paga por fora ${criada.id} (conta ${conta.id}) não se pagou por fora`);
+    return { resultado: "nada-a-fazer" };
+  }
+  const sincronia = await sincronizarSeLivre(criada.id);
+  const ate = sincronia && "assinatura" in sincronia ? sincronia.assinatura.pagoAte : null;
+  const detalhe = `${plano} pago por fora; ${await temAcessoAtivo(conta.id) ? "com acesso" : "sem acesso"} às aulas${ate ? ` até ${ate.toISOString().slice(0, 10)}` : ""}`;
+  await registrar(por, "liberar-pago-por-fora", { userId: conta.id, assinatura: criada.id, cliente: clienteId }, detalhe, preco.centavos);
+  return { resultado: "ok", feito: { detalhe } };
+}
+
+/**
+ * LIBERAR DE NOVO (o conserto do caso "contestação", passo 4d — E7): só com a contestação GANHA pela escola, lida na Stripe
+ * agora. A marca sai da assinatura (`tirarMarcaDeContestacao`), pela operação na assinatura, com a trava e a sincronia: o
+ * período que a pessoa pagou volta a valer até o fim, e a assinatura continua cancelada. O caso fecha.
+ */
+export async function liberarDeNovoPeloOperador(casoId: number, por: PorQuem): Promise<Resultado<AcaoFeita>> {
+  const caso = await prisma.billingCase.findUnique({ where: { id: casoId }, select: { kind: true, key: true, open: true, userId: true, stripeSubscriptionId: true } });
+  if (!caso || !caso.open || !consertosDoCaso(caso.kind, caso.key).includes("liberar-de-novo") || !caso.stripeSubscriptionId) return { resultado: "nao-encontrada" };
+  if ((await statusDaContestacao(caso.key.slice("du:".length))) !== "won") return { resultado: "contestacao-nao-ganha" };
+  const assinatura = caso.stripeSubscriptionId;
+  if (!(await operarNaAssinatura(assinatura, () => tirarMarcaDeContestacao(assinatura)))) return { resultado: "ocupada" };
+  const dono = (await prisma.subscription.findUnique({ where: { stripeSubscriptionId: assinatura }, select: { ownerUserId: true } }))?.ownerUserId ?? caso.userId;
+  const detalhe = `a escola ganhou a contestação: o período pago voltou a valer; ${dono && (await temAcessoAtivo(dono)) ? "com acesso" : "sem acesso"} às aulas`;
+  await concluirCaso(casoId, por, "liberar-de-novo", { userId: dono, assinatura }, detalhe);
   return { resultado: "ok", feito: { detalhe } };
 }
 

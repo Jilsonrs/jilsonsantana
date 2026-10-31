@@ -71,7 +71,7 @@ let adminId = "";
 let espelhoId = 0;
 let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
-const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: aluna, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
+const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: aluna, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
 
 async function entrar(email?: string, senha?: string): Promise<string[]> {
   const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });

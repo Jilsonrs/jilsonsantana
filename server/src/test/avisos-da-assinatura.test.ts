@@ -783,6 +783,15 @@ describe("qual e-mail é devido agora (função pura)", () => {
     expect(ANTECEDENCIA_DO_PREPAGO_EM_MS).toBe(3 * DIA);
   });
 
+  // A paga por fora pelo operador (4.7b, passo 4d — P120) é pré-paga como a do Pix: os mesmos e-mails, com a data do fim.
+  it("a paga POR FORA: 'está acabando' como a do Pix, e a confirmação com o fim do acesso", () => {
+    const fim = new Date("2026-11-28T15:00:00Z");
+    const porFora = { status: "active", currentPeriodEnd: fim, pixPaymentIntentId: null, paidOutOfBand: true };
+    expect(emailDevido(porFora, new Date(fim.getTime() - DIA))).toEqual({ tipo: "PREPAGO_TERMINANDO", referencia: fim.toISOString(), trancaEm: fim });
+    const agora = new Date(fim.getTime() - 20 * DIA);
+    expect(emailDevido({ ...porFora, createdAt: new Date(agora.getTime() - 60_000) }, agora)).toEqual({ tipo: "CONFIRMADA", referencia: "inicio", trancaEm: fim });
+  });
+
   it("a confirmação: a assinatura viva que nasceu dentro da janela — no Pix, com o fim do acesso; antes do fim da pré-paga, o 'está acabando' vem primeiro", () => {
     const agora = new Date("2026-11-10T15:00:00Z");
     const nasceu = (msAtras: number) => new Date(agora.getTime() - msAtras);

@@ -6663,7 +6663,31 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               as aulas abertas, o caso fechado; "Devolver o Pix", 9990 devolvidos e o caso fechado; uma assinatura paga e
               cancelada na Stripe, "Devolver este pagamento": 9990 devolvidos, o acesso cortado, o caso fechado; o retrato do
               banco igual antes e depois. *Docs check (context7): não disparado — as idas à Stripe são as de sempre.*
-        - [ ] **4d — Liberar acesso pago por fora** e **liberar de novo depois da contestação ganha**.
+        - [x] **4d — Liberar acesso pago por fora** e **liberar de novo depois da contestação ganha**. **FEITO (31/10/2026).**
+              **"Liberar acesso pago por fora"** (P120) na ficha da conta — o plano (mensal ou anual) e a confirmação dizendo o
+              efeito (`POST …/acoes/liberar-pago-por-fora`): só para a conta SEM acesso (de novo com a trava da conta — 409
+              `JaTemAcesso`); o acesso sai de uma assinatura PRÉ-PAGA de verdade, paga por fora (`criarAssinaturaPagaPorFora`,
+              em `stripe-pix.ts`: não renova, sem cartão guardado, a marca `pago_por_fora` com a conta do operador, a primeira
+              fatura paga por fora, a chave de repetição pela conta e o plano), gravada pela sincronia — nunca um desvio no
+              gate. **A paga por fora é pré-paga em todo lugar** (a regra foi para o `CLAUDE.md`): nos detalhes (`pagoPorFora`,
+              e `prePaga()` a inclui — a tela do aluno e as operações a tratam como a do Pix), no espelho (a coluna
+              `paidOutOfBand`, migration `20261031230000_pago_por_fora`), na lista do painel ("pré-paga", nunca "vai
+              cancelar") e nos e-mails da pré-paga (a confirmação com a data do fim, e o "está acabando" 3 dias antes — os
+              textos já aprovados, aplicados a ela também). **"Liberar de novo"** é o conserto do caso da contestação: o
+              servidor lê na Stripe se ela foi GANHA (`statusDaContestacao`; senão, 409 `ContestacaoNaoGanha`), e tira a marca
+              (`tirarMarcaDeContestacao`) pela operação na assinatura, com a trava e a sincronia — o período pago volta a valer
+              até o fim, a assinatura continua cancelada, e o caso fecha. O "liberar" do caso do dinheiro sem assinatura
+              (4c) é o mesmo da ficha: pede o plano, então fica na ficha. Testes: `admin-cobranca-liberar.test.ts` (novo, 8),
+              `LiberarPagoPorFora.test.tsx` (novo, 3), a lista, os e-mails, `stripe.test.ts`, `stripe-pix-rede.test.ts`, a
+              ficha e "Precisa de você". **Mutação: 11 de 11 reprovaram.** **Prova pela rota** (servidor local, banco de dev,
+              dois alunos descartáveis, a área de teste da Stripe): liberado o mensal — na Stripe ativa, sem renovar, com a
+              marca, a fatura paga por fora e sem cartão; o espelho pago por fora; as aulas abertas; a tela do aluno
+              "pré-paga", sem cartão; o cancelar do painel, 409; liberar de novo com acesso, 409. Uma assinatura paga com o
+              cartão de teste que abre contestação, cancelada pela rotina do aviso "dinheiro saiu": sem aulas; "Liberar de
+              novo" ainda aberta, 409; depois das provas de teste (`winning_evidence`), ganha: a marca saiu, as aulas
+              voltaram, o caso fechou; o retrato do banco igual antes e depois. **Banco de dev:** a migration aplicada, *No
+              difference detected*, nenhuma tabela sem RLS. *Docs check (context7): Stripe → `/websites/stripe` → como ganhar
+              uma contestação na área de teste (31/10/2026).*
         - [ ] **Fechamento do bloco 4.**
       - [ ] **BLOCO 5 — CONTESTAÇÃO E FRAUDE SEM O PAINEL DA STRIPE**
         - [ ] **5a — A contestação na ficha e nos casos:** o prazo, o motivo, o valor; aceitar.
