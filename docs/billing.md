@@ -2088,7 +2088,8 @@ mandava ao painel da Stripe; está no histórico do git.)*
    - *ativa sem período pago*: **Encerrar na hora**;
    - *cobrança em aberto*: **Anular a cobrança em aberto**;
    - *devolução que falhou*: **Devolver de novo**, ou **Marcar como resolvida por fora**;
-   - *troca de plano*: **Devolver a diferença** ou **Soltar o agendamento**;
+   - *troca de plano*: a troca que cobrou mais do que a tela mostrou — a diferença sai por **Devolver este pagamento**,
+     na ficha (em parte); o agendamento que ficou pela metade — **Soltar o agendamento**;
    - *contestação*: **Responder com provas** (o texto exato que vai ao banco aparece antes; o envio não tem volta) ou
      **Aceitar a perda**; ganhou, **Liberar de novo**. O prazo está no caso;
    - *e-mail que não saiu*: **Reenviar**;
