@@ -6342,7 +6342,20 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               recusa "insufficient_funds", a devolução parcial, o recibo, o CPF escondido, o cartão e o código da
               cobrança levando ao cliente. *Docs check (context7): Stripe → `/websites/stripe` → 31/10/2026, 2ª consulta
               da sessão: o motivo da recusa em `outcome.reason`; `refunds` só expandido; `receipt_url`.*
-        - [ ] **1d — A ficha do aluno, a tela.**
+        - [x] **1d — A ficha do aluno, a tela.** **FEITO (31/10/2026).** `/admin/cobranca/assinaturas/ficha?conta=…`
+              (ou `?assinatura=…`, a sem conta), debaixo de "Assinaturas", que fica aceso no submenu: o nome e o
+              e-mail, quando a conta nasceu, "Com acesso às aulas" ou "Sem acesso"; as assinaturas; as cobranças (valor
+              e data, a forma — bandeira e final, ou Pix —, o que aconteceu: paga, recusada com o motivo em português
+              — "sem saldo ou sem limite", "cartão vencido"… —, esperando, devolvida, devolvida em parte com o valor,
+              contestada com a situação e o prazo; o código `ch_` e o "Ver recibo"); o cartão com a validade; o CPF
+              escondido; os e-mails da cobrança, os que saíram e os que não saíram. Carregando; a ficha que não existe
+              ("Não achamos esta ficha", sem "tentar de novo"); a falha (com ele); a Stripe fora do ar (o resto
+              aparece, e a tela diz o que falta). **Na lista:** o nome leva à ficha; e a busca por `ch_`, `in_` ou
+              `du_` pergunta de quem é o código e abre a ficha direto ("Nenhuma pessoa da escola tem esse código"
+              quando ninguém tem). Componentes: `LinhaDaAssinatura` (a linha, agora da lista e da ficha),
+              `CobrancasDaFicha`, `ResumoDaFicha`; os textos em `lib/cobranca-ficha.ts`. Testes: a ficha (novo, 9) e
+              a lista (+3). **Mutação: 8 de 8 reprovaram.** *Docs check (context7): não disparado — nada novo vai à
+              Stripe (a tela lê as rotas do 1c).*
         - [ ] **1e — As tentativas que não terminaram** (*A*, item 3).
         - [ ] **1f — O que aconteceu** (*A*, itens 4 e 5): a tabela do **registro** (veio do 1a) — quem fez (o
               operador, o aluno, a Stripe, a rodada, o JilsonAI), quando, em quem, o quê e o que a Stripe respondeu —,

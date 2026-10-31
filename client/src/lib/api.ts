@@ -42,6 +42,8 @@ import type {
   SincroniaDaConta,
   FiltroDasAssinaturas,
   ListaDeAssinaturas,
+  FichaDaCobranca,
+  OndeLeva,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1209,6 +1211,18 @@ export async function desistirDaTroca(): Promise<TrocaDesfeita> {
 /** A lista do painel da Cobrança (etapa 4.7b, passo 1b): uma página, com a contagem de cada filtro. */
 export async function adminListarAssinaturas(consulta: { filtro: FiltroDasAssinaturas; busca?: string; pagina: number }): Promise<ListaDeAssinaturas> {
   const { data } = await client.get<ListaDeAssinaturas>("/admin/assinaturas", { params: consulta });
+  return data;
+}
+
+/** A ficha do aluno no painel da Cobrança (etapa 4.7b, passo 1d): por conta, ou pela assinatura sem conta. */
+export async function adminFichaDaCobranca(quem: { conta: string } | { assinatura: number }): Promise<FichaDaCobranca> {
+  const { data } = await client.get<FichaDaCobranca>("/admin/cobranca/ficha", { params: quem });
+  return data;
+}
+
+/** De quem é o código da Stripe que veio num alerta. */
+export async function adminAcharCodigo(codigo: string): Promise<OndeLeva> {
+  const { data } = await client.get<OndeLeva>("/admin/cobranca/achar", { params: { codigo } });
   return data;
 }
 

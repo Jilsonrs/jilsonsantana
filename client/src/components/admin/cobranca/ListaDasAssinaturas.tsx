@@ -1,5 +1,5 @@
 import type { ListaDeAssinaturas } from "@jilson/core";
-import { detalhesDaLinha, textoDaSituacao } from "@/lib/cobranca-admin";
+import { LinhaDaAssinatura } from "@/components/admin/cobranca/LinhaDaAssinatura";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -34,16 +34,7 @@ export function ListaDasAssinaturas({ dados, carregando, falhou, aoTentarDeNovo,
     <div className="space-y-4">
       <ul aria-label="Assinaturas" className="divide-y divide-border rounded-2xl border border-border/60">
         {dados.assinaturas.map((assinatura) => (
-          <li key={assinatura.id} className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="truncate font-medium text-foreground">{assinatura.aluno ? (assinatura.aluno.nome ?? assinatura.aluno.email) : "Sem conta na escola"}</p>
-              {assinatura.aluno?.nome ? <p className="truncate text-sm text-muted-foreground">{assinatura.aluno.email}</p> : null}
-            </div>
-            <div className="text-sm sm:text-right">
-              <p className="text-foreground">{textoDaSituacao(assinatura)}</p>
-              <p className="text-muted-foreground">{detalhesDaLinha(assinatura)}</p>
-            </div>
-          </li>
+          <LinhaDaAssinatura key={assinatura.id} assinatura={assinatura} comLink />
         ))}
       </ul>
       {pagina > 1 || dados.temMais ? (

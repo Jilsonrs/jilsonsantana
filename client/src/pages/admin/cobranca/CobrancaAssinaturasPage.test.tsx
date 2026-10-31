@@ -2,14 +2,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "@/test-utils";
-import type { AssinaturaDaLista, ContagemDasAssinaturas, FiltroDasAssinaturas, ListaDeAssinaturas, SincroniaDaConta } from "@jilson/core";
+import type { AssinaturaDaLista, ContagemDasAssinaturas, FiltroDasAssinaturas, ListaDeAssinaturas, OndeLeva, SincroniaDaConta } from "@jilson/core";
 
 type Consulta = { filtro: FiltroDasAssinaturas; busca?: string; pagina: number };
 const adminListarAssinaturas = vi.fn<(consulta: Consulta) => Promise<ListaDeAssinaturas>>();
 const adminSincronizarConta = vi.fn<(email: string) => Promise<SincroniaDaConta>>();
+const adminAcharCodigo = vi.fn<(codigo: string) => Promise<OndeLeva>>();
 vi.mock("@/lib/api", () => ({
   adminListarAssinaturas: (consulta: Consulta) => adminListarAssinaturas(consulta),
   adminSincronizarConta: (email: string) => adminSincronizarConta(email),
+  adminAcharCodigo: (codigo: string) => adminAcharCodigo(codigo),
 }));
 
 import { CobrancaAssinaturasPage } from "./CobrancaAssinaturasPage";
@@ -40,6 +42,7 @@ const ultimaConsulta = () => adminListarAssinaturas.mock.calls[adminListarAssina
 beforeEach(() => {
   adminListarAssinaturas.mockReset().mockResolvedValue(resposta([linha()]));
   adminSincronizarConta.mockReset();
+  adminAcharCodigo.mockReset();
 });
 
 describe("Cobrança → Assinaturas — os estados", () => {
@@ -147,5 +150,35 @@ describe("Cobrança → Assinaturas — filtro, busca e página vão ao servidor
     renderWithProviders(<CobrancaAssinaturasPage />);
     expect(screen.getByLabelText("E-mail do aluno")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Conferir na Stripe" })).toBeTruthy();
+  });
+});
+
+describe("Cobrança → Assinaturas — da lista para a ficha (passo 1d)", () => {
+  it("o nome leva à ficha da conta; a linha sem conta, à ficha da assinatura", async () => {
+    adminListarAssinaturas.mockResolvedValue(resposta([linha({ id: 1 }), linha({ id: 2, aluno: null })]));
+    renderWithProviders(<CobrancaAssinaturasPage />);
+    expect((await screen.findByRole("link", { name: "Ana Souza" })).getAttribute("href")).toBe("/admin/cobranca/assinaturas/ficha?conta=u-1");
+    expect(screen.getByRole("link", { name: "Sem conta na escola" }).getAttribute("href")).toBe("/admin/cobranca/assinaturas/ficha?assinatura=2");
+  });
+
+  it("o código de uma cobrança (ch_): pergunta de quem é e abre a ficha — sem buscar na lista", async () => {
+    adminAcharCodigo.mockResolvedValue({ conta: "u-9", assinatura: null });
+    renderWithProviders(<CobrancaAssinaturasPage />, { route: "/admin/cobranca/assinaturas", path: "/admin/cobranca/assinaturas", extraRoutes: [{ path: "/admin/cobranca/assinaturas/ficha", element: <p>A FICHA ABRIU</p> }] });
+    await screen.findByText("Ana Souza");
+    fireEvent.change(screen.getByLabelText("Buscar assinaturas"), { target: { value: " ch_123 " } });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+    expect(await screen.findByText("A FICHA ABRIU")).toBeTruthy();
+    expect(adminAcharCodigo.mock.calls).toEqual([["ch_123"]]);
+    expect(adminListarAssinaturas.mock.calls.every(([c]) => c.busca === undefined)).toBe(true);
+  });
+
+  it("o código que ninguém da escola tem: diz isso, e a lista continua", async () => {
+    adminAcharCodigo.mockRejectedValue({ response: { data: { error: "NaoEncontrada" } } });
+    renderWithProviders(<CobrancaAssinaturasPage />);
+    await screen.findByText("Ana Souza");
+    fireEvent.change(screen.getByLabelText("Buscar assinaturas"), { target: { value: "du_999" } });
+    fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Nenhuma pessoa da escola tem esse código.");
+    expect(screen.getByText("Ana Souza")).toBeTruthy();
   });
 });
