@@ -138,16 +138,29 @@ export function paraCasoDaLista(linha: LinhaDoCaso): CasoDaLista {
     fechadoEm: linha.closedAt?.toISOString() ?? null,
     fechadoPor: linha.closedBy,
     nota: linha.note,
-    conserto: consertoDoCaso(linha.kind, linha.key),
+    consertos: consertosDoCaso(linha.kind, linha.key),
+    conserto: consertosDoCaso(linha.kind, linha.key)[0] ?? null,
   };
 }
 
-/** O conserto que o painel faz para o caso (passo 3b): a cobrança em aberto, o agendamento pela metade, a ativa sem período pago. */
-export function consertoDoCaso(tipo: TipoDeCasoDaLista, chave: string): ConsertoDoCaso | null {
-  if (tipo === "COBRANCA_EM_ABERTO") return "anular-cobranca";
-  if (tipo === "TROCA_DE_PLANO" && chave.startsWith("agendamento:")) return "soltar-agendamento";
-  if (tipo === "ATIVA_SEM_PERIODO_PAGO") return "encerrar-na-hora";
-  return null;
+/**
+ * Os consertos que o painel faz para o caso: a cobrança em aberto, o agendamento pela metade, a ativa sem período pago (passo
+ * 3b); a devolução que falhou — a do reembolso (`sub:`) ou a de uma cobrança, com o valor (passo 4a e a revisão do bloco 4); o Pix em
+ * conferência — aceitar ou devolver (P117) — e o dinheiro recebido sem assinatura (passo 4c). Só com o que o conserto precisa
+ * na chave: sem ela, nenhum.
+ */
+export function consertosDoCaso(tipo: TipoDeCasoDaLista, chave: string): ConsertoDoCaso[] {
+  // A devolução que falhou: a do reembolso (`sub:`), ou a de uma cobrança com o valor guardado (`devolucao:<re_…>` do aviso,
+  // `cobranca:<ch_…>` do painel). O caso antigo de um pagamento (`pagamento:`), sem o valor, se resolve pela ficha.
+  if (tipo === "DEVOLUCAO_FALHOU" && (chave.startsWith("sub:") || chave.startsWith("devolucao:re_") || chave.startsWith("cobranca:"))) return ["devolver-de-novo"];
+  if (tipo === "PIX_EM_CONFERENCIA" && chave.startsWith("pix:pi_")) return ["aceitar-pix", "devolver-pix"];
+  if (tipo === "PAGO_SEM_ASSINATURA" && (chave.startsWith("sub:") || chave.startsWith("fatura:in_"))) return ["devolver-este-pagamento"];
+  // A contestação (bloco 5, passo 5a): aceitar a perda (só a aberta) — ou, se a escola ganhou, liberar de novo (passo 4d).
+  if (tipo === "CONTESTACAO" && chave.startsWith("du:")) return ["aceitar-contestacao", "liberar-de-novo"];
+  if (tipo === "COBRANCA_EM_ABERTO") return ["anular-cobranca"];
+  if (tipo === "TROCA_DE_PLANO" && chave.startsWith("agendamento:")) return ["soltar-agendamento"];
+  if (tipo === "ATIVA_SEM_PERIODO_PAGO") return ["encerrar-na-hora"];
+  return [];
 }
 
 /**

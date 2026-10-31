@@ -48,7 +48,9 @@ export function CartaoDoCaso({ caso }: { caso: CasoDaLista }) {
       {caso.aberto ? (
         <>
           <p className="text-sm text-muted-foreground">O que resolve: {O_QUE_RESOLVE[caso.tipo]}</p>
-          {caso.conserto ? <ConsertoDoCaso casoId={caso.id} conserto={caso.conserto} /> : null}
+          {caso.consertos.map((conserto) => (
+            <ConsertoDoCaso key={conserto} casoId={caso.id} conserto={conserto} />
+          ))}
           {caso.tipo === "EMAIL_NAO_SAIU" ? (
             <div className="space-y-1">
               <Button type="button" size="sm" variant="outline" disabled={reenviar.isPending} onClick={() => reenviar.mutate()}>

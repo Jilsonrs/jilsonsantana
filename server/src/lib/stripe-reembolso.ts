@@ -108,7 +108,10 @@ export async function cancelarNaHora(assinaturaId: string, dado: MotivoDado): Pr
 export async function cancelarPorContestacao(assinaturaId: string, contestacaoId: string): Promise<void> {
   let faturaEmAberto: string | null = null;
   try {
-    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: contestacaoId }, expand: ["latest_invoice"] });
+    // A marca JUNTA as contestações da assinatura (achado P1 da revisão do bloco 4, 31/10/2026): com uma só, a segunda
+    // contestação apagava a primeira, e ganhar uma liberava as duas (`tirarMarcaDeContestacao`).
+    const atual = (await stripe().subscriptions.retrieve(assinaturaId)).metadata[METADADO_DA_CONTESTACAO];
+    const marcada = await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: juntarNaMarca(atual, contestacaoId) }, expand: ["latest_invoice"] });
     if (marcada.status === "canceled" || marcada.status === "incomplete_expired") return;
     const fatura = marcada.latest_invoice;
     faturaEmAberto = typeof fatura === "object" && fatura !== null && fatura.status === "open" ? fatura.id : null;
@@ -185,6 +188,124 @@ export async function devolver(pagamento: Pagamento, dono: DonoDaDevolucao): Pro
   } catch (erro) {
     if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "charge_already_refunded") return;
     throw erroSemMensagem(erro, "a devolução do pagamento");
+  }
+}
+
+/**
+ * O que foi PAGO numa fatura (o "Devolver este pagamento" do dinheiro sem assinatura, 4.7b, passo 4c): os pagamentos dela, com
+ * o que cada um já devolveu. A fatura que não está paga não tem o que devolver.
+ */
+export async function oQueFoiPagoNaFatura(faturaId: string): Promise<OQueFoiPago> {
+  let fatura: Stripe.Invoice;
+  try {
+    fatura = await stripe().invoices.retrieve(faturaId, { expand: ["payments"] });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura da fatura");
+  }
+  if (fatura.status !== "paid" || fatura.amount_paid <= 0) return { moeda: null, pagamentos: [] };
+  const pagamentos: Pagamento[] = [];
+  for (const pagamentoId of pagamentosDaFatura(fatura)) pagamentos.push({ pagamentoId, ...(await cobrancaDoPagamento(pagamentoId)) });
+  return { moeda: fatura.currency, pagamentos };
+}
+
+/**
+ * A CONTESTAÇÃO, como a Stripe diz AGORA (o "Liberar de novo" do painel, 4.7b, passo 4d): o status dela — `won` quando o banco
+ * deu razão à escola. Nenhum: a Stripe não a conhece.
+ */
+export async function statusDaContestacao(contestacaoId: string): Promise<string | null> {
+  try {
+    return (await stripe().disputes.retrieve(contestacaoId)).status;
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") return null;
+    throw erroSemMensagem(erro, "a leitura da contestação");
+  }
+}
+
+/**
+ * ACEITA A CONTESTAÇÃO (o "Aceitar a perda" do painel, 4.7b, passo 5a): a escola não manda provas, e o banco a encerra como
+ * perdida — o dinheiro fica com a pessoa. `[FATO — context7 /websites/stripe, 31/10/2026]` só a contestação aberta
+ * (`needs_response`) se fecha assim, e não tem volta. Devolve o status de depois.
+ */
+export async function aceitarContestacao(contestacaoId: string): Promise<string> {
+  try {
+    return (await stripe().disputes.close(contestacaoId)).status;
+  } catch (erro) {
+    throw erroSemMensagem(erro, "o aceite da contestação");
+  }
+}
+
+/** As contestações da marca (os ids, separados por vírgula). Função pura. */
+export function idsDaMarca(marca: string | undefined): string[] {
+  return (marca ?? "").split(",").filter(Boolean);
+}
+
+/** A marca com mais uma contestação — sem repetir a que já está. Função pura. */
+export function juntarNaMarca(marca: string | undefined, id: string): string {
+  const ids = idsDaMarca(marca);
+  return (ids.includes(id) ? ids : [...ids, id]).join(",");
+}
+
+/**
+ * TIRA A MARCA DA CONTESTAÇÃO da assinatura (E7 — liberar de novo a contestação GANHA): sem ela, o período que a pessoa pagou
+ * volta a contar como pago (`paraAssinaturaNaStripe`). A assinatura continua cancelada: para seguir depois, ela assina de novo.
+ * SÓ com TODAS as contestações da marca ganhas, lidas na Stripe agora (achado P1 da revisão do bloco 4, 31/10/2026): com uma
+ * delas perdida ou sem decisão, nada muda (`outra-nao-ganha`) — liberar a ganha devolveria as aulas sem o dinheiro da outra.
+ */
+export async function tirarMarcaDeContestacao(assinaturaId: string): Promise<"tirada" | "outra-nao-ganha"> {
+  let marca: string | undefined;
+  try {
+    marca = (await stripe().subscriptions.retrieve(assinaturaId)).metadata[METADADO_DA_CONTESTACAO];
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a leitura da marca da contestação");
+  }
+  for (const id of idsDaMarca(marca)) if ((await statusDaContestacao(id)) !== "won") return "outra-nao-ganha";
+  try {
+    await stripe().subscriptions.update(assinaturaId, { metadata: { [METADADO_DA_CONTESTACAO]: "" } });
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a saída da marca da contestação");
+  }
+  return "tirada";
+}
+
+/** Uma cobrança que o painel devolve (passo 4a): de quem é, quanto foi e quanto já voltou. */
+export type CobrancaParaDevolver = { id: string; cliente: string | null; pagamentoId: string | null; centavos: number; devolvido: number; moeda: string; paga: boolean };
+
+/** A COBRANÇA, lida na Stripe agora — ou nenhuma, se a Stripe não a conhece. */
+export async function lerCobranca(cobrancaId: string): Promise<CobrancaParaDevolver | null> {
+  try {
+    const c = await stripe().charges.retrieve(cobrancaId);
+    return {
+      id: c.id,
+      cliente: typeof c.customer === "string" ? c.customer : (c.customer?.id ?? null),
+      pagamentoId: typeof c.payment_intent === "string" ? c.payment_intent : (c.payment_intent?.id ?? null),
+      centavos: c.amount,
+      devolvido: c.amount_refunded,
+      moeda: c.currency,
+      paga: c.paid && c.status === "succeeded",
+    };
+  } catch (erro) {
+    if (erro instanceof Stripe.errors.StripeInvalidRequestError && erro.code === "resource_missing") return null;
+    throw erroSemMensagem(erro, "a leitura da cobrança");
+  }
+}
+
+/**
+ * DEVOLVE UMA PARTE (ou tudo o que falta) de uma cobrança — o "Devolver um pagamento" do painel (passo 4a, P139). A
+ * chave de repetição leva a cobrança, o que já tinha voltado e o valor: o clique duplo não devolve duas vezes, e a
+ * segunda parte, depois da primeira, é outro pedido. A Stripe recusa devolver mais do que falta.
+ */
+export async function devolverParte(cobranca: CobrancaParaDevolver, centavos: number, dono: { userId: string | null; assinaturaId: string | null; operador: string }, agora: Date = new Date()): Promise<void> {
+  const metadata: Record<string, string> = { para: "painel", operador: dono.operador };
+  if (dono.userId) metadata.userId = dono.userId;
+  if (dono.assinaturaId) metadata.assinatura = dono.assinaturaId;
+  try {
+    const devolucao = await stripe().refunds.create(
+      { charge: cobranca.id, amount: centavos, reason: "requested_by_customer", metadata },
+      { idempotencyKey: `painel-devolucao-${cobranca.id}-${cobranca.devolvido}-${centavos}-${Math.floor(agora.getTime() / JANELA_DA_CHAVE)}` },
+    );
+    if (devolucao.status === "failed" || devolucao.status === "canceled") throw new Error(`[stripe] a devolução nasceu ${devolucao.status}`);
+  } catch (erro) {
+    throw erroSemMensagem(erro, "a devolução da cobrança");
   }
 }
 

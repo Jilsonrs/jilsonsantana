@@ -15,6 +15,7 @@ const falsa = {
   invoicePayments: { list: vi.fn() },
   paymentIntents: { retrieve: vi.fn() },
   refunds: { create: vi.fn() },
+  disputes: { retrieve: vi.fn() },
 };
 // A biblioteca falsa entra pela fábrica do cliente: é dela que saem TODAS as idas à Stripe,
 // inclusive as do próprio `stripe.ts` (a busca da assinatura que alimenta o espelho).
@@ -25,7 +26,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
 
 import { AssinaturaNaoEncontrada, buscarAssinatura } from "./stripe.js";
 import { cobrancaDoPagamento, faturaDevolvida, periodoDevolvido, pixDevolvido } from "./stripe-devolucao.js";
-import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorContestacao, chaveDaDevolucao, devolver, encerrarParaOPix, paraPedidoDeDevolucao } from "./stripe-reembolso.js";
+import { aDevolver, assinaturaDoPagamento, buscarOQueFoiPago, buscarOQueFoiPagoNoPix, cancelarNaHora, cancelarPorContestacao, chaveDaDevolucao, devolver, encerrarParaOPix, idsDaMarca, juntarNaMarca, paraPedidoDeDevolucao, tirarMarcaDeContestacao } from "./stripe-reembolso.js";
 
 const DONO = { userId: "u-1", assinaturaId: "sub_1" };
 const recusa = (code: string) => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", code, statusCode: 400 });
@@ -115,6 +116,10 @@ describe("encerrar a assinatura para reembolsar", () => {
 // novo), SEM chave de repetição (medido na prova do E14: com ela, a marca repetida devolvia a resposta guardada e o
 // cancelamento repetido dava 404), e a fatura em aberto anulada depois.
 describe("cancelar a assinatura contestada", () => {
+  beforeEach(() => {
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", status: "active", metadata: {} });
+  });
+
   it("primeiro a marca, depois o cancelamento NA HORA — sem crédito nem fatura nova, e sem chave de repetição", async () => {
     falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "active", latest_invoice: { id: "in_1", status: "paid" } });
     falsa.subscriptions.cancel.mockResolvedValue({ id: "sub_1", status: "canceled" });
@@ -132,6 +137,15 @@ describe("cancelar a assinatura contestada", () => {
     await cancelarPorContestacao("sub_1", "dp_1");
     expect(falsa.subscriptions.update.mock.calls[0]).toEqual(falsa.subscriptions.update.mock.calls[1]);
     expect(falsa.subscriptions.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  // A revisão de segurança do bloco 4 (P1): a marca guardava só a última — a segunda contestação apagava a primeira.
+  it("a SEGUNDA contestação se junta à marca, sem apagar a primeira (e a mesma não se repete)", async () => {
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", status: "canceled", metadata: { contestacao: "dp_1" } });
+    falsa.subscriptions.update.mockResolvedValue({ id: "sub_1", status: "canceled" });
+    await cancelarPorContestacao("sub_1", "dp_2");
+    await cancelarPorContestacao("sub_1", "dp_1");
+    expect(falsa.subscriptions.update.mock.calls.map(([, pedido]) => (pedido as { metadata: { contestacao: string } }).metadata.contestacao)).toEqual(["dp_1,dp_2", "dp_1"]);
   });
 
   it("a já encerrada (a reentrega do aviso): só a marca, sem cancelar de novo", async () => {
@@ -174,6 +188,38 @@ describe("cancelar a assinatura contestada", () => {
     await expect(cancelarPorContestacao("sub_1", "dp_2")).resolves.toBeUndefined();
     expect(erro.mock.calls.flat().join(" ")).toContain("a cobrança em aberto NÃO foi anulada");
     erro.mockRestore();
+  });
+});
+
+describe("a marca das contestações (revisão de segurança do bloco 4)", () => {
+  it("juntar e ler: os ids separados por vírgula, sem repetir e sem vazio", () => {
+    expect(juntarNaMarca(undefined, "dp_1")).toBe("dp_1");
+    expect(juntarNaMarca("", "dp_1")).toBe("dp_1");
+    expect(juntarNaMarca("dp_1", "dp_2")).toBe("dp_1,dp_2");
+    expect(juntarNaMarca("dp_1,dp_2", "dp_1")).toBe("dp_1,dp_2");
+    expect(idsDaMarca("dp_1,dp_2")).toEqual(["dp_1", "dp_2"]);
+    expect(idsDaMarca("")).toEqual([]);
+    expect(idsDaMarca(undefined)).toEqual([]);
+  });
+
+  it("liberar de novo: a marca SÓ sai com TODAS as contestações ganhas — com uma perdida ou sem decisão, nada muda", async () => {
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_1", status: "canceled", metadata: { contestacao: "dp_1,dp_2" } });
+    falsa.disputes.retrieve.mockImplementation(async (id: string) => ({ id, status: id === "dp_1" ? "won" : "lost" }));
+    expect(await tirarMarcaDeContestacao("sub_1")).toBe("outra-nao-ganha");
+    falsa.disputes.retrieve.mockImplementation(async (id: string) => ({ id, status: id === "dp_1" ? "won" : "needs_response" }));
+    expect(await tirarMarcaDeContestacao("sub_1")).toBe("outra-nao-ganha");
+    expect(falsa.subscriptions.update).not.toHaveBeenCalled();
+    falsa.disputes.retrieve.mockImplementation(async (id: string) => ({ id, status: "won" }));
+    falsa.subscriptions.update.mockResolvedValue({ id: "sub_1" });
+    expect(await tirarMarcaDeContestacao("sub_1")).toBe("tirada");
+    expect(falsa.subscriptions.update.mock.calls).toEqual([["sub_1", { metadata: { contestacao: "" } }]]);
+  });
+
+  it("a leitura da marca falhou: sobe, sem a mensagem da Stripe, e nada muda", async () => {
+    falsa.subscriptions.retrieve.mockRejectedValue(foraDoAr());
+    await expect(tirarMarcaDeContestacao("sub_1")).rejects.toThrow(/a leitura da marca da contestação/);
+    await expect(tirarMarcaDeContestacao("sub_1")).rejects.not.toThrow(/sk_test_abc/);
+    expect(falsa.subscriptions.update).not.toHaveBeenCalled();
   });
 });
 

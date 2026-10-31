@@ -15,8 +15,10 @@ import type { PedidoDeEmail, Envio } from "../lib/email.js";
 const buscarDetalhes = vi.fn<(id: string) => Promise<DetalhesDaAssinatura>>();
 const pararRenovacao = vi.fn<(id: string, dado: MotivoDado) => Promise<DetalhesDaAssinatura>>();
 const retomarRenovacao = vi.fn<(id: string, acabaNoFimDoPeriodo: boolean) => Promise<DetalhesDaAssinatura>>();
+const pagarFatura = vi.fn<(faturaId: string) => Promise<"paga" | "recusada" | "pede-confirmacao">>();
 vi.mock("../lib/stripe-assinatura.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-assinatura.js")>()),
+  pagarFatura: (faturaId: string) => pagarFatura(faturaId),
   buscarDetalhes: (id: string) => buscarDetalhes(id),
   pararRenovacao: (id: string, dado: MotivoDado) => pararRenovacao(id, dado),
   retomarRenovacao: (id: string, acabaNoFimDoPeriodo: boolean) => retomarRenovacao(id, acabaNoFimDoPeriodo),
@@ -36,10 +38,12 @@ vi.mock("../lib/stripe.js", async (importOriginal) => ({
   trocarNumeroFiscal: (cliente: string, documento: { tipo: string; numero: string }) => trocarNumeroFiscal(cliente, documento),
 }));
 const anularFatura = vi.fn<(faturaId: string) => Promise<"anulada" | "paga">>();
+const assinaturaDaFatura = vi.fn<(faturaId: string) => Promise<string | null>>();
 const soltarAgendamento = vi.fn<(agendamentoId: string) => Promise<void>>();
 vi.mock("../lib/stripe-plano.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/stripe-plano.js")>()),
   anularFatura: (faturaId: string) => anularFatura(faturaId),
+  assinaturaDaFatura: (faturaId: string) => assinaturaDaFatura(faturaId),
   soltarAgendamento: (agendamentoId: string) => soltarAgendamento(agendamentoId),
 }));
 const enviarEmail = vi.fn<(pedido: PedidoDeEmail) => Promise<Envio>>();
@@ -52,6 +56,7 @@ import servidor from "./servidor.js";
 import { prisma, TipoDeCaso } from "../lib/prisma.js";
 import { abrirCaso } from "../lib/casos.js";
 import { AssinaturaNaoEncontrada } from "../lib/stripe.js";
+import { operador } from "../routes/admin-cobranca.js";
 
 const S = `${Date.now()}`;
 const DIA = 24 * 60 * 60 * 1000;
@@ -66,7 +71,7 @@ let adminId = "";
 let espelhoId = 0;
 let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
-const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: aluna, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
+const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: aluna, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
 
 async function entrar(email?: string, senha?: string): Promise<string[]> {
   const res = await request(servidor).post("/api/auth/sign-in/email").send({ email, password: senha });
@@ -93,11 +98,13 @@ beforeEach(() => {
   buscarDetalhes.mockReset().mockImplementation(async (id) => daStripe(id));
   pararRenovacao.mockReset().mockImplementation(async (id) => daStripe(id));
   retomarRenovacao.mockReset().mockImplementation(async (id) => daStripe(id));
+  pagarFatura.mockReset().mockResolvedValue("paga");
   cancelarNaHora.mockReset().mockResolvedValue(undefined);
   buscarAssinatura.mockReset().mockImplementation(async (id) => ({ id, status: "active", pagoAte: EM_30_DIAS, clienteId: CLIENTE, userId: aluna, livemode: false, ...naStripe }));
   enviarEmail.mockReset().mockResolvedValue({ enviado: true, id: "re_teste" });
   trocarNumeroFiscal.mockReset().mockResolvedValue(undefined);
   anularFatura.mockReset().mockResolvedValue("anulada");
+  assinaturaDaFatura.mockReset().mockResolvedValue(SUB);
   soltarAgendamento.mockReset().mockResolvedValue(undefined);
 });
 
@@ -120,6 +127,30 @@ describe("as ações — quem entra e o formato", () => {
     }
     expect((await request(servidor).post("/api/admin/cobranca/casos/1/reenviar").set("Cookie", member)).status).toBe(403);
     expect(buscarDetalhes).not.toHaveBeenCalled();
+  });
+
+  // A revisão de segurança do bloco 3: as rotas do 3b (anular, encerrar, o CPF, o link) e o 401 do reenviar.
+  it("as rotas dos consertos, do CPF e do link: sem login 401; aluno 403 — e nada vai à Stripe", async () => {
+    const pedidos: [string, object][] = [
+      ["/api/admin/cobranca/casos/1/resolver", { acao: "encerrar-na-hora" }],
+      ["/api/admin/cobranca/casos/1/reenviar", {}],
+      ["/api/admin/cobranca/acoes/corrigir-documento", { conta: aluna, documento: "529.982.247-25" }],
+      ["/api/admin/cobranca/acoes/enviar-link", { conta: aluna, link: "reativar" }],
+      ["/api/admin/cobranca/acoes/cobrar-de-novo", { assinatura: espelhoId }],
+    ];
+    for (const [rota, corpo] of pedidos) {
+      expect((await request(servidor).post(rota).set("Cookie", []).send(corpo)).status).toBe(401);
+      expect((await request(servidor).post(rota).set("Cookie", member).send(corpo)).status).toBe(403);
+    }
+    expect([buscarDetalhes, cancelarNaHora, trocarNumeroFiscal, enviarEmail].map((d) => d.mock.calls.length)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("sem a conta na sessão, a ação responde 401 — nunca fica pendurada", () => {
+    const res = { set: vi.fn(), status: vi.fn(), json: vi.fn() };
+    res.status.mockReturnValue(res);
+    // Seguro: o teste usa só `set`, `status` e `json`, que é o que a função chama.
+    expect(operador({}, res as unknown as Parameters<typeof operador>[1])).toBeNull();
+    expect([res.status.mock.calls, res.json.mock.calls]).toEqual([[[401]], [[{ error: "SemSessao" }]]]);
   });
 
   it("corpo fora do formato: 400; sem a Stripe configurada: 503", async () => {
@@ -150,12 +181,46 @@ describe("cancelar e desfazer", () => {
     expect(await ultimaDoRegistro("cancelar")).toMatchObject({ who: "OPERADOR", userId: aluna, stripeSubscriptionId: SUB });
   });
 
-  it("atrasada: termina agora (a mesma operação do aluno)", async () => {
+  it("atrasada: termina agora (a mesma operação do aluno) — e, pelo operador, a sessão da pessoa CAI", async () => {
     detalhes = { status: "past_due", pagoAte: new Date(Date.now() - DIA) };
-    const res = await acao("cancelar", { assinatura: espelhoId });
-    expect([res.status, res.body]).toEqual([200, { detalhe: "terminou agora (a cobrança estava atrasada)" }]);
-    expect(cancelarNaHora).toHaveBeenCalledTimes(1);
-    expect(pararRenovacao).not.toHaveBeenCalled();
+    cancelarNaHora.mockImplementation(async () => {
+      naStripe = { status: "canceled", pagoAte: new Date(Date.now() - DIA) };
+    });
+    await prisma.session.create({ data: { id: `sessao-${S}-atrasada`, token: `token-${S}-atrasada`, userId: aluna, expiresAt: new Date(Date.now() + 7 * DIA) } });
+    try {
+      const res = await acao("cancelar", { assinatura: espelhoId });
+      expect([res.status, res.body]).toEqual([200, { detalhe: "terminou agora (a cobrança estava atrasada)" }]);
+      expect(cancelarNaHora).toHaveBeenCalledTimes(1);
+      expect(pararRenovacao).not.toHaveBeenCalled();
+      // Revisão de segurança do bloco 3: a sessão fica só quando a PRÓPRIA pessoa cancela (CLAUDE.md → Access Architecture).
+      expect(await prisma.session.count({ where: { userId: aluna } })).toBe(0);
+    } finally {
+      await prisma.session.deleteMany({ where: { userId: aluna } });
+      await prisma.subscription.update({ where: { id: espelhoId }, data: { status: "active", currentPeriodEnd: EM_30_DIAS } });
+    }
+  });
+
+  // O PASSO 4b: tentar cobrar de novo agora a cobrança em aberto da atrasada.
+  it("cobrar de novo a atrasada: a cobrança em aberto, com a trava e a sincronia — e o registro diz como foi", async () => {
+    detalhes = { status: "past_due", pagoAte: new Date(Date.now() - 5 * DIA), faturaEmAbertoId: `in_${S}_aberta` };
+    const res = await acao("cobrar-de-novo", { assinatura: espelhoId });
+    expect([res.status, res.body]).toEqual([200, { detalhe: "a cobrança passou; com acesso às aulas" }]);
+    expect(pagarFatura.mock.calls).toEqual([[`in_${S}_aberta`]]);
+    expect(buscarAssinatura).toHaveBeenCalledWith(SUB);
+    expect(await ultimaDoRegistro("cobrar-de-novo")).toMatchObject({ who: "OPERADOR", userId: aluna, stripeSubscriptionId: SUB, detail: "a cobrança passou; com acesso às aulas" });
+    pagarFatura.mockResolvedValueOnce("recusada").mockResolvedValueOnce("pede-confirmacao");
+    expect((await acao("cobrar-de-novo", { assinatura: espelhoId })).body).toEqual({ detalhe: "o cartão foi recusado de novo; a Stripe segue tentando sozinha" });
+    expect((await acao("cobrar-de-novo", { assinatura: espelhoId })).body).toEqual({ detalhe: "o banco pede uma confirmação que só a pessoa dá: mande o link de trocar o cartão" });
+  });
+
+  it("cobrar de novo a que está em dia, ou a que foi paga no meio (relida com a trava): 409, e nada é cobrado", async () => {
+    expect((await acao("cobrar-de-novo", { assinatura: espelhoId })).body).toEqual({ error: "NadaAFazer" });
+    // A em dia é recusada antes da trava: a Stripe é lida uma vez só.
+    expect(buscarDetalhes).toHaveBeenCalledTimes(1);
+    detalhes = { status: "past_due", faturaEmAbertoId: `in_${S}_aberta` };
+    buscarDetalhes.mockImplementationOnce(async (id) => daStripe(id)).mockImplementationOnce(async (id) => ({ ...daStripe(id), status: "active", faturaEmAbertoId: null }));
+    expect((await acao("cobrar-de-novo", { assinatura: espelhoId })).body).toEqual({ error: "NadaAFazer" });
+    expect(pagarFatura).not.toHaveBeenCalled();
   });
 
   it("a pré-paga do Pix não tem renovação: 409, e nada muda", async () => {
@@ -232,9 +297,34 @@ describe("os consertos do caso (passo 3b)", () => {
     expect((await resolver(agendamento, "soltar-agendamento")).status).toBe(200);
     expect(soltarAgendamento.mock.calls).toEqual([[`sub_sched_${S}`]]);
     const semPeriodo = await caso(TipoDeCaso.ATIVA_SEM_PERIODO_PAGO, "sub");
+    detalhes = { pagoAte: null };
     const res = await resolver(semPeriodo, "encerrar-na-hora");
     expect([res.status, res.body]).toEqual([200, { detalhe: "encerrada agora, sem devolver" }]);
     expect(cancelarNaHora.mock.calls).toEqual([[SUB, {}]]);
+  });
+
+  // A revisão de segurança do bloco 3: a decisão era tomada fora da trava, com o que se leu antes.
+  it("encerrar na hora: quem PAGOU entre o caso e o clique não é encerrado (relido com a trava)", async () => {
+    const semPeriodo = await caso(TipoDeCaso.ATIVA_SEM_PERIODO_PAGO, "sub-pagou-no-meio");
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ ...daStripe(id), pagoAte: null }));
+    expect((await resolver(semPeriodo, "encerrar-na-hora")).body).toEqual({ error: "NadaAFazer" });
+    expect(cancelarNaHora).not.toHaveBeenCalled();
+    expect(buscarDetalhes).toHaveBeenCalledTimes(2);
+  });
+
+  it("soltar só o agendamento DA CHAVE do caso: o caso de troca sem agendamento não solta nada (404)", async () => {
+    const semAgendamento = await caso(TipoDeCaso.TROCA_DE_PLANO, "sub");
+    detalhes = { agendamentoId: `sub_sched_do_aluno_${S}` };
+    expect((await resolver(semAgendamento, "soltar-agendamento")).status).toBe(404);
+    expect(soltarAgendamento).not.toHaveBeenCalled();
+  });
+
+  it("anular: a fatura do caso que é de OUTRA assinatura não se anula", async () => {
+    const deOutra = await caso(TipoDeCaso.COBRANCA_EM_ABERTO, "fatura-de-outra", `in_${S}_de_outra`);
+    detalhes = { status: "canceled" };
+    assinaturaDaFatura.mockResolvedValueOnce(`sub_${S}_outra`);
+    expect((await resolver(deOutra, "anular-cobranca")).body).toEqual({ error: "NadaAFazer" });
+    expect(anularFatura).not.toHaveBeenCalled();
   });
 
   it("o conserto que não é do tipo do caso: 404; encerrar a já encerrada: 409", async () => {

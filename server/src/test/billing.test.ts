@@ -481,6 +481,20 @@ describe("POST /api/billing/assinatura", () => {
     });
   });
 
+  // A revisão de segurança do bloco 4 (P2): a paga por fora pelo operador cuja fatura não se pagou ficava incompleta, com o
+  // mesmo preço — o checkout a reaproveitava, e a pessoa pagaria com cartão uma assinatura que não renova.
+  it("a PAGA POR FORA que ficou incompleta nunca é reaproveitada: é cancelada, e nasce outra", async () => {
+    await semAssinatura(async () => {
+      const primeira = await assinarComo({ plano: "mensal" }, member);
+      naStripe = naStripe.map((a) => ({ ...a, pagoPorFora: true }));
+      const depois = await assinarComo({ plano: "mensal" }, member);
+      expect(depois.status).toBe(200);
+      expect(depois.body.segredo).not.toBe(primeira.body.segredo);
+      expect(cancelarIncompleta).toHaveBeenCalledTimes(1);
+      expect(criarAssinatura).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("trocou de plano (ou de código) depois de tentar: a incompleta antiga é cancelada, e nasce a nova", async () => {
     await semAssinatura(async () => {
       const mensal = await assinarComo({ plano: "mensal" }, member);

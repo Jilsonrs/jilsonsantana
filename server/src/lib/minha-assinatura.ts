@@ -44,8 +44,9 @@ const RENOVAM: ReadonlySet<string> = new Set(["active", "trialing"]);
  * Parar, manter, mudar de plano e trocar o cartão não cabem; o reembolso dos 7 dias devolve o Pix. Uma regra
  * só, para a tela (que não mostra os botões) e para as operações (que recusam com `pre-paga`).
  */
-export function prePaga(detalhes: Pick<DetalhesDaAssinatura, "pixPaymentIntentId">): boolean {
-  return detalhes.pixPaymentIntentId !== null;
+export function prePaga(detalhes: Pick<DetalhesDaAssinatura, "pixPaymentIntentId" | "pagoPorFora">): boolean {
+  // A do Pix e a paga por fora pelo operador (4.7b, passo 4d — P120): as duas não renovam e não têm cartão.
+  return detalhes.pixPaymentIntentId !== null || detalhes.pagoPorFora;
 }
 
 const iso = (data: Date | null): string | null => (data ? data.toISOString() : null);
@@ -279,7 +280,7 @@ async function reembolsoDisponivel(detalhes: DetalhesDaAssinatura): Promise<Said
 }
 
 /** Tudo o que foi pago nesta assinatura: a recorrente, pelas faturas; a PRÉ-PAGA, pelo Pix de que nasceu (a fatura dela foi paga por fora). */
-function oQueFoiPago(detalhes: DetalhesDaAssinatura): Promise<OQueFoiPago> {
+export function oQueFoiPago(detalhes: DetalhesDaAssinatura): Promise<OQueFoiPago> {
   return detalhes.pixPaymentIntentId ? buscarOQueFoiPagoNoPix(detalhes.pixPaymentIntentId) : buscarOQueFoiPago(detalhes.id);
 }
 
@@ -410,15 +411,17 @@ export async function pararMinhaRenovacao(userId: string, dado: MotivoDado): Pro
   const achada = await assinaturaDaConta(userId);
   if (achada.resultado === "desconhecida") return achada;
   if (achada.resultado === "nenhuma") return { resultado: "sem-assinatura" };
-  return pararRenovacaoDe(achada.detalhes, userId, dado);
+  return pararRenovacaoDe(achada.detalhes, userId, dado, { peloDono: true });
 }
 
 /**
  * A MESMA operação de cancelar, numa assinatura JÁ ACHADA — a da conta do aluno logado (acima) ou a que o admin
  * escolheu na ficha (o painel da cobrança, etapa 4.7b, passo 3a: "o painel e o JilsonAI chamam as mesmas"). `userId`:
- * a dona, para o registro e para os casos.
+ * a dona, para o registro e para os casos. `peloDono`: a sessão fica, na atrasada que termina, só quando foi a PRÓPRIA
+ * pessoa que pediu (CLAUDE.md → Access Architecture: são três operações da pessoa, e só elas) — o cancelamento pelo
+ * operador derruba a sessão, como toda perda de acesso (revisão de segurança do bloco 3 da 4.7b).
  */
-export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: string, dado: MotivoDado): Promise<Parada> {
+export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: string, dado: MotivoDado, quem: { peloDono: boolean }): Promise<Parada> {
   // A pré-paga (etapa 4.9) já termina no fim do período: não há renovação a parar — e o reembolso é outra porta.
   if (prePaga(detalhes)) return { resultado: "pre-paga" };
   const { id } = detalhes;
@@ -468,7 +471,7 @@ export async function pararRenovacaoDe(detalhes: DetalhesDaAssinatura, userId: s
     },
     // Quem cancela com a cobrança atrasada perde as aulas na hora e CONTINUA LOGADO, como no
     // reembolso: foi a própria pessoa que pediu, e ela precisa ler a confirmação.
-    { manterSessao: (feito) => feito.resultado === "ok" && feito.terminou },
+    { manterSessao: (feito) => quem.peloDono && feito.resultado === "ok" && feito.terminou },
   );
   if (!operacao) return { resultado: "ocupada" };
   const feito = operacao.feito;
@@ -577,50 +580,78 @@ export async function reembolsarMinhaAssinatura(userId: string, dado: MotivoDado
     console.warn(`[stripe] reembolso recusado: a assinatura ${id} (conta ${userId}) está fora do prazo`);
     return { resultado: "fora-do-prazo" };
   }
+  const feito = await reembolsarAssinaturaDe(achada.detalhes, userId, dado, { peloDono: true });
+  // Sem o valor mostrado, o "valor mudou" não acontece.
+  return feito.resultado === "valor-mudou" ? { resultado: "nada-a-devolver" } : feito;
+}
+
+/** Quem reembolsa: o DONO (no prazo dos 7 dias, e mantém a sessão) ou o OPERADOR (sem prazo, com o valor que a tela mostrou). */
+export type QuemReembolsa = { peloDono: true } | { peloDono: false; centavosMostrados?: number };
+
+/**
+ * A MESMA operação de reembolsar, numa assinatura JÁ ACHADA — a da conta do aluno (acima) ou a que o operador escolheu no
+ * painel da cobrança (etapa 4.7b, passo 4a — decisão do operador, 29/10/2026, P114: "um clique reembolso já resolver
+ * tudo"; o prazo dos 7 dias é direito do aluno, não limite do operador). Pelo DONO: o prazo vale, e a sessão fica (CLAUDE.md
+ * → Access Architecture: é uma das três operações da própria pessoa). Pelo OPERADOR: sem prazo; a sessão cai como em toda
+ * perda de acesso; e, com o valor que a tela mostrou, só devolve se o de AGORA for o mesmo — senão, nada é feito
+ * (`valor-mudou`: o que a tela afirma é o que o servidor faz). `userId`: a dona, para o registro e para os casos.
+ */
+export async function reembolsarAssinaturaDe(detalhes: DetalhesDaAssinatura, userId: string, dado: MotivoDado, quem: QuemReembolsa): Promise<Reembolso | { resultado: "valor-mudou" }> {
+  const { id } = detalhes;
   const operacao = await operarNaAssinatura(
     id,
-    async (): Promise<Devolvido> => {
+    async (): Promise<Devolvido | { resultado: "valor-mudou" }> => {
       // COM A TRAVA, relido: o prazo, a situação e o que foi pago valem os de AGORA.
       const agora = await buscarDetalhes(id);
-      if (!noPrazoDoReembolso(agora)) return { resultado: "fora-do-prazo" };
+      if (quem.peloDono && !noPrazoDoReembolso(agora)) return { resultado: "fora-do-prazo" };
+      // O OPERADOR confere o valor que a tela mostrou ANTES de anular a troca pendente (achado P2 da revisão do bloco 4,
+      // 31/10/2026): o "valor mudou" não faz nada — nem desfaz a troca que a pessoa está confirmando no banco. Se a anulação
+      // revelar que a troca já foi paga, o valor mudou também.
+      const mostrados = quem.peloDono ? undefined : quem.centavosMostrados;
+      if (mostrados !== undefined) {
+        const antes = aDevolver(await oQueFoiPago(agora));
+        if (antes <= 0) return { resultado: "nada-a-devolver" };
+        if (antes !== mostrados) return { resultado: "valor-mudou" };
+      }
       // A troca na hora que ficou esperando a confirmação do banco é anulada ANTES de tudo: a
       // fatura dela não pode ser paga depois de a pessoa cancelar (achado da revisão de
       // segurança). Se a resposta for "paga", a troca se completou — e a leitura abaixo, feita
       // depois, já inclui essa cobrança na devolução. `[FATO — medido, 11/10/2026]` ao encerrar
       // na hora a própria Stripe anula essa fatura; anular aqui não depende disso.
-      if (agora.faturaDaTrocaId) await anularFatura(agora.faturaDaTrocaId);
+      if (agora.faturaDaTrocaId && (await anularFatura(agora.faturaDaTrocaId)) === "paga" && mostrados !== undefined) return { resultado: "valor-mudou" };
       const pago = await oQueFoiPago(agora);
       const centavos = aDevolver(pago);
       if (centavos <= 0 || !pago.moeda) return { resultado: "nada-a-devolver" };
+      if (mostrados !== undefined && centavos !== mostrados) return { resultado: "valor-mudou" };
       // Já encerrada (a devolução falhou da outra vez, ou foi encerrada pelo painel): só devolve.
       if (!encerradaDeVez(agora)) await cancelarNaHora(id, dado);
       try {
         // Da cobrança mais antiga para a mais nova (é a ordem de `buscarOQueFoiPago`).
         for (const pagamento of pago.pagamentos) await devolver(pagamento, { userId, assinaturaId: id });
       } catch (erro) {
-        console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — conferir e devolver pelo painel da Stripe: ${erro instanceof Error ? erro.message : String(erro)}`);
+        console.error(`[stripe] reembolso: a assinatura ${id} (conta ${userId}) foi ENCERRADA e a devolução falhou — "Devolver de novo" no painel da cobrança (Precisa de você): ${erro instanceof Error ? erro.message : String(erro)}`);
         await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `sub:${id}`, urgente: true, conta: userId, assinatura: id, centavos, detalhe: "o reembolso encerrou a assinatura e a devolução falhou" });
         return { resultado: "devolucao-falhou" };
       }
       return { resultado: "ok", centavos, moeda: pago.moeda };
     },
-    // A sessão fica quando a pessoa PEDIU e a assinatura foi encerrada por isso: o reembolso
-    // que saiu, e o que falhou depois de encerrar (ela precisa ler que a devolução não saiu e
-    // que alguém já foi avisado). A operação que não fez nada e descobre que o acesso acabou
-    // derruba a sessão, como toda perda de acesso.
-    { manterSessao: (feito) => feito.resultado === "ok" || feito.resultado === "devolucao-falhou" },
+    // A sessão fica quando a PESSOA pediu e a assinatura foi encerrada por isso: o reembolso que
+    // saiu, e o que falhou depois de encerrar (ela precisa ler que a devolução não saiu e que
+    // alguém já foi avisado). A operação que não fez nada e descobre que o acesso acabou, e a do
+    // operador, derrubam a sessão, como toda perda de acesso.
+    { manterSessao: (feito) => quem.peloDono && (feito.resultado === "ok" || feito.resultado === "devolucao-falhou") },
   );
   if (!operacao) return { resultado: "ocupada" };
   const feito = operacao.feito;
   if (feito.resultado !== "ok") return feito;
-  console.info(`[stripe] reembolso: conta ${userId}, assinatura ${id}, ${feito.centavos} centavos (${feito.moeda}) devolvidos, motivo ${dado.motivo ?? "não dito"}`);
+  console.info(`[stripe] reembolso: conta ${userId}, assinatura ${id}, ${feito.centavos} centavos (${feito.moeda}) devolvidos, ${quem.peloDono ? `motivo ${dado.motivo ?? "não dito"}` : "pelo operador"}`);
   // O DINHEIRO VOLTOU E O ESPELHO NÃO FOI ACERTADO (achado da revisão de segurança): se a
   // assinatura já estava encerrada, a Stripe não manda mais aviso nenhum sobre ela — só o de
   // dinheiro devolvido. Tenta mais uma vez; se não der, alguém segue com acesso depois de
   // receber o dinheiro de volta: precisa de gente.
   if (operacao.sincronia === null) {
     try {
-      await sincronizarSeLivre(id, { manterSessao: true });
+      await sincronizarSeLivre(id, { manterSessao: quem.peloDono });
     } catch (erro) {
       console.error(`[stripe] reembolso: a conta ${userId} recebeu o dinheiro de volta e o espelho da assinatura ${id} NÃO foi acertado — ela pode seguir com acesso; conferir em Admin → Assinaturas: ${erro instanceof Error ? erro.message : String(erro)}`);
       await abrirCaso({ tipo: TipoDeCaso.DIVERGENCIA, chave: `sub:${id}`, urgente: false, conta: userId, assinatura: id, detalhe: "recebeu o reembolso e o site não foi acertado" });

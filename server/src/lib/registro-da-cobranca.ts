@@ -12,7 +12,7 @@ import { Prisma, prisma, QuemFez } from "./prisma.js";
 export function resumoDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): { detalhe: string | null; centavos: number | null } {
   if (aviso.contestacao) return { detalhe: `${aviso.contestacao.fase} · ${aviso.contestacao.motivo}`, centavos: aviso.contestacao.centavos };
   if (aviso.avisoDeFraude) return { detalhe: aviso.avisoDeFraude.tipo, centavos: null };
-  if (aviso.devolucaoFalhou) return { detalhe: "devolucao-falhou", centavos: null };
+  if (aviso.devolucaoFalhou) return { detalhe: "devolucao-falhou", centavos: aviso.devolucaoQueFalhou?.centavos ?? null };
   if (!("assinatura" in desfecho)) return { detalhe: null, centavos: null };
   const assinatura = desfecho.assinatura;
   const partes: string[] = [assinatura.status];

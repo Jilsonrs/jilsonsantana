@@ -1,5 +1,5 @@
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
-import { TENTATIVAS_DO_CODIGO, VALIDADE_DO_CODIGO_EM_MINUTOS, type CodigoDoEmailEnviado, type EmailCorrigido } from "@jilson/core";
+import { Role, TENTATIVAS_DO_CODIGO, VALIDADE_DO_CODIGO_EM_MINUTOS, type CodigoDoEmailEnviado, type EmailCorrigido } from "@jilson/core";
 import { Prisma, prisma } from "./prisma.js";
 import { getDict } from "./dict.js";
 import { enviarEmail } from "./email.js";
@@ -25,10 +25,18 @@ import { registrar, type PorQuem } from "./acoes-da-cobranca.js";
 // com texto fixo (CLAUDE.md → Membership Gating).
 
 /** O que não deu — cada um vira um status com nome na rota. */
-export type NaoCorrigido = "nao-encontrada" | "mesmo-email" | "email-de-outra-conta" | "email-nao-saiu" | "sem-pedido" | "codigo-errado" | "pagamento-no-email-novo" | "ocupada";
+export type NaoCorrigido = "nao-encontrada" | "conta-de-admin" | "mesmo-email" | "email-de-outra-conta" | "email-nao-saiu" | "sem-pedido" | "codigo-errado" | "pagamento-no-email-novo" | "ocupada";
 
 /** A troca vai à Stripe (até dois clientes) com as travas na mão. */
 const TEMPO_DA_TROCA = { maxWait: 10_000, timeout: 45_000 };
+
+/**
+ * A CONTA DE ADMIN (e a do próprio operador) não se corrige por aqui (revisão de segurança do bloco 3): com uma sessão de
+ * admin roubada, a troca daria a conta de admin a quem a roubou, para sempre — ela apaga a senha e as sessões do operador.
+ */
+function contaDeAdmin(conta: { id: string; role: string }, por: PorQuem): boolean {
+  return conta.role === Role.ADMIN || conta.id === por.conta;
+}
 
 /** O resumo do código, preso à conta e ao e-mail novo: o mesmo número não vale para outro pedido. Função pura. */
 export function resumoDoCodigo(contaId: string, email: string, codigo: string): string {
@@ -38,8 +46,9 @@ export function resumoDoCodigo(contaId: string, email: string, codigo: string): 
 /** 1. O CÓDIGO vai ao e-mail certo. Um pedido novo substitui o anterior (e o código dele deixa de valer). */
 export async function pedirCodigoDoEmailNovo(contaId: string, emailDigitado: string, por: PorQuem): Promise<{ resultado: "ok"; feito: CodigoDoEmailEnviado } | { resultado: NaoCorrigido }> {
   const email = emailDigitado.toLowerCase();
-  const conta = await prisma.user.findUnique({ where: { id: contaId }, select: { id: true, email: true, deletedAt: true } });
+  const conta = await prisma.user.findUnique({ where: { id: contaId }, select: { id: true, email: true, role: true, deletedAt: true } });
   if (!conta || conta.deletedAt) return { resultado: "nao-encontrada" };
+  if (contaDeAdmin(conta, por)) return { resultado: "conta-de-admin" };
   if (conta.email === email) return { resultado: "mesmo-email" };
   if (await temConta(prisma, email)) return { resultado: "email-de-outra-conta" };
   const codigo = String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -66,18 +75,20 @@ export async function pedirCodigoDoEmailNovo(contaId: string, emailDigitado: str
 }
 
 /**
- * O código confere com o pedido guardado? A tentativa errada conta num comando só (dois pedidos juntos não ganham
- * tentativas a mais), e a que esgota as tentativas apaga o pedido.
+ * O código confere com o pedido guardado? A tentativa conta ANTES de comparar, num comando só (revisão de segurança do
+ * bloco 3): N pedidos juntos nunca comparam mais códigos que as tentativas que sobram. A errada que esgota as tentativas
+ * apaga o pedido.
  */
 async function conferirOCodigo(contaId: string, email: string, codigo: string): Promise<"ok" | "sem-pedido" | "codigo-errado"> {
-  const pedido = await prisma.emailCorrection.findUnique({ where: { userId: contaId } });
-  if (!pedido || pedido.newEmail !== email || pedido.expiresAt.getTime() <= Date.now() || pedido.attempts >= TENTATIVAS_DO_CODIGO) return "sem-pedido";
-  const guardado = Buffer.from(pedido.codeHash, "hex");
+  const [contada] = await prisma.$queryRaw<{ attempts: number; codeHash: string }[]>`
+    UPDATE "email_correction" SET "attempts" = "attempts" + 1
+     WHERE "userId" = ${contaId} AND "newEmail" = ${email} AND "attempts" < ${TENTATIVAS_DO_CODIGO} AND "expiresAt" > now()
+     RETURNING "attempts", "codeHash"`;
+  if (!contada) return "sem-pedido";
+  const guardado = Buffer.from(contada.codeHash, "hex");
   const dado = Buffer.from(resumoDoCodigo(contaId, email, codigo), "hex");
   if (guardado.length === dado.length && timingSafeEqual(guardado, dado)) return "ok";
-  const [contada] = await prisma.$queryRaw<{ attempts: number }[]>`
-    UPDATE "email_correction" SET "attempts" = "attempts" + 1 WHERE "userId" = ${contaId} AND "codeHash" = ${pedido.codeHash} RETURNING "attempts"`;
-  if (contada && contada.attempts >= TENTATIVAS_DO_CODIGO) await prisma.emailCorrection.deleteMany({ where: { userId: contaId, codeHash: pedido.codeHash } });
+  if (contada.attempts >= TENTATIVAS_DO_CODIGO) await prisma.emailCorrection.deleteMany({ where: { userId: contaId, codeHash: contada.codeHash } });
   return "codigo-errado";
 }
 
@@ -93,8 +104,9 @@ export async function corrigirEmailComCodigo(contaId: string, emailDigitado: str
     return await transacaoDaCobranca(async (tx): Promise<{ resultado: "ok"; feito: EmailCorrigido } | { resultado: NaoCorrigido }> => {
       // As travas que não esperam: a da conta (a do checkout e do Pix) e as dos dois e-mails (a do assinar sem conta).
       if (!(await travarAConta(tx, contaId))) return { resultado: "ocupada" };
-      const conta = await tx.user.findUnique({ where: { id: contaId }, select: { id: true, email: true, deletedAt: true } });
+      const conta = await tx.user.findUnique({ where: { id: contaId }, select: { id: true, email: true, role: true, deletedAt: true } });
       if (!conta || conta.deletedAt) return { resultado: "nao-encontrada" };
+      if (contaDeAdmin(conta, por)) return { resultado: "conta-de-admin" };
       if (!(await travarOEmail(tx, email)) || !(await travarOEmail(tx, conta.email))) return { resultado: "ocupada" };
       // Relido com as travas: o pedido conferido (um pedido novo, no meio, o substituiria) e o e-mail novo ainda livre —
       // de conta e de tentativa (uma nova pode ter nascido depois da limpeza acima).

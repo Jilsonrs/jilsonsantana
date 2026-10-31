@@ -85,7 +85,7 @@ const comEspelho = (status: string, currentPeriodEnd: Date | null) => prisma.sub
 let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
 const ANUAL: Partial<DetalhesDaAssinatura> = { plano: "anual", preco: { centavos: 99500, moeda: "brl" }, pagoAte: EM_UM_ANO, fimDoPeriodo: EM_UM_ANO };
-const MARCADA: Partial<DetalhesDaAssinatura> = { ...ANUAL, agendamentoId: "sub_sched_do_teste", agendamentoNosso: true, trocaMarcada: { plano: "mensal", em: EM_UM_ANO } };
+const MARCADA: Partial<DetalhesDaAssinatura> = { ...ANUAL, agendamentoId: "sub_sched_do_teste", pagoPorFora: false, agendamentoNosso: true, trocaMarcada: { plano: "mensal", em: EM_UM_ANO } };
 
 async function comAAssinaturaOcupada(enquanto: () => Promise<void>): Promise<void> {
   let soltar: () => void = () => {};
@@ -125,7 +125,7 @@ beforeEach(async () => {
   naStripe = {};
   buscarDetalhes.mockReset().mockImplementation(async (id) => {
     if (id !== SUB) throw new AssinaturaNaoEncontrada(id);
-    return { id, status: "active", pagoAte: EM_20_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_20_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
+    return { id, status: "active", pagoAte: EM_20_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_20_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes };
   });
   buscarProximaCobranca.mockReset().mockResolvedValue({ centavos: 9990, moeda: "brl" });
   buscarPrecos.mockReset().mockResolvedValue(PRECOS);
@@ -485,7 +485,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
 
   // DUAS ABAS (achado da revisão de segurança, 11/10/2026): vale o que a Stripe diz COM A TRAVA.
   it("o plano já mudou na outra aba, entre a leitura e a trava: 409 — nada é cobrado de novo", async () => {
-    const lidoAntes = { id: SUB, status: "active", pagoAte: EM_20_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_20_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null } satisfies DetalhesDaAssinatura;
+    const lidoAntes = { id: SUB, status: "active", pagoAte: EM_20_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_20_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null } satisfies DetalhesDaAssinatura;
     buscarDetalhes.mockImplementationOnce(async () => lidoAntes);
     detalhes = ANUAL;
     const res = await mudar(member, anual());
@@ -495,7 +495,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
   });
 
   it("a troca já foi marcada na outra aba, entre a leitura e a trava: 409 — não marca duas vezes", async () => {
-    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_UM_ANO, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, fimDoPeriodo: EM_UM_ANO, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null }));
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_UM_ANO, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, fimDoPeriodo: EM_UM_ANO, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null }));
     detalhes = MARCADA;
     expect((await mudar(member, { plano: "mensal" })).body).toEqual({ error: "TrocaIndisponivel" });
     expect(agendarTroca).not.toHaveBeenCalled();
@@ -505,7 +505,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
   // antigo fica preso à assinatura por mais um mês, já sem troca nenhuma. Ele não pode impedir a
   // pessoa de mudar de plano — e sai antes da mudança.
   it("com o agendamento de uma troca que JÁ aconteceu (sem troca marcada): dá para mudar, e ele é solto ANTES", async () => {
-    detalhes = { agendamentoId: "sub_sched_que_ja_virou", agendamentoNosso: true, trocaMarcada: null };
+    detalhes = { agendamentoId: "sub_sched_que_ja_virou", pagoPorFora: false, agendamentoNosso: true, trocaMarcada: null };
     expect((await oferta(member)).body.troca).toMatchObject({ para: "anual", quando: "agora" });
     expect((await ler()).body).toMatchObject({ podeMudarDePlano: true, trocaMarcada: null });
     const res = await mudar(member, anual());
@@ -515,7 +515,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
   });
 
   it("o mesmo para marcar o mensal: o agendamento velho sai antes de o novo ser criado", async () => {
-    detalhes = { ...ANUAL, agendamentoId: "sub_sched_que_ja_virou", agendamentoNosso: true, trocaMarcada: null };
+    detalhes = { ...ANUAL, agendamentoId: "sub_sched_que_ja_virou", pagoPorFora: false, agendamentoNosso: true, trocaMarcada: null };
     expect((await mudar(member, { plano: "mensal" })).body).toEqual({ estado: "marcado", em: EM_UM_ANO.toISOString() });
     expect(soltarAgendamento.mock.calls).toEqual([["sub_sched_que_ja_virou"]]);
     expect(soltarAgendamento.mock.invocationCallOrder[0]).toBeLessThan(agendarTroca.mock.invocationCallOrder[0] ?? 0);
@@ -524,7 +524,7 @@ describe("POST /api/billing/minha-assinatura/plano — quando a troca não cabe"
   // Achado da revisão de segurança (segunda passada, 11/10/2026): o agendamento que NÃO foi a
   // escola que criou (posto pelo painel da Stripe) nunca é solto porque o aluno mudou de plano.
   it("com um agendamento que não é da escola: não há troca a oferecer nem a fazer — e ele NÃO é solto", async () => {
-    for (const caso of [{ agendamentoId: "sub_sched_do_painel", agendamentoNosso: false }, { ...ANUAL, agendamentoId: "sub_sched_do_painel", agendamentoNosso: false }] as Partial<DetalhesDaAssinatura>[]) {
+    for (const caso of [{ agendamentoId: "sub_sched_do_painel", pagoPorFora: false, agendamentoNosso: false }, { ...ANUAL, agendamentoId: "sub_sched_do_painel", pagoPorFora: false, agendamentoNosso: false }] as Partial<DetalhesDaAssinatura>[]) {
       detalhes = caso;
       expect((await oferta(member)).body, JSON.stringify(caso)).toEqual({ troca: null });
       expect((await ler()).body).toMatchObject({ podeMudarDePlano: false });
@@ -647,7 +647,7 @@ describe("POST /api/billing/minha-assinatura/plano/desistir", () => {
   });
 
   it("o agendamento que NÃO é da escola (posto pelo painel da Stripe) não é solto por quem desiste", async () => {
-    detalhes = { ...ANUAL, agendamentoId: "sub_sched_do_painel", agendamentoNosso: false };
+    detalhes = { ...ANUAL, agendamentoId: "sub_sched_do_painel", pagoPorFora: false, agendamentoNosso: false };
     const res = await desistir(member);
     expect([res.status, res.body]).toEqual([200, { trocado: false, plano: "anual" }]);
     nadaMudouNaStripe();
@@ -660,7 +660,7 @@ describe("POST /api/billing/minha-assinatura/plano/desistir", () => {
   });
 
   it("a outra aba já desistiu, entre a leitura e a trava: 200, sem soltar de novo (soltar o que já foi solto viraria erro)", async () => {
-    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_UM_ANO, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, fimDoPeriodo: EM_UM_ANO, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: "sub_sched_do_teste", agendamentoNosso: true, trocaMarcada: { plano: "mensal", em: EM_UM_ANO }, faturaDaTrocaId: null }));
+    buscarDetalhes.mockImplementationOnce(async (id) => ({ id, status: "active", pagoAte: EM_UM_ANO, plano: "anual", preco: { centavos: 99500, moeda: "brl" }, fimDoPeriodo: EM_UM_ANO, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_member", agendamentoId: "sub_sched_do_teste", pagoPorFora: false, agendamentoNosso: true, trocaMarcada: { plano: "mensal", em: EM_UM_ANO }, faturaDaTrocaId: null }));
     detalhes = ANUAL;
     const res = await desistir(member);
     expect([res.status, res.body]).toEqual([200, { trocado: false, plano: "anual" }]);

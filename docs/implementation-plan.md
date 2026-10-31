@@ -210,6 +210,12 @@
 > do operador: *"Publica e envia o que está pronto"*. CI e publicação com sucesso. **Revisão `jilson-prod-00055`** (100% do
 > tráfego): a subida com a cobrança conferida e nenhuma linha de erro; a página, 200; a versão do app a mesma
 > (`mvvbqspl-b34b3a6f`), como devia.
+> **Publicado em 31/10/2026: `2ce2799`** — o bloco 1 da 4.7b (o painel da Cobrança: ver tudo) — **e `34f93fa`** — os blocos
+> 2 e 3 (os casos "Precisa de você", o aviso ao operador, as ações sem dinheiro e corrigir o e-mail); ordens do operador:
+> *"Sim, pode publicar"* e *"publica e continua"*. CI e publicação com sucesso. **Revisão `jilson-prod-00057`** (100% do
+> tráfego), a versão do app `mvwgmspf-3dfc57a7`: a saúde, 200; as rotas novas do painel, 401 sem login. **Em produção (só
+> leitura):** nenhuma tabela sem RLS; as migrations `20261031200000_casos_da_cobranca` e `20261031220000_correcao_de_email`
+> aplicadas; nenhum caso nem pedido de correção ainda. O detalhe: a etapa 4.7b, os fechamentos dos blocos.
 >
 > **PARA CONTINUAR NO PRÓXIMO CHAT (a ordem — atualizado em 31/10/2026: a 4.7b remapeada; antes, 30/10, depois da publicação `7000a96`):**
 > **O PRÓXIMO BLOCO (decisão do operador, 30/10/2026, ao fim do dia): "as telas administrativas da parte de cobrança que
@@ -217,12 +223,15 @@
 > de pagamento de aluno se resolve no admin, sem ir à Stripe; ele acompanha tudo e só é chamado quando precisa (a caixa
 > *Precisa de você*); e fica pronta para automatizar depois (o JilsonAI ou outra ferramenta). O mapa e os passos — 6
 > blocos, um passo por sessão, uma revisão de segurança por bloco — estão na etapa 4.7b. **A tela dos leads fica fora**
-> (decisão dele, 31/10). **O BLOCO 1 ESTÁ NO AR desde 31/10/2026 (merge `2ce2799`)**; o 2a e o 2b estão no `dev`.
+> (decisão dele, 31/10). **OS BLOCOS 1, 2 E 3 ESTÃO NO AR desde 31/10/2026 (merges `2ce2799` e `34f93fa`)**; as correções
+> da revisão do bloco 3 estão no `dev`, e sobem com a próxima publicação. **O próximo passo: o 4a** (o bloco 4, as ações com
+> dinheiro — prova pela rota em cada passo). Esperam o operador: a P147 (os textos dos e-mails) e a P148 (avisar o e-mail
+> antigo na correção).
 > **Os 6 blocos entram ANTES da abertura** (decisão dele, 31/10/2026, à P146 — entre isso, os
 > blocos 1 a 4, que o agente recomendou, e só os blocos 1 e 2). **Os 6 blocos aprovados de uma vez e as 9 decisões
 > (P137 a P145) respondidas no mesmo dia** — cada uma no seu lugar, na etapa. **Como trabalhar (decisões dele, 31/10):**
 > os passos correm direto, um commit por passo com os gates; a revisão de segurança de cada bloco roda em segundo plano;
-> no fim de cada bloco, só a pergunta "posso publicar?"; foto, só do que o aluno vê. **O próximo passo: o 1a.** Isso muda
+> no fim de cada bloco, só a pergunta "posso publicar?"; foto, só do que o aluno vê. Isso muda
 > *O PLANO DE LANÇAMENTO*: a 4.7b deixa de ser "depois da abertura".
 > **O DIA 30/10/2026 FECHOU A PARTE DE VENDA, menos o teste com dinheiro de verdade** — que o operador decidiu fazer **por
 > último, como um aluno de verdade, depois da 6g do Antigravity** (*"Eu nunca testei com meu cartão de verdade; iria testar
@@ -6191,8 +6200,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
       - **Cancelar e devolver o dinheiro** — UM clique, cartão e Pix (P114).
       - **Devolver um pagamento** — um só (a cobrança em dobro, a tentativa paga sem assinatura, a diferença da troca
         de plano), inteiro ou em parte *(decisão do operador, 31/10/2026, P139: ele digita o valor — no máximo o que
-        ainda não foi devolvido —; a parte não corta o acesso, só a devolução inteira corta)*; e **devolver de novo** a
-        devolução que falhou.
+        ainda não foi devolvido)*, com **"E encerrar a assinatura agora"** *(decisão dele no passo 4a: só devolver não
+        mexe no acesso — a regra das aulas libera a assinatura ativa —; marcada, a assinatura acaba antes de devolver)*;
+        e **devolver de novo** a devolução que falhou.
       - **Tentar cobrar de novo agora** — a atrasada, quando o aluno avisa que resolveu o cartão.
       - **Pix em conferência:** Aceitar este Pix · Devolver (P117).
       - **Liberar acesso pago por fora** (P120) e **liberar de novo depois da contestação ganha**.
@@ -6482,7 +6492,7 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               arquivo de teste (`setup.ts`, como o limite de tentativas: um caso urgente de outro arquivo faria o aviso
               sair num teste que conta e-mails). **Mutação: 6 de 6 reprovaram.** *Docs check (context7): não
               disparado.*
-        - [ ] **Fechamento do bloco 2.** **A revisão de segurança (31/10/2026, só o que mudou — os passos 2a a 2d):
+        - [x] **Fechamento do bloco 2.** **A revisão de segurança (31/10/2026, só o que mudou — os passos 2a a 2d):
               nenhum P0 nem P1.** Os cinco menores, fechados com teste e mutação (6 de 6 reprovaram), sem nova rodada.
               Três se fecharam com UMA mudança — **o caso aberto dentro de uma transação da cobrança é guardado e
               gravado quando ela termina, tenha dado certo ou não** (`transacaoDaCobranca`, em `casos.ts`; a regra foi
@@ -6499,9 +6509,9 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               Testes: `casos-uma-ligacao.test.ts` (novo — o banco aceitando UMA ligação: a contestação com a cobrança
               que não se anula, e o agendamento pela metade dentro de uma operação que falha), `casos.test.ts`,
               `avisos-ao-operador.test.ts` (+3) e `reembolso.test.ts` (+1: a devolução e a sincronia falhando juntas).
-              **Falta:** os dois e-mails ao operador (no e-mail de verdade) e publicar — **junto com o bloco 3**: as
-              correções desta revisão mexem em código que o bloco 3 também mudou, e publicar o 2 sozinho pediria
-              refazê-las numa cópia à parte. Depois do deploy, conferir em produção (só leitura) o RLS da `billing_case`.
+              **PUBLICADO em 31/10/2026, junto com o bloco 3 (merge `34f93fa` — o detalhe no fechamento do bloco 3)**:
+              as correções desta revisão mexiam em código que o bloco 3 também mudou. Os dois e-mails ao operador foram
+              mandados de verdade e esperam a aprovação dele (P147).
       - [ ] **BLOCO 3 — AS AÇÕES SEM DINHEIRO**
         - [x] **3a — O motor e as primeiras:** a confirmação com o efeito, o registro com quem fez; Conferir na
               Stripe (a sincronia, agora na ficha), Cancelar no fim do período, Desfazer, Copiar ou enviar o link,
@@ -6571,16 +6581,152 @@ plano de cada bloco antes de escrever código (CLAUDE.md → Context7).
               guarda o id da pessoa, não o e-mail; a troca de e-mail do recurso de código exige a sessão da própria pessoa (não
               serve ao admin) — e, no código instalado (1.7.13), as rotinas de código só valem para e-mail que já tem conta.
               Stripe → `/websites/stripe` → a fatura finalizada guarda o e-mail de quando foi finalizada.*
-        - [ ] **Fechamento do bloco 3.**
+        - [x] **Fechamento do bloco 3.** **PUBLICADO em 31/10/2026, junto com o bloco 2, com a ordem do operador ("publica e
+              continua"): merge `34f93fa`**, revisão `jilson-prod-00057` (100% do tráfego), CI e Deploy verdes. **No ar:**
+              `/api/health` 200; as rotas novas do painel recusam quem não entrou (401). **Em produção (só leitura, branch
+              `production`):** nenhuma tabela sem RLS (`billing_case` e `email_correction` com RLS); as migrations
+              `20261031200000_casos_da_cobranca` e `20261031220000_correcao_de_email` aplicadas; nenhum caso, pedido de
+              correção ou linha de registro ainda. **A revisão de segurança (31/10/2026, só o que mudou — `b7bca19`,
+              `77abaa5`, `f9d69cd`): nenhum P0 nem P1.** Os nove de engenharia, fechados com teste e mutação (10 de 10
+              reprovaram), sem nova rodada, no `dev` (sobem com a próxima publicação): (P2) a correção do e-mail aceitava a
+              conta de admin — com uma sessão roubada, a troca daria a conta de admin a quem a roubou: agora a conta de
+              admin e a do próprio operador recebem 409 `ContaDeAdmin`, no pedido e de novo com as travas; (P2) "Encerrar
+              na hora, sem devolver" decidia fora da trava, com o que tinha lido antes — agora relê com ela, e quem pagou no
+              meio não é encerrado; (P2) as rotas do 3b não tinham o teste de quem entra (401/403) — agora têm, provado
+              trocando o `requireAdmin` pelo `requireAuth`; (P3) a tentativa do código conta ANTES de comparar (5
+              tentativas ao mesmo tempo comparam no máximo 3); (P3) o cancelamento da atrasada pelo OPERADOR derruba a
+              sessão da pessoa — a sessão fica só quando é ela que pede (`pararRenovacaoDe(…, { peloDono })`, como o
+              `CLAUDE.md` → *Access Architecture* já dizia); (P3) o "soltar" só vale para o caso com o agendamento na chave,
+              e solta só aquele; (P3) o "anular" confere que a fatura é da assinatura do caso (`assinaturaDaFatura`); (P3) a
+              ação sem a conta na sessão responde 401 em vez de ficar pendurada; (P3) o código da correção tem o teto do
+              código de entrar, por e-mail de DESTINO (3 por hora, 6 por dia). **Ficaram para o operador:** os textos dos
+              e-mails, com a sugestão da revisão contra golpe (P147), e avisar o e-mail antigo na correção (P148). Os
+              e-mails foram mandados de verdade (o resumo da manhã numa segunda tentativa: a chave do dia já tinha sido
+              usada na prova do 2d — é o esperado, um resumo por dia).
       - [ ] **BLOCO 4 — AS AÇÕES COM DINHEIRO** (prova pela rota em cada passo)
-        - [ ] **4a — Devolver:** cancelar e devolver num clique (cartão e Pix), devolver um pagamento (inteiro ou em
-              parte, P139), devolver de novo a que falhou.
-        - [ ] **4b — Tentar cobrar de novo agora** (a atrasada).
-        - [ ] **4c — O Pix em conferência** (aceitar, devolver) e **o dinheiro sem assinatura** (devolver, liberar).
-        - [ ] **4d — Liberar acesso pago por fora** e **liberar de novo depois da contestação ganha**.
-        - [ ] **Fechamento do bloco 4.**
+        - [x] **4a — Devolver:** cancelar e devolver num clique (cartão e Pix), devolver um pagamento (inteiro ou em
+              parte, P139), devolver de novo a que falhou. **FEITO (31/10/2026).** `lib/devolucoes-do-painel.ts` (a regra foi
+              para o `CLAUDE.md` → *Membership Gating*), pelas MESMAS operações: **"Cancelar e devolver o dinheiro"** é a
+              operação do reembolso do aluno, separada em "achar a assinatura da conta" + `reembolsarAssinaturaDe` — pelo
+              DONO, no prazo dos 7 dias e com a sessão mantida, como sempre; pelo OPERADOR, sem prazo, a sessão cai como em
+              toda perda de acesso, e a tela manda o valor da PRÉVIA (`POST …/acoes/devolver-tudo/previa`): se o de agora for
+              outro, 409 `ValorMudou` e nada é feito (`POST …/acoes/devolver-tudo`). Encerra e devolve TUDO o que falta voltar
+              (o Pix, na pré-paga); a devolução que falha abre o caso urgente. **"Devolver um pagamento"** em cada cobrança da
+              ficha (`POST …/acoes/devolver-pagamento`): só cobrança de um cliente DA PESSOA da ficha (404), no máximo o que
+              falta voltar (409 `ValorAcimaDoQueFalta`), com a trava e a sincronia da assinatura dela (a pré-paga achada pelo
+              Pix). **A surpresa da prova pela rota, decidida pelo operador no mesmo dia:** devolver a cobrança INTEIRA do mês
+              não tirava o acesso (a regra das aulas libera a assinatura ativa) — o formulário ganhou **"E encerrar a
+              assinatura agora"**: marcada, encerra e só então devolve. **"Devolver de novo"** é o conserto do caso
+              "devolução que falhou" (`sub:` pela operação do reembolso; `pagamento:pi_` pelo que falta daquele pagamento),
+              e o caso fecha. Tudo no registro, com o valor e quem fez. **Na tela:** "Cancelar e devolver o dinheiro" em cada
+              assinatura (menos a que nunca foi paga), "Devolver" em cada cobrança paga (o valor começa no que falta, e o
+              campo lê "99,90"), "Devolver de novo" no caso. Testes: `admin-cobranca-devolucoes.test.ts` (novo, 20),
+              `DevolverTudo.test.tsx` (novo, 5), `DevolverPagamento.test.tsx` (novo, 5), `cobranca-devolucao.test.ts`
+              (novo), a ficha (+2) e "Precisa de você" (+1). **Mutação: 13 de 13 reprovaram.** **Prova pela rota** (servidor
+              local, banco de dev, quatro alunos descartáveis, pagamentos de verdade na área de teste — cartão e Pix): o valor
+              errado recusado e nada mudou; "Cancelar e devolver" encerrou na Stripe, devolveu 9990 de 9990, o espelho
+              cancelado e a sessão caída; a cobrança de outra pessoa, 404; acima do que falta, 409; a parte (1000) e o resto
+              devolvidos com o acesso mantido; "devolver e encerrar" encerrou, devolveu e cortou o acesso; o Pix da pré-paga
+              devolvido; o registro com os valores; o retrato do banco igual antes e depois. *Docs check (context7): Stripe →
+              `/websites/stripe` → a devolução de uma parte, várias vezes, até o total (31/10/2026, depois da compactação da
+              sessão).*
+        - [x] **4b — Tentar cobrar de novo agora** (a atrasada). **FEITO (31/10/2026).** Na ficha, a assinatura atrasada
+              ganha **"Tentar cobrar de novo agora"** ao lado de "Cancelar agora" (`POST …/acoes/cobrar-de-novo`), para quando
+              o aluno avisa que resolveu o cartão: a MESMA cobrança que a troca de cartão do aluno faz (`pagarFatura`), com a
+              trava e a sincronia (`operarNaAssinatura`), e relida com a trava — a que foi paga no meio não é cobrada de novo; a
+              em dia é recusada antes da trava (409 `NadaAFazer`). Passou: as aulas voltam na hora. Recusada: a Stripe segue
+              tentando sozinha. O banco pedindo confirmação: só a pessoa completa, pelo link de trocar o cartão (a resposta
+              diz isso). Fica no registro. Testes: `admin-cobranca-acoes.test.ts` (+2, e a rota na fronteira 401/403) e a
+              ficha (+1). **Mutação: 5 de 5 reprovaram.** **Prova pela rota** (servidor local, banco de dev, um aluno
+              descartável, o relógio de teste da Stripe 40 dias no passado): a assinatura paga, o cartão trocado por um que é
+              recusado, o relógio avançado — a renovação falhou, `past_due`, o aluno sem aulas; "cobrar de novo" com o cartão
+              ruim: recusada, sem aulas; com o cartão bom no lugar: a fatura paga, a assinatura `active`, as aulas de volta;
+              na que está em dia: 409; o retrato do banco igual antes e depois. *Docs check (context7): não disparado — a ida à
+              Stripe é a de sempre (`pagarFatura`).*
+        - [x] **4c — O Pix em conferência** (aceitar, devolver) e **o dinheiro sem assinatura** (devolver, liberar). **FEITO
+              (31/10/2026)** — o "liberar" é o do 4d (a mesma ação, "Liberar acesso pago por fora"), e entra nesse caso
+              quando ele existir. **O caso passa a ter uma LISTA de consertos** (`consertos`; o campo `conserto`, o primeiro
+              deles, fica para a aba do admin aberta antes desta publicação, e sai na seguinte — API aditiva). **"Aceitar este
+              Pix"** (P117 — `aceitarPixEmConferencia`, em `assinaturas.ts`, com a trava do Pix): a pré-paga que já vale é só
+              sincronizada; a incompleta é paga por fora, ou encerrada se não der; e a nova nasce NO PREÇO DE AGORA do plano,
+              com uma chave de repetição própria (`chaveDoPrePago("aceitar")` — a do aviso devolveria, na janela, a pré-paga
+              que morreu); a marca de conferência sai (`tirarDeConferencia`) e a sincronia grava o espelho (a conta do
+              visitante nasce, com as boas-vindas). O Pix que já voltou, ou que já virou assinatura, fecha o caso sem criar
+              nada; o plano fora de venda ou a fatura que não se paga por fora: 409 `PixNaoAceito` ("devolva o Pix").
+              **"Devolver o Pix"**: inteiro, e o caso fecha com o valor. **"Devolver este pagamento"** (o dinheiro sem
+              assinatura): o da tentativa cancelada já paga (`sub:` — todas as faturas pagas dela) ou o da cobrança paga no
+              instante de cancelar (`fatura:in_…` — `oQueFoiPagoNaFatura`), com a trava e a sincronia da assinatura: o período
+              pago deixa de contar. Testes: `admin-cobranca-pix-em-conferencia.test.ts` (novo, 9) e "Precisa de você" (+2).
+              **Mutação: 10 de 10 reprovaram.** **Prova pela rota** (servidor local, banco de dev, três alunos descartáveis,
+              Pix e cartão de verdade na área de teste): um Pix pago posto em conferência — o "Conferir" o deixa para o
+              operador; "Aceitar" criou a pré-paga (acaba no fim do período, a fatura paga, a marca fora), o espelho com o Pix,
+              as aulas abertas, o caso fechado; "Devolver o Pix", 9990 devolvidos e o caso fechado; uma assinatura paga e
+              cancelada na Stripe, "Devolver este pagamento": 9990 devolvidos, o acesso cortado, o caso fechado; o retrato do
+              banco igual antes e depois. *Docs check (context7): não disparado — as idas à Stripe são as de sempre.*
+        - [x] **4d — Liberar acesso pago por fora** e **liberar de novo depois da contestação ganha**. **FEITO (31/10/2026).**
+              **"Liberar acesso pago por fora"** (P120) na ficha da conta — o plano (mensal ou anual) e a confirmação dizendo o
+              efeito (`POST …/acoes/liberar-pago-por-fora`): só para a conta SEM acesso (de novo com a trava da conta — 409
+              `JaTemAcesso`); o acesso sai de uma assinatura PRÉ-PAGA de verdade, paga por fora (`criarAssinaturaPagaPorFora`,
+              em `stripe-pix.ts`: não renova, sem cartão guardado, a marca `pago_por_fora` com a conta do operador, a primeira
+              fatura paga por fora, a chave de repetição pela conta e o plano), gravada pela sincronia — nunca um desvio no
+              gate. **A paga por fora é pré-paga em todo lugar** (a regra foi para o `CLAUDE.md`): nos detalhes (`pagoPorFora`,
+              e `prePaga()` a inclui — a tela do aluno e as operações a tratam como a do Pix), no espelho (a coluna
+              `paidOutOfBand`, migration `20261031230000_pago_por_fora`), na lista do painel ("pré-paga", nunca "vai
+              cancelar") e nos e-mails da pré-paga (a confirmação com a data do fim, e o "está acabando" 3 dias antes — os
+              textos já aprovados, aplicados a ela também). **"Liberar de novo"** é o conserto do caso da contestação: o
+              servidor lê na Stripe se ela foi GANHA (`statusDaContestacao`; senão, 409 `ContestacaoNaoGanha`), e tira a marca
+              (`tirarMarcaDeContestacao`) pela operação na assinatura, com a trava e a sincronia — o período pago volta a valer
+              até o fim, a assinatura continua cancelada, e o caso fecha. O "liberar" do caso do dinheiro sem assinatura
+              (4c) é o mesmo da ficha: pede o plano, então fica na ficha. Testes: `admin-cobranca-liberar.test.ts` (novo, 8),
+              `LiberarPagoPorFora.test.tsx` (novo, 3), a lista, os e-mails, `stripe.test.ts`, `stripe-pix-rede.test.ts`, a
+              ficha e "Precisa de você". **Mutação: 11 de 11 reprovaram.** **Prova pela rota** (servidor local, banco de dev,
+              dois alunos descartáveis, a área de teste da Stripe): liberado o mensal — na Stripe ativa, sem renovar, com a
+              marca, a fatura paga por fora e sem cartão; o espelho pago por fora; as aulas abertas; a tela do aluno
+              "pré-paga", sem cartão; o cancelar do painel, 409; liberar de novo com acesso, 409. Uma assinatura paga com o
+              cartão de teste que abre contestação, cancelada pela rotina do aviso "dinheiro saiu": sem aulas; "Liberar de
+              novo" ainda aberta, 409; depois das provas de teste (`winning_evidence`), ganha: a marca saiu, as aulas
+              voltaram, o caso fechou; o retrato do banco igual antes e depois. **Banco de dev:** a migration aplicada, *No
+              difference detected*, nenhuma tabela sem RLS. *Docs check (context7): Stripe → `/websites/stripe` → como ganhar
+              uma contestação na área de teste (31/10/2026).*
+        - [ ] **Fechamento do bloco 4.** **A revisão de segurança (31/10/2026, só o que mudou — `933e0ca`, `7c53789`,
+              `d2cc903`, `fe97314`): nenhum P0; seis P1, corrigidos antes de publicar, e sete P2** (seis fechados com
+              teste e mutação, sem nova rodada; o sétimo é tela nova e foi ao operador — P149). Os P1: (1) **"Aceitar este
+              Pix" com a pré-paga MORTA do mesmo Pix no espelho** dava 500 com a assinatura nova já paga (a coluna do Pix é
+              única) — agora o espelho guarda o Pix só na pré-paga que o USOU (`sincronizar`), e a linha da morta solta a
+              coluna antes de a nova nascer; (2) **"Liberar acesso pago por fora" por cima de outro pagamento aberto** (a
+              atrasada sem aulas: a Stripe seguia tentando o cartão dela, e era o mesmo período pago duas vezes) — agora,
+              em todos os clientes da conta, a assinatura viva e o Pix pago à espera recusam (409 `OutraAssinaturaViva`,
+              `PixPagoEsperando`), e o cartão começado e o QR à espera morrem antes (`assinaturasAbertas`, a mesma do Pix);
+              (3) **"Devolver o Pix" sem a trava do Pix** devolvia o Pix que já tinha virado assinatura, que ficava ativa
+              sem o dinheiro — agora com a trava (`devolverPixEmConferencia`): o que já vale recusa (409
+              `PixJaVirouAssinatura`, é o "Cancelar e devolver"), e a pré-paga incompleta morre antes; (4) **"Devolver um
+              pagamento" repetido devolvia de novo** (a chave de repetição levava o que já tinha voltado, lido na hora) —
+              agora o pedido leva o que a tela mostrou, relido com a trava (409 `ValorMudou`); (5) **"Devolver de novo"
+              devolvia tudo o que faltava da cobrança**, e a que falhou podia ser uma parte — agora o caso guarda a
+              cobrança e o valor (`devolucao:<re_…>` do aviso, `cobranca:<ch_…>` do painel) e devolve exatamente isto; o
+              caso antigo, sem o valor, recusa (409 `SemValorDaDevolucao`, é pela ficha); (6) **"Liberar de novo" com duas
+              contestações** — a marca guardava só a última, e ganhar uma devolvia as aulas sem o dinheiro da outra —
+              agora a marca junta todas, e só sai com todas ganhas (409 `OutraContestacaoNaoGanha`). Os P2: "Aceitar este
+              Pix" recusa a conta que já tem acesso ou outra assinatura viva (409 `JaTemOutraAssinatura`); "E encerrar" com
+              a devolução que falha abre o caso urgente com o valor e registra o encerramento; o "valor mudou" do
+              "Cancelar e devolver" não anula mais a troca de plano pendente; a pré-paga do Pix sem espelho é achada na
+              Stripe para o "E encerrar"; a paga por fora cuja fatura não se paga morre na hora, e o checkout nunca a
+              reaproveita; a liberação que valeu e ficou sem o registro é registrada na nova tentativa (e a transação dela
+              ganhou o tempo do Pix). **Mutação: 17 de 17 reprovaram.** *A publicação: a confirmar com o operador.*
       - [ ] **BLOCO 5 — CONTESTAÇÃO E FRAUDE SEM O PAINEL DA STRIPE**
-        - [ ] **5a — A contestação na ficha e nos casos:** o prazo, o motivo, o valor; aceitar.
+        - [x] **5a — A contestação na ficha e nos casos:** o prazo, o motivo, o valor; aceitar. **FEITO (31/10/2026).** O prazo,
+              o motivo e o valor já vinham na ficha (a cobrança contestada, bloco 1) e no caso (o resumo "fase · motivo ·
+              prazo", com o valor — bloco 2). Novo: **"Aceitar a perda"** no caso da contestação (`aceitarContestacaoPeloOperador`,
+              `aceitarContestacao` em `stripe-reembolso.ts`): a escola não manda provas e o banco a encerra como perdida — o
+              dinheiro fica com a pessoa, e não tem volta. Só a contestação ABERTA (`needs_response`), lida na Stripe agora
+              `[FATO — context7 /websites/stripe, 31/10/2026: fechar uma contestação é aceitá-la, e só a aberta se fecha assim]`:
+              o inquérito se resolve devolvendo o dinheiro (sem taxa — "Devolver um pagamento"), e a já decidida não muda (409
+              `ContestacaoNaoAberta`). O acesso não muda aqui (o "dinheiro saiu" já cancelou). O caso fecha, com quem aceitou.
+              O caso da contestação traz os dois consertos: "Aceitar a perda" e "Liberar de novo" (passo 4d). Testes:
+              `admin-cobranca-contestacao.test.ts` (novo, 3) e "Precisa de você" (+1). **Mutação: 4 de 4 reprovaram.** **Prova
+              pela rota** (servidor local, banco de dev, o cartão de teste que abre contestação): a contestação `needs_response`
+              aceita pelo painel — na Stripe, `lost`; o caso fechado; aceitar de novo, 404; o retrato do banco igual antes e
+              depois. *Docs check (context7): Stripe → `/websites/stripe` → fechar (aceitar) uma contestação (31/10/2026).*
         - [ ] **5b — Responder com provas** (P140: o painel monta, ele envia ou aceita a perda).
         - [ ] **5c — O aviso de fraude:** devolver, cancelar e cortar sozinho, avisando (P141).
         - [ ] **Fechamento do bloco 5.**

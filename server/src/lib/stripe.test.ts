@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import Stripe from "stripe";
 import { pagamentosDaFatura } from "./stripe-devolucao.js";
 import { codigoDaAssinatura, quandoAcaba } from "./stripe.js";
-import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, METADADO_DA_CONTESTACAO, paraAviso, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
+import { AVISOS_DO_ENDERECO, avisoEmFormatoAntigo, METADADO_DA_CONTESTACAO, METADADO_PAGO_POR_FORA, paraAviso, chaveDoNumeroFiscal, chavePublicavel, erroSemMensagem, idDoAvisoNoCorpo, METADADO_DO_PIX, pagamentoPrePagoDoAviso, pareceAvisoDaStripe, paraAssinaturaNaStripe, paraAssinaturaNoCheckout, paraCodigoPromocional, paraNumeroFiscal, paraPedidoDeAssinatura, paraPedidoDeCliente, paraPedidoDeClienteDoVisitante, paraPrecosDosPlanos, verificarAviso } from "./stripe.js";
 
 // O ESPELHO A PARTIR DA STRIPE (Fase 4, etapa 4.1) — função pura, teste unitário (CLAUDE.md →
 // Testing: só função pura, sem I/O). O que protege é o "PAGO ATÉ": quando a renovação falha, a
@@ -78,6 +78,13 @@ describe("o espelho a partir da assinatura da Stripe", () => {
     const contestada = assinatura({ status: "canceled", metadata: { [METADADO_DA_CONTESTACAO]: "dp_1" } });
     expect(paraAssinaturaNaStripe(contestada).pagoAte?.getTime()).toBe(inicio * 1000);
     expect(paraAssinaturaNaStripe(assinatura({ status: "canceled", metadata: { [METADADO_DA_CONTESTACAO]: "" } })).pagoAte?.getTime()).toBe(fim * 1000);
+  });
+
+  // A PAGA POR FORA (4.7b, passo 4d — P120): a marca de quem liberou faz dela pré-paga; sem a marca (ou vazia), não.
+  it("a assinatura PAGA POR FORA: a marca a faz pré-paga; sem ela, ou vazia, não", () => {
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { [METADADO_PAGO_POR_FORA]: "admin-1" } })).pagoPorFora).toBe(true);
+    expect(paraAssinaturaNaStripe(assinatura({ metadata: { [METADADO_PAGO_POR_FORA]: "" } })).pagoPorFora).toBe(false);
+    expect(paraAssinaturaNaStripe(assinatura({})).pagoPorFora).toBe(false);
   });
 
   // OS E-MAILS DA COBRANÇA (etapa 4.7, passo 7): a data da próxima tentativa vem da última fatura,
@@ -289,7 +296,7 @@ function doCheckout({ status = "incomplete", fatura = { status: "open", confirma
 
 describe("a assinatura como o checkout a vê", () => {
   it("incompleta com a fatura aberta: o segredo do pagamento, o plano e nenhum código", () => {
-    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null, pixPaymentIntentId: null, fimDoPeriodo: null });
+    expect(paraAssinaturaNoCheckout(doCheckout())).toEqual({ id: "sub_1", status: "incomplete", precoId: "price_mensal", codigoId: null, segredoDoPagamento: "pi_1_secret_x", segredoDoCartao: null, resumoDaTentativa: null, pagamentoCancelado: false, numeroFiscalDaFatura: null, pixPaymentIntentId: null, pagoPorFora: false, fimDoPeriodo: null });
   });
 
   // R4 da revisão das correções (29/10/2026): é por ele que a conferência pula a cancelada que já acabou.
@@ -303,6 +310,8 @@ describe("a assinatura como o checkout a vê", () => {
   // reconhecem — e nunca a cancelam nem a reaproveitam como um cartão começado.
   it("a pré-paga leva o Pix de que nasceu; a do cartão, nada", () => {
     expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { userId: "u1", plano: "mensal", [METADADO_DO_PIX]: "pi_do_pix" } })).pixPaymentIntentId).toBe("pi_do_pix");
+    // A paga por fora pelo operador (revisão de segurança do bloco 4): o checkout nunca a reaproveita.
+    expect(paraAssinaturaNoCheckout(doCheckout({ metadata: { userId: "u1", plano: "mensal", [METADADO_PAGO_POR_FORA]: "conta-do-operador" } })).pagoPorFora).toBe(true);
     expect(paraAssinaturaNoCheckout(doCheckout()).pixPaymentIntentId).toBeNull();
   });
 

@@ -1,11 +1,13 @@
 import type { CobrancaDaFicha } from "@jilson/core";
 import { dataCurta } from "@/lib/cobranca-admin";
 import { dinheiro, textoDaCobranca, textoDaForma } from "@/lib/cobranca-ficha";
+import { DevolverPagamento } from "@/components/admin/cobranca/DevolverPagamento";
 
-type Props = { cobrancas: CobrancaDaFicha[]; maisCobrancas: boolean; stripeIndisponivel: boolean };
+/** `quem`: a conta ou o visitante da ficha, para "Devolver" (passo 4a); sem ele (a assinatura sem conta), nada se devolve por aqui. */
+type Props = { cobrancas: CobrancaDaFicha[]; maisCobrancas: boolean; stripeIndisponivel: boolean; quem: { conta: string } | { visitante: string } | null };
 
 /** As cobranças do aluno (cartão e Pix), da mais nova para a mais velha, com o que aconteceu e o recibo (etapa 4.7b, passo 1d). */
-export function CobrancasDaFicha({ cobrancas, maisCobrancas, stripeIndisponivel }: Props) {
+export function CobrancasDaFicha({ cobrancas, maisCobrancas, stripeIndisponivel, quem }: Props) {
   if (stripeIndisponivel) return <p className="text-muted-foreground">As cobranças não aparecem agora: a Stripe não respondeu.</p>;
   if (cobrancas.length === 0) return <p className="text-muted-foreground">Nenhuma cobrança na Stripe.</p>;
   return (
@@ -27,6 +29,7 @@ export function CobrancasDaFicha({ cobrancas, maisCobrancas, stripeIndisponivel 
                   Ver recibo
                 </a>
               ) : null}
+              {quem ? <DevolverPagamento cobranca={cobranca} quem={quem} /> : null}
             </div>
           </li>
         ))}

@@ -75,7 +75,7 @@ const comEspelho = (status: string, currentPeriodEnd: Date | null) => prisma.sub
 /** O que a Stripe diz da assinatura do member@ (os detalhes da tela e o que a sincronia lê). */
 let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
-const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
+const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "active", pagoAte: EM_30_DIAS, plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: EM_30_DIAS, comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: null, itemId: "si_do_teste", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
 const PARADA: Partial<DetalhesDaAssinatura> = { acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: true };
 /** A PRÉ-PAGA (etapa 4.9): nasceu de um Pix, marcada para acabar desde que nasceu, sem cartão. */
 const PRE_PAGA: Partial<DetalhesDaAssinatura> = { acabaEm: EM_30_DIAS, acabaNoFimDoPeriodo: true, cartao: null, pixPaymentIntentId: "pi_pix_do_teste" };
@@ -452,7 +452,7 @@ describe("POST /api/billing/minha-assinatura/cancelar — com uma troca de plano
   });
 
   it("com a troca MARCADA para o fim do período: solta o agendamento ANTES de parar a renovação", async () => {
-    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste", agendamentoNosso: true, trocaMarcada: { plano: "mensal", em: EM_30_DIAS } };
+    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste", pagoPorFora: false, agendamentoNosso: true, trocaMarcada: { plano: "mensal", em: EM_30_DIAS } };
     expect((await cancelar(member, {})).status).toBe(200);
     expect(soltarAgendamento.mock.calls).toEqual([["sub_sched_do_teste"]]);
     expect(soltarAgendamento.mock.invocationCallOrder[0]).toBeLessThan(pararRenovacao.mock.invocationCallOrder[0] ?? 0);
@@ -461,7 +461,7 @@ describe("POST /api/billing/minha-assinatura/cancelar — com uma troca de plano
   // Cancelar é direito da pessoa: com um agendamento preso, a Stripe recusa parar a renovação
   // — então ele sai mesmo que não tenha sido a escola que o criou. Mas aí alguém fica sabendo.
   it("com um agendamento que NÃO é da escola (posto pelo painel da Stripe): é solto para a pessoa poder cancelar — e alguém é avisado", async () => {
-    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_painel", agendamentoNosso: false };
+    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_painel", pagoPorFora: false, agendamentoNosso: false };
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       expect((await cancelar(member, {})).status).toBe(200);
@@ -473,7 +473,7 @@ describe("POST /api/billing/minha-assinatura/cancelar — com uma troca de plano
   });
 
   it("o agendamento da PRÓPRIA escola é solto sem alarme", async () => {
-    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste", agendamentoNosso: true, trocaMarcada: { plano: "mensal", em: EM_30_DIAS } };
+    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste", pagoPorFora: false, agendamentoNosso: true, trocaMarcada: { plano: "mensal", em: EM_30_DIAS } };
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       expect((await cancelar(member, {})).status).toBe(200);
@@ -509,7 +509,7 @@ describe("POST /api/billing/minha-assinatura/cancelar — com uma troca de plano
   });
 
   it("não deu para soltar o agendamento: 500, e a renovação NÃO é dada como parada", async () => {
-    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste", agendamentoNosso: true };
+    detalhes = { plano: "anual", agendamentoId: "sub_sched_do_teste", pagoPorFora: false, agendamentoNosso: true };
     soltarAgendamento.mockRejectedValue(new Error("[stripe] a soltura do agendamento da troca falhou: StripeConnectionError"));
     const erro = vi.spyOn(console, "error").mockImplementation(() => {});
     try {

@@ -9,7 +9,7 @@ import type { PagamentoPrePago } from "./stripe.js";
 // mensagem crua da Stripe.
 const falsa = {
   paymentIntents: { create: vi.fn(), list: vi.fn(), cancel: vi.fn(), retrieve: vi.fn(), update: vi.fn() },
-  subscriptions: { create: vi.fn(), list: vi.fn(), retrieve: vi.fn() },
+  subscriptions: { create: vi.fn(), list: vi.fn(), retrieve: vi.fn(), cancel: vi.fn() },
   invoices: { pay: vi.fn(), retrieve: vi.fn() },
 };
 vi.mock("./stripe-cliente.js", async (importOriginal) => ({
@@ -17,7 +17,7 @@ vi.mock("./stripe-cliente.js", async (importOriginal) => ({
   stripe: () => falsa,
 }));
 
-import { assinaturasDoPix, cancelarPagamentoPix, chaveDoPrePago, criarAssinaturaPrePaga, criarPagamentoPix, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, paraPedidoDeAssinaturaPrePaga, paraPedidoDePix, paraPixDoCliente, pixConfigurado, VALIDADE_DO_PIX_EM_SEGUNDOS } from "./stripe-pix.js";
+import { assinaturasDoPix, cancelarPagamentoPix, chaveDoPrePago, criarAssinaturaPagaPorFora, criarAssinaturaPrePaga, criarPagamentoPix, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, paraPedidoDeAssinaturaPrePaga, paraPedidoDePix, paraPixDoCliente, pixConfigurado, VALIDADE_DO_PIX_EM_SEGUNDOS } from "./stripe-pix.js";
 
 const recusa = () => new Stripe.errors.StripeInvalidRequestError({ message: "mensagem crua da Stripe, com sk_test_abc", type: "invalid_request_error", statusCode: 400 });
 const PAGAMENTO: PagamentoPrePago = { id: "pi_1", plano: "mensal", precoId: "price_mensal", clienteId: "cus_1", livemode: false, centavos: 9990, userId: "conta-1", visitante: null };
@@ -114,6 +114,13 @@ describe("criar a assinatura pré-paga", () => {
     expect(falsa.subscriptions.create).toHaveBeenCalledWith(expect.objectContaining({ cancel_at_period_end: true }), { idempotencyKey: chaveDoPrePago("criar", "pi_1") });
     expect(falsa.invoices.pay).toHaveBeenCalledWith("in_1", { paid_out_of_band: true }, { idempotencyKey: chaveDoPrePago("fatura", "in_1") });
     expect(falsa.subscriptions.retrieve).not.toHaveBeenCalled();
+  });
+
+  it("a do OPERADOR ('Aceitar este Pix', 4.7b, passo 4c) tem a chave própria — a do aviso devolveria a que morreu", async () => {
+    falsa.subscriptions.create.mockResolvedValue({ id: "sub_2", latest_invoice: { id: "in_2", status: "paid" } });
+    await criarAssinaturaPrePaga(PAGAMENTO, "operador");
+    expect(falsa.subscriptions.create).toHaveBeenCalledWith(expect.anything(), { idempotencyKey: chaveDoPrePago("aceitar", "pi_1") });
+    expect(chaveDoPrePago("aceitar", "pi_1")).not.toBe(chaveDoPrePago("criar", "pi_1"));
   });
 
   it("a criação repetida devolveu a mesma assinatura, já com a fatura paga: não paga de novo", async () => {
@@ -290,5 +297,42 @@ describe("pôr o Pix em conferência (achado 4 da segunda revisão)", () => {
     const erro = await marcarEmConferencia("pi_1", "x").catch((e: unknown) => e);
     expect(String(erro)).toContain("[stripe] a marca de conferência do Pix falhou");
     expect(String(erro)).not.toContain("sk_test");
+  });
+});
+
+// A PAGA POR FORA (o "Liberar acesso pago por fora" do painel, 4.7b, passo 4d — P120).
+describe("criar a assinatura paga por fora", () => {
+  it("pré-paga como a do Pix: não renova, sem cartão guardado, com a marca de quem liberou; a primeira fatura paga por fora; a chave segura o clique duplo", async () => {
+    falsa.subscriptions.create.mockResolvedValue({ id: "sub_3", latest_invoice: { id: "in_3", status: "open" } });
+    falsa.invoices.pay.mockResolvedValue({ id: "in_3", status: "paid" });
+    const agora = new Date("2026-11-02T12:00:00Z");
+    expect(await criarAssinaturaPagaPorFora({ clienteId: "cus_1", precoId: "price_anual", plano: "anual", userId: "conta-1", operador: "admin-1" }, agora)).toEqual({ id: "sub_3", faturaPaga: true });
+    const [pedido, opcoes] = falsa.subscriptions.create.mock.calls[0] as [Record<string, unknown>, { idempotencyKey: string }];
+    expect(pedido).toMatchObject({ customer: "cus_1", items: [{ price: "price_anual", quantity: 1 }], cancel_at_period_end: true, payment_settings: { save_default_payment_method: "off" }, metadata: { userId: "conta-1", plano: "anual", pago_por_fora: "admin-1" } });
+    expect(opcoes.idempotencyKey).toMatch(/^pago-por-fora:conta-1:anual:\d+$/);
+    expect(falsa.invoices.pay).toHaveBeenCalledWith("in_3", { paid_out_of_band: true }, expect.anything());
+    expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
+  });
+
+  // A revisão de segurança do bloco 4 (P2): a que não se pagou ficava INCOMPLETA e com a marca — o checkout por cartão podia
+  // reaproveitá-la, e a pessoa pagaria uma assinatura que não renova.
+  it("a fatura que não se pagou por fora: a incompleta morre na hora; a que se pagou no meio de uma falha fica", async () => {
+    const pedido = { clienteId: "cus_1", precoId: "price_anual", plano: "anual" as const, userId: "conta-1", operador: "admin-1" };
+    falsa.subscriptions.create.mockResolvedValue({ id: "sub_4", latest_invoice: { id: "in_4", status: "void" } });
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_4", status: "incomplete" });
+    expect(await criarAssinaturaPagaPorFora(pedido)).toEqual({ id: "sub_4", faturaPaga: false });
+    expect(falsa.subscriptions.cancel.mock.calls).toEqual([["sub_4"]]);
+
+    falsa.subscriptions.cancel.mockClear();
+    falsa.subscriptions.create.mockResolvedValue({ id: "sub_5", latest_invoice: { id: "in_5", status: "open" } });
+    falsa.invoices.pay.mockRejectedValue(new Error("fora do ar"));
+    falsa.invoices.retrieve.mockResolvedValue({ id: "in_5", status: "open" });
+    await expect(criarAssinaturaPagaPorFora(pedido)).rejects.toThrow("fora do ar");
+    expect(falsa.subscriptions.cancel.mock.calls).toEqual([["sub_5"]]);
+
+    falsa.subscriptions.cancel.mockClear();
+    falsa.subscriptions.retrieve.mockResolvedValue({ id: "sub_5", status: "active" });
+    await expect(criarAssinaturaPagaPorFora(pedido)).rejects.toThrow("fora do ar");
+    expect(falsa.subscriptions.cancel).not.toHaveBeenCalled();
   });
 });

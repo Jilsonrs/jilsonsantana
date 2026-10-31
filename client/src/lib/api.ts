@@ -53,6 +53,8 @@ import type {
   LinkParaOAluno,
   CodigoDoEmailEnviado,
   EmailCorrigido,
+  PreviaDaDevolucao,
+  Plano,
   MinhaAssinatura,
   TrocaDeCartaoPreparada,
   CartaoTrocado,
@@ -1239,6 +1241,17 @@ export async function adminCancelar(assinatura: number): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cancelar", { assinatura });
   return data;
 }
+/** Liberar acesso pago por fora (passo 4d — P120): a pré-paga paga por fora, para a conta e o plano. */
+export async function adminLiberarPagoPorFora(conta: string, plano: Plano): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/liberar-pago-por-fora", { conta, plano });
+  return data;
+}
+
+/** Tentar cobrar de novo agora a cobrança em aberto da atrasada (passo 4b). */
+export async function adminCobrarDeNovo(assinatura: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/cobrar-de-novo", { assinatura });
+  return data;
+}
 export async function adminDesfazerCancelamento(assinatura: number): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/desfazer-cancelamento", { assinatura });
   return data;
@@ -1259,6 +1272,20 @@ export async function adminCorrigirDocumento(quem: { conta: string } | { visitan
 }
 export async function adminEnviarLink(conta: string, link: LinkParaOAluno): Promise<AcaoFeita> {
   const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/enviar-link", { conta, link });
+  return data;
+}
+
+/** As devoluções (passo 4a — P114 e P139): a prévia e "Cancelar e devolver o dinheiro"; e devolver um pagamento. */
+export async function adminPreviaDeDevolverTudo(assinatura: number): Promise<PreviaDaDevolucao> {
+  const { data } = await client.post<PreviaDaDevolucao>("/admin/cobranca/acoes/devolver-tudo/previa", { assinatura });
+  return data;
+}
+export async function adminDevolverTudo(assinatura: number, centavos: number): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/devolver-tudo", { assinatura, centavos });
+  return data;
+}
+export async function adminDevolverPagamento(quem: { conta: string } | { visitante: string }, cobranca: string, centavos: number, devolvido: number, encerrar: boolean): Promise<AcaoFeita> {
+  const { data } = await client.post<AcaoFeita>("/admin/cobranca/acoes/devolver-pagamento", { ...quem, cobranca, centavos, devolvido, encerrar });
   return data;
 }
 

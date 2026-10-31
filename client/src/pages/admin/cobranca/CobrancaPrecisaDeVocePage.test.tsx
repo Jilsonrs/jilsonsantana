@@ -36,6 +36,7 @@ const caso = (extra: Partial<CasoDaLista> = {}): CasoDaLista => ({
   fechadoEm: null,
   fechadoPor: null,
   nota: null,
+  consertos: [],
   conserto: null,
   ...extra,
 });
@@ -135,9 +136,9 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     adminResolverCaso.mockReset().mockResolvedValue({ detalhe: "a cobrança em aberto foi anulada" });
     adminListarCasos.mockResolvedValue(
       lista([
-        caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, conserto: "anular-cobranca" }),
-        caso({ id: 12, tipo: "TROCA_DE_PLANO", urgente: false, conserto: "soltar-agendamento" }),
-        caso({ id: 13, tipo: "ATIVA_SEM_PERIODO_PAGO", urgente: false, conserto: "encerrar-na-hora" }),
+        caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, consertos: ["anular-cobranca"] }),
+        caso({ id: 12, tipo: "TROCA_DE_PLANO", urgente: false, consertos: ["soltar-agendamento"] }),
+        caso({ id: 13, tipo: "ATIVA_SEM_PERIODO_PAGO", urgente: false, consertos: ["encerrar-na-hora"] }),
         caso({ id: 14, tipo: "CONTESTACAO" }),
       ]),
     );
@@ -154,9 +155,68 @@ describe("Precisa de você — os consertos (passo 3b)", () => {
     await waitFor(() => expect(adminListarCasos.mock.calls.length).toBeGreaterThan(pedidosAntes));
   });
 
+  it("a devolução que falhou (passo 4a): 'Devolver de novo', com o efeito — e a falha de novo diz que não saiu", async () => {
+    adminResolverCaso.mockReset().mockResolvedValueOnce({ detalhe: "R$ 99,90 devolvidos de novo" }).mockRejectedValueOnce({ response: { data: { error: "DevolucaoFalhou" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 12, tipo: "DEVOLUCAO_FALHOU", urgente: true, consertos: ["devolver-de-novo"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Devolver de novo" }));
+    expect(screen.getByText("Tenta devolver de novo o valor que não voltou. Se falhar outra vez, o caso continua aberto.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect(await screen.findByText("Feito: R$ 99,90 devolvidos de novo.")).toBeTruthy();
+    expect(adminResolverCaso.mock.calls).toEqual([[12, "devolver-de-novo"]]);
+    fireEvent.click(screen.getByRole("button", { name: "Devolver de novo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("A devolução não saiu.");
+  });
+
+  it("o Pix em conferência (passo 4c): 'Aceitar este Pix' e 'Devolver o Pix', cada um com o efeito; aceitar manda o conserto certo", async () => {
+    adminResolverCaso.mockReset().mockResolvedValue({ detalhe: "o Pix virou a assinatura pré-paga; com acesso às aulas" });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 15, tipo: "PIX_EM_CONFERENCIA", urgente: true, consertos: ["aceitar-pix", "devolver-pix"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    expect(await screen.findByRole("button", { name: "Devolver o Pix" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Aceitar este Pix" }));
+    expect(screen.getByText("O Pix que a pessoa pagou vira a assinatura pré-paga, no preço de hoje do plano: as aulas abrem agora.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect(await screen.findByText("Feito: o Pix virou a assinatura pré-paga; com acesso às aulas.")).toBeTruthy();
+    expect(adminResolverCaso.mock.calls).toEqual([[15, "aceitar-pix"]]);
+  });
+
+  it("o dinheiro sem assinatura (passo 4c): 'Devolver este pagamento'; o Pix que não se aceita diz o caminho", async () => {
+    adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "PixNaoAceito" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 16, tipo: "PAGO_SEM_ASSINATURA", urgente: true, consertos: ["devolver-este-pagamento"] }), caso({ id: 17, tipo: "PIX_EM_CONFERENCIA", consertos: ["aceitar-pix", "devolver-pix"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    expect(await screen.findByRole("button", { name: "Devolver este pagamento" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Aceitar este Pix" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Não deu para aceitar este Pix: o plano não está à venda, ou a fatura não se pagou por fora. Devolva o Pix.");
+  });
+
+  it("a contestação aberta (passo 5a): 'Aceitar a perda', com o efeito de não ter volta; a que não está aberta diz isso", async () => {
+    adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "ContestacaoNaoAberta" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 19, tipo: "CONTESTACAO", urgente: true, consertos: ["aceitar-contestacao", "liberar-de-novo"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    expect(await screen.findByRole("button", { name: "Liberar de novo" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Aceitar a perda" }));
+    expect(screen.getByText("A escola não manda provas: o banco encerra a contestação como perdida, e o dinheiro fica com a pessoa. Não tem volta.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Só a contestação aberta se aceita: o inquérito se resolve devolvendo o dinheiro, e a já decidida não muda.");
+    expect(adminResolverCaso.mock.calls).toEqual([[19, "aceitar-contestacao"]]);
+  });
+
+  it("a contestação (passo 4d): 'Liberar de novo', com o efeito; a que a escola não ganhou diz isso", async () => {
+    adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "ContestacaoNaoGanha" } } });
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 18, tipo: "CONTESTACAO", urgente: true, consertos: ["liberar-de-novo"] })]));
+    renderWithProviders(<CobrancaPrecisaDeVocePage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Liberar de novo" }));
+    expect(screen.getByText("Só se a escola ganhou a contestação (e as outras desta assinatura): o período que a pessoa pagou volta a valer até o fim. A assinatura continua cancelada.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("A escola ainda não ganhou esta contestação (o banco não decidiu, ou decidiu contra): nada foi liberado.");
+    expect(adminResolverCaso.mock.calls).toEqual([[18, "liberar-de-novo"]]);
+  });
+
   it("a assinatura ainda viva: diz por que não anula", async () => {
     adminResolverCaso.mockReset().mockRejectedValue({ response: { data: { error: "AssinaturaViva" } } });
-    adminListarCasos.mockResolvedValue(lista([caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, conserto: "anular-cobranca" })]));
+    adminListarCasos.mockResolvedValue(lista([caso({ id: 11, tipo: "COBRANCA_EM_ABERTO", urgente: false, consertos: ["anular-cobranca"] })]));
     renderWithProviders(<CobrancaPrecisaDeVocePage />);
     fireEvent.click(await screen.findByRole("button", { name: "Anular a cobrança em aberto" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirmar" }));

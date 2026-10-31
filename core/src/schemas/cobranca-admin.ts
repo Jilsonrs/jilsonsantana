@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { MotivoDoCancelamento } from "../constants/billing.js";
+import { PLANOS, type MotivoDoCancelamento } from "../constants/billing.js";
 import { enderecoDeEmailSchema } from "./billing.js";
 
 // O PAINEL DA COBRANÇA DO ADMIN (Fase 4, etapa 4.7b — decisões do operador, 31/10/2026). Só ADMIN lê e usa estes
@@ -235,7 +235,12 @@ export type CasoDaLista = {
   fechadoEm: string | null;
   fechadoPor: QuemFezNoRegistro | null;
   nota: string | null;
-  /** O conserto que o painel já faz para este caso (passo 3b) — ou nenhum ainda. */
+  /** Os consertos que o painel faz para este caso (passos 3b, 4a e 4c) — nenhum, um ou mais (o Pix em conferência: aceitar ou devolver). */
+  consertos: ConsertoDoCaso[];
+  /**
+   * O primeiro dos consertos. API aditiva (CLAUDE.md → *Rendering Boundary*): fica para a aba do admin aberta antes da
+   * publicação do passo 4c, que ainda lê este campo; sai na publicação seguinte.
+   */
   conserto: ConsertoDoCaso | null;
 };
 
@@ -265,7 +270,7 @@ export type AcaoFeita = { detalhe: string };
 export type ConferenciaPelaFicha = { temAcesso: boolean; detalhe: string };
 
 /** Os consertos que hoje só o painel da Stripe faz, a partir de um caso (passo 3b). */
-export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora"] as const;
+export const CONSERTOS_DO_CASO = ["anular-cobranca", "soltar-agendamento", "encerrar-na-hora", "devolver-de-novo", "aceitar-pix", "devolver-pix", "devolver-este-pagamento", "liberar-de-novo", "aceitar-contestacao"] as const;
 export type ConsertoDoCaso = (typeof CONSERTOS_DO_CASO)[number];
 export const resolverCasoSchema = z.object({ acao: z.enum(CONSERTOS_DO_CASO) });
 
@@ -279,6 +284,34 @@ export const corrigirDocumentoSchema = z.union([
 export const LINKS_PARA_O_ALUNO = ["trocarCartao", "reativar", "pagarComPix"] as const;
 export type LinkParaOAluno = (typeof LINKS_PARA_O_ALUNO)[number];
 export const enviarLinkSchema = z.object({ conta: z.string().min(1).max(100), link: z.enum(LINKS_PARA_O_ALUNO) });
+
+/**
+ * DEVOLVER (bloco 4, passo 4a — decisões do operador P114 e P139). "Cancelar e devolver o dinheiro": a prévia diz quanto
+ * volta (tudo o que falta voltar da assinatura, e de quantos pagamentos), e a ação leva o valor MOSTRADO — se o de agora
+ * for outro, nada é feito.
+ */
+export type PreviaDaDevolucao = { centavos: number; moeda: string | null; pagamentos: number };
+export const devolverTudoSchema = z.object({ assinatura: z.number().int().positive(), centavos: z.number().int().positive() }).strict();
+/**
+ * "Devolver um pagamento": uma cobrança da ficha, inteira ou em parte (P139: no máximo o que ainda não voltou). `encerrar`:
+ * encerra agora a assinatura dessa cobrança, antes de devolver (decisão do operador, 31/10/2026: sem ela, devolver não mexe
+ * no acesso — a regra das aulas libera a assinatura ativa sem olhar o pagamento).
+ */
+const cobrancaDaFichaSchema = z.string().regex(/^(ch|py)_[A-Za-z0-9_]+$/).max(100);
+// `devolvido`: o quanto desta cobrança já tinha voltado quando a tela abriu (revisão de segurança do bloco 4, 31/10/2026): se o
+// de agora for outro, nada é feito — o mesmo pedido repetido não devolve duas vezes.
+const doPagamento = { cobranca: cobrancaDaFichaSchema, centavos: z.number().int().positive(), devolvido: z.number().int().min(0), encerrar: z.boolean().optional() };
+export const devolverPagamentoSchema = z.union([
+  z.object({ conta: z.string().min(1).max(100), ...doPagamento }).strict(),
+  z.object({ visitante: z.string().min(1).max(100), ...doPagamento }).strict(),
+]);
+export type DevolverPagamentoInput = z.infer<typeof devolverPagamentoSchema>;
+
+/**
+ * LIBERAR ACESSO PAGO POR FORA (bloco 4, passo 4d — decisão do operador P120): a conta e o plano. O operador recebeu fora da
+ * Stripe; o acesso sai de uma assinatura pré-paga de verdade, paga por fora — nunca de um desvio no gate.
+ */
+export const liberarPagoPorForaSchema = z.object({ conta: z.string().min(1).max(100), plano: z.enum(PLANOS) }).strict();
 
 /** CORRIGIR O E-MAIL (passo 3c — decisão do operador P121): o e-mail certo da conta, para onde o código vai. */
 export const pedirCodigoDoEmailSchema = z.object({ conta: z.string().min(1).max(100), email: enderecoDeEmailSchema }).strict();

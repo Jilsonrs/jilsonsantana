@@ -430,7 +430,7 @@ describe("o aviso da Stripe — o dinheiro devolvido", () => {
 
   // A DEVOLUÇÃO QUE FALHOU DEPOIS (achado da revisão de segurança, 11/10/2026): a Stripe aceita
   // a devolução e, dias depois, o banco a devolve — o dinheiro NÃO voltou ao aluno.
-  const avisoDaDevolucao = (type: string, status: string, pagamento: string | null = "pi_da_devolucao"): Aviso => ({ id: novoId("evt"), type, data: { object: { id: novoId("re"), object: "refund", status, amount: 9990, payment_intent: pagamento } } });
+  const avisoDaDevolucao = (type: string, status: string, pagamento: string | null = "pi_da_devolucao"): Aviso => ({ id: novoId("evt"), type, data: { object: { id: novoId("re"), object: "refund", status, amount: 9990, charge: "ch_da_devolucao", payment_intent: pagamento } } });
 
   it("a devolução FALHOU: alguém é avisado, com o pagamento — e a assinatura é sincronizada (o período volta a contar como pago)", async () => {
     const sub = novoId("sub");
@@ -442,7 +442,7 @@ describe("o aviso da Stripe — o dinheiro devolvido", () => {
       for (const tipo of ["refund.failed", "refund.updated", "charge.refund.updated"]) {
         const aviso = avisoDaDevolucao(tipo, "failed");
         expect((await enviar(aviso)).status, tipo).toBe(200);
-        expect(erro.mock.calls.flat().join(" "), tipo).toContain(`[stripe] aviso ${aviso.id} (${tipo}): uma devolução do pagamento pi_da_devolucao FALHOU`);
+        expect(erro.mock.calls.flat().join(" "), tipo).toContain(`[stripe] aviso ${aviso.id} (${tipo}): uma devolução de 9990 centavos do pagamento pi_da_devolucao FALHOU`);
       }
     } finally {
       erro.mockRestore();
@@ -465,9 +465,11 @@ describe("o aviso da Stripe — o dinheiro devolvido", () => {
       expect((await enviar(aviso)).status).toBe(200);
       expect((await enviar(aviso)).status).toBe(200);
       expect(erro.mock.calls.flat().filter((linha) => String(linha).includes("FALHOU"))).toHaveLength(1);
-      // O caso (4.7b, bloco 2): um só, urgente — o dinheiro não voltou ao aluno.
-      expect(await prisma.billingCase.findMany({ where: { kind: "DEVOLUCAO_FALHOU", key: "pagamento:pi_da_devolucao" }, select: { open: true, urgent: true } })).toEqual([{ open: true, urgent: true }]);
-      await prisma.billingCase.deleteMany({ where: { key: "pagamento:pi_da_devolucao" } });
+      // O caso (4.7b, bloco 2): um só, urgente — o dinheiro não voltou ao aluno. Por DEVOLUÇÃO, com a cobrança e o valor dela
+      // (revisão de segurança do bloco 4): é exatamente isto que o "Devolver de novo" devolve.
+      const devolucao = (aviso.data.object as { id: string }).id;
+      expect(await prisma.billingCase.findMany({ where: { kind: "DEVOLUCAO_FALHOU", key: `devolucao:${devolucao}` }, select: { open: true, urgent: true, amount: true, stripeObjectId: true } })).toEqual([{ open: true, urgent: true, amount: 9990, stripeObjectId: "ch_da_devolucao" }]);
+      await prisma.billingCase.deleteMany({ where: { key: `devolucao:${devolucao}` } });
     } finally {
       erro.mockRestore();
       registro.mockRestore();

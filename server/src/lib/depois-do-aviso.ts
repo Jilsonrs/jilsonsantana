@@ -21,8 +21,11 @@ export async function depoisDoAviso(aviso: AvisoDaStripe, desfecho: Desfecho): P
   // repetido (a reentrega) não alerta de novo; e se o processamento falhar, a Stripe entrega de
   // novo e o alerta sai então.
   if (aviso.devolucaoFalhou && desfecho.resultado !== "repetido") {
-    console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; conferir e devolver pelo painel da Stripe`);
-    await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: `pagamento:${aviso.pagamento ?? aviso.id}`, urgente: true, assinatura: aviso.assinatura, objeto: aviso.pagamento ?? null, detalhe: "uma devolução falhou: o dinheiro não voltou ao aluno" });
+    const falhou = aviso.devolucaoQueFalhou ?? null;
+    console.error(`[stripe] aviso ${aviso.id} (${aviso.tipo}): uma devolução${falhou ? ` de ${falhou.centavos} centavos` : ""} do pagamento ${aviso.pagamento ?? "?"} FALHOU — o dinheiro não voltou ao aluno; devolver de novo em Precisa de você`);
+    // Um caso por DEVOLUÇÃO, com a cobrança e o valor dela (achado P1 da revisão do bloco 4, 31/10/2026): o "Devolver de novo"
+    // devolve exatamente o que falhou.
+    await abrirCaso({ tipo: TipoDeCaso.DEVOLUCAO_FALHOU, chave: falhou ? `devolucao:${falhou.id}` : `pagamento:${aviso.pagamento ?? aviso.id}`, urgente: true, assinatura: aviso.assinatura, objeto: falhou?.cobranca ?? aviso.pagamento ?? null, centavos: falhou?.centavos ?? null, detalhe: "uma devolução falhou: o dinheiro não voltou ao aluno" });
   }
   // O PIX PAGO cuja assinatura terminou SEM ACESSO (achado 5 do passo 6 da etapa 4.9, 29/10/2026): o
   // dinheiro entrou e a assinatura não abre — pagante trancado, que hoje só o aluno descobriria. Uma vez

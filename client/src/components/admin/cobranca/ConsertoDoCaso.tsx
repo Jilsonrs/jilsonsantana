@@ -9,6 +9,12 @@ const DO_CONSERTO: Record<Conserto, { rotulo: string; efeito: string }> = {
   "anular-cobranca": { rotulo: "Anular a cobrança em aberto", efeito: "A cobrança em aberto é anulada: ela não será mais tentada." },
   "soltar-agendamento": { rotulo: "Soltar o agendamento", efeito: "A troca de plano que ficou pela metade é desfeita; a assinatura segue como está." },
   "encerrar-na-hora": { rotulo: "Encerrar agora, sem devolver", efeito: "A assinatura termina agora e a pessoa perde o acesso. Nada é devolvido." },
+  "devolver-de-novo": { rotulo: "Devolver de novo", efeito: "Tenta devolver de novo o valor que não voltou. Se falhar outra vez, o caso continua aberto." },
+  "aceitar-pix": { rotulo: "Aceitar este Pix", efeito: "O Pix que a pessoa pagou vira a assinatura pré-paga, no preço de hoje do plano: as aulas abrem agora." },
+  "devolver-pix": { rotulo: "Devolver o Pix", efeito: "O Pix volta inteiro para a pessoa, e ela pode pagar de novo pela tela." },
+  "devolver-este-pagamento": { rotulo: "Devolver este pagamento", efeito: "O dinheiro que entrou volta inteiro para a pessoa." },
+  "aceitar-contestacao": { rotulo: "Aceitar a perda", efeito: "A escola não manda provas: o banco encerra a contestação como perdida, e o dinheiro fica com a pessoa. Não tem volta." },
+  "liberar-de-novo": { rotulo: "Liberar de novo", efeito: "Só se a escola ganhou a contestação (e as outras desta assinatura): o período que a pessoa pagou volta a valer até o fim. A assinatura continua cancelada." },
 };
 
 /** O conserto de um caso (etapa 4.7b, passo 3b): o botão, a confirmação dizendo o efeito, e o que a Stripe respondeu. */

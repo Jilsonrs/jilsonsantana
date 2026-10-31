@@ -35,6 +35,7 @@ vi.mock("../lib/stripe-limpeza.js", async (importOriginal) => ({
 
 import servidor from "./servidor.js";
 import { prisma } from "../lib/prisma.js";
+import { resumoDoCodigo } from "../lib/correcao-de-email.js";
 
 const S = `${Date.now()}`;
 let n = 0;
@@ -132,6 +133,31 @@ describe("corrigir o e-mail — o código", () => {
     expect(await prisma.emailCorrection.findUnique({ where: { userId: conta.id } })).toBeNull();
   });
 
+  // A revisão de segurança do bloco 3: com uma sessão de admin roubada, a troca daria a conta de admin a quem a roubou.
+  it("a conta de ADMIN (e a do próprio operador) não se corrige: nem o código sai, nem a troca vale", async () => {
+    expect((await pedirCodigo({ conta: adminId, email: novoEmail() })).body).toEqual({ error: "ContaDeAdmin" });
+    const outroAdmin = `email-${S}-${++n}`;
+    const doOutro = novoEmail("admin");
+    await prisma.user.create({ data: { id: outroAdmin, email: doOutro, role: "admin" } });
+    expect((await pedirCodigo({ conta: outroAdmin, email: novoEmail() })).body).toEqual({ error: "ContaDeAdmin" });
+    expect(enviarEmail).not.toHaveBeenCalled();
+    // E de novo na troca, com as travas: um pedido que exista (gravado aqui à mão) não passa.
+    const email = novoEmail();
+    await prisma.emailCorrection.create({ data: { userId: outroAdmin, newEmail: email, codeHash: resumoDoCodigo(outroAdmin, email, "123456"), expiresAt: new Date(Date.now() + 60_000), requestedBy: adminId } });
+    expect((await trocar({ conta: outroAdmin, email, codigo: "123456" })).body).toEqual({ error: "ContaDeAdmin" });
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: outroAdmin } })).email).toBe(doOutro);
+    expect(trocarEmailDoCliente).not.toHaveBeenCalled();
+  });
+
+  it("o código ao mesmo e-mail: 3 por hora (o teto do código de entrar) — depois, 429, e nada sai", async () => {
+    const conta = await aluna();
+    const email = novoEmail();
+    for (let i = 0; i < 3; i++) expect((await pedirCodigo({ conta: conta.id, email })).status).toBe(200);
+    const res = await pedirCodigo({ conta: conta.id, email });
+    expect([res.status, res.body]).toEqual([429, { error: "MuitasTentativas" }]);
+    expect(doTipo("codigo-do-email-novo")).toHaveLength(3);
+  });
+
   it("o e-mail que não saiu: 502, e o pedido não fica — o código dele não vale", async () => {
     const conta = await aluna();
     enviarEmail.mockResolvedValueOnce({ enviado: false, motivo: "falhou" });
@@ -187,6 +213,19 @@ describe("corrigir o e-mail — a troca", () => {
     expect((await prisma.user.findUniqueOrThrow({ where: { id: conta.id } })).email).toBe(conta.email);
     expect(await estaDentro(conta.sessao)).toBe(true);
     expect(trocarEmailDoCliente).not.toHaveBeenCalled();
+  });
+
+  // A revisão de segurança do bloco 3: a tentativa era contada DEPOIS de comparar, e N pedidos juntos comparavam N códigos.
+  it("5 tentativas erradas AO MESMO TEMPO: no máximo 3 são comparadas — as outras já acham o pedido esgotado", async () => {
+    const conta = await aluna();
+    const email = novoEmail();
+    await pedirCodigo({ conta: conta.id, email });
+    const errado = outroCodigo(codigoEnviado());
+    const respostas = await Promise.all(Array.from({ length: 5 }, () => trocar({ conta: conta.id, email, codigo: errado })));
+    const erros = respostas.map((r) => (r.body as { error?: string }).error);
+    expect(erros.filter((e) => e === "CodigoErrado").length).toBeLessThanOrEqual(3);
+    expect(erros.every((e) => e === "CodigoErrado" || e === "CodigoVencido")).toBe(true);
+    expect(await prisma.emailCorrection.findUnique({ where: { userId: conta.id } })).toBeNull();
   });
 
   it("o vencido, o de um pedido substituído e o de outro e-mail não valem", async () => {

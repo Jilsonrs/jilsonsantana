@@ -8,39 +8,53 @@ import { Button } from "@/components/ui/button";
 
 type Acao = { rotulo: string; efeito: string; fazer: () => Promise<{ detalhe: string }> };
 
-/** A ação que cabe a esta assinatura agora — ou nenhuma. */
-function acaoPara(assinatura: AssinaturaDaLista, quem: string): Acao | null {
+/** As ações que cabem a esta assinatura agora — nenhuma, uma ou (a atrasada) duas. */
+function acoesPara(assinatura: AssinaturaDaLista, quem: string): Acao[] {
   if (assinatura.situacao === "ativa") {
     const ate = assinatura.pagoAte ? dataCurta(assinatura.pagoAte) : "o fim do período pago";
-    return { rotulo: "Cancelar no fim do período", efeito: `${quem} continua com acesso até ${ate}, e a assinatura não renova.`, fazer: () => api.adminCancelar(assinatura.id) };
+    return [{ rotulo: "Cancelar no fim do período", efeito: `${quem} continua com acesso até ${ate}, e a assinatura não renova.`, fazer: () => api.adminCancelar(assinatura.id) }];
   }
   if (assinatura.situacao === "atrasada") {
-    return { rotulo: "Cancelar agora", efeito: "A cobrança está atrasada: a assinatura termina agora, sem acesso, e a cobrança em aberto não é mais tentada.", fazer: () => api.adminCancelar(assinatura.id) };
+    return [
+      // Passo 4b: quando o aluno avisa que resolveu o cartão.
+      { rotulo: "Tentar cobrar de novo agora", efeito: "Cobra agora a cobrança em aberto, no cartão da assinatura. Se passar, as aulas voltam na hora; se for recusada, a Stripe segue tentando sozinha.", fazer: () => api.adminCobrarDeNovo(assinatura.id) },
+      { rotulo: "Cancelar agora", efeito: "A cobrança está atrasada: a assinatura termina agora, sem acesso, e a cobrança em aberto não é mais tentada.", fazer: () => api.adminCancelar(assinatura.id) },
+    ];
   }
   if (assinatura.situacao === "vai-cancelar") {
-    return { rotulo: "Desfazer o cancelamento", efeito: "A assinatura volta a renovar no fim do período.", fazer: () => api.adminDesfazerCancelamento(assinatura.id) };
+    return [{ rotulo: "Desfazer o cancelamento", efeito: "A assinatura volta a renovar no fim do período.", fazer: () => api.adminDesfazerCancelamento(assinatura.id) }];
   }
-  return null;
+  return [];
 }
 
 /**
- * A ação de UMA assinatura na ficha (etapa 4.7b, passo 3a): o botão, a confirmação dizendo o efeito, e o que a Stripe
- * respondeu. Depois, a ficha é lida de novo.
+ * As ações de UMA assinatura na ficha (etapa 4.7b, passos 3a e 4b): cada uma com o botão, a confirmação dizendo o efeito,
+ * e o que a Stripe respondeu. Depois, a ficha é lida de novo.
  */
 export function AcoesDaAssinatura({ assinatura, quem }: { assinatura: AssinaturaDaLista; quem: string }) {
+  const acoes = acoesPara(assinatura, quem);
+  if (acoes.length === 0) return null;
+  return (
+    <div className="mt-3 space-y-2">
+      {acoes.map((acao) => (
+        <UmaAcao key={acao.rotulo} acao={acao} />
+      ))}
+    </div>
+  );
+}
+
+function UmaAcao({ acao }: { acao: Acao }) {
   const [confirmando, setConfirmando] = useState(false);
   const queryClient = useQueryClient();
-  const acao = acaoPara(assinatura, quem);
   const fazer = useMutation({
-    mutationFn: () => (acao ? acao.fazer() : Promise.reject(new Error("sem ação"))),
+    mutationFn: () => acao.fazer(),
     onSuccess: () => {
       setConfirmando(false);
       return queryClient.invalidateQueries({ queryKey: ["admin", "cobranca", "ficha"] });
     },
   });
-  if (!acao) return null;
   return (
-    <div className="mt-3 space-y-2">
+    <div className="space-y-2">
       {confirmando ? (
         <div role="group" aria-label="Confirmar" className="space-y-2 rounded-xl border border-border/60 p-3">
           <p className="text-sm text-foreground">{acao.efeito}</p>

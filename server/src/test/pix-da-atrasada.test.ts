@@ -81,7 +81,7 @@ let memberEmail = "";
 let detalhes: Partial<DetalhesDaAssinatura> = {};
 let naStripe: Partial<AssinaturaNaStripe> = {};
 const falhaHa = (dias: number) => new Date(Date.now() - dias * DIA);
-const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "past_due", pagoAte: falhaHa(5), plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: new Date(Date.now() + 25 * DIA), comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: FATURA, itemId: "si_do_teste", agendamentoId: null, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
+const daStripe = (id: string): DetalhesDaAssinatura => ({ id, status: "past_due", pagoAte: falhaHa(5), plano: "mensal", preco: { centavos: 9990, moeda: "brl" }, fimDoPeriodo: new Date(Date.now() + 25 * DIA), comecouEm: null, acabaEm: null, acabaNoFimDoPeriodo: false, cartao: null, clienteId: CLIENTE, userId: memberId, pixPaymentIntentId: null, faturaEmAbertoId: FATURA, itemId: "si_do_teste", agendamentoId: null, pagoPorFora: false, agendamentoNosso: false, trocaMarcada: null, faturaDaTrocaId: null, ...detalhes });
 
 const pagarAAtrasada = (cookies: string[] = member, corpo: object = { documento: CPF }) => request(servidor).post("/api/billing/minha-assinatura/pix").set("Cookie", cookies).send(corpo);
 const espelho = () => prisma.subscription.findUniqueOrThrow({ where: { stripeSubscriptionId: SUB } });

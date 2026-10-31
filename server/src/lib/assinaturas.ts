@@ -3,9 +3,9 @@ import { prisma } from "./prisma.js";
 import { abrirCaso, resolvidoSozinho, TipoDeCaso, transacaoDaCobranca } from "./casos.js";
 import { assinaturaDaAcesso, cobrancaAtrasada, encerradaDeVez, temAcessoAtivo } from "./acesso.js";
 import { AssinaturaNaoEncontrada, assinaturasDoCliente, buscarAssinatura, buscarPrecos, cancelarIncompleta, type AssinaturaNaStripe, type AvisoDaStripe, type PagamentoPrePago } from "./stripe.js";
-import { assinaturaDoPagamento, cancelarPorContestacao } from "./stripe-reembolso.js";
-import { pixDevolvido } from "./stripe-devolucao.js";
-import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
+import { assinaturaDoPagamento, cancelarPorContestacao, devolver } from "./stripe-reembolso.js";
+import { cobrancaDoPagamento, pixDevolvido } from "./stripe-devolucao.js";
+import { assinaturasDoPix, cancelarPagamentoPix, criarAssinaturaPrePaga, garantirFaturaPaga, lerPagamentoPix, listarPixDoCliente, marcarEmConferencia, tirarDeConferencia, type PixPago, type PixPendente, type PrePagaDoPix } from "./stripe-pix.js";
 import { alertarNoMaximoACada15Min } from "./alerta-de-configuracao.js";
 import { contaDoPedido, type SemContaDoVisitante } from "./pedido-do-visitante.js";
 
@@ -117,8 +117,12 @@ async function sincronizar(tx: Prisma.TransactionClient, assinaturaId: string, {
   const quem = espelho ? { dono: espelho.ownerUserId, contaNova: null } : await donoDaAssinaturaNova(tx, agora);
   if ("motivo" in quem) return { resultado: "sem-conta", assinatura: agora, motivo: quem.motivo };
   const { dono, contaNova } = quem;
+  // O Pix da PRÉ-PAGA vai para o espelho só na que o USOU (achado P1 da revisão do bloco 4, 31/10/2026): a coluna é única, e
+  // a pré-paga que morreu sem ser paga continua com o Pix nos metadados — gravado nela, a substituta que o operador aceita (ou
+  // um aviso atrasado da morta) bateria na coluna, e a sincronia cairia.
+  const pixDoEspelho = agora.pixPaymentIntentId && pixConsumido(agora.status) ? agora.pixPaymentIntentId : null;
   // O plano, o fim marcado e o código vão junto (o painel da cobrança, etapa 4.7b): o gate não os lê.
-  const dados = { status: agora.status, currentPeriodEnd: agora.pagoAte, stripeCustomerId: agora.clienteId, livemode: agora.livemode, pixPaymentIntentId: agora.pixPaymentIntentId ?? null, plan: agora.planoAtual ?? null, cancelAt: agora.acabaEm ?? null, promotionCode: agora.codigoPromocional ?? null, cancelReason: agora.motivoDoCancelamento ?? null };
+  const dados = { status: agora.status, currentPeriodEnd: agora.pagoAte, stripeCustomerId: agora.clienteId, livemode: agora.livemode, pixPaymentIntentId: pixDoEspelho, plan: agora.planoAtual ?? null, cancelAt: agora.acabaEm ?? null, promotionCode: agora.codigoPromocional ?? null, cancelReason: agora.motivoDoCancelamento ?? null, paidOutOfBand: agora.pagoPorFora === true };
   const tinhaAcesso = dono !== null && (await temAcessoAtivo(dono, tx));
 
   if (espelho) await tx.subscription.update({ where: { id: espelho.id }, data: dados });
@@ -356,6 +360,94 @@ export async function processarPixPago(pagamento: PagamentoPrePago, aviso?: Avis
     const motivo = erro instanceof Error ? erro.message : String(erro);
     throw new Error(`[stripe] ${marcar ? `aviso ${marcar.id} (pagamento pré-pago ${pagamento.id})` : `o Pix pago ${pagamento.id}`} falhou: ${motivo}`, { cause: erro });
   }
+}
+
+/** O que "Aceitar este Pix" fez (o painel da cobrança, etapa 4.7b, passo 4c). */
+export type PixAceito = { resultado: "aceito"; sincronia: Sincronia } | { resultado: "nao-pago" | "devolvido" | "ja-virou-assinatura" | "sem-preco" | "fatura-nao-paga" | "ocupada" | "ja-tem-outra-assinatura" };
+
+/**
+ * A conta do Pix JÁ TEM acesso, ou o cliente dele outra assinatura VIVA (achado P2 da revisão do bloco 4, 31/10/2026)?
+ * Então fazer uma pré-paga do Pix valer seria uma segunda assinatura pelo mesmo período — o Pix se devolve. A incompleta (o
+ * cartão começado) não conta: ela não deu acesso.
+ */
+async function temOutraAssinatura(tx: Prisma.TransactionClient, pagamento: PagamentoPrePago): Promise<boolean> {
+  if (pagamento.userId && (await temAcessoAtivo(pagamento.userId, tx))) return true;
+  const vivas = (await assinaturasDoCliente(pagamento.clienteId)).filter((a) => a.status !== "canceled" && a.status !== "incomplete_expired" && a.status !== "incomplete");
+  return vivas.some((a) => a.pixPaymentIntentId !== pagamento.id);
+}
+
+/**
+ * ACEITAR ESTE PIX (o painel da cobrança, etapa 4.7b, passo 4c — decisão do operador, 29/10/2026, P117): o Pix PAGO que ficou
+ * EM CONFERÊNCIA (o valor não bateu com o preço, a pré-paga dele morreu sem ser paga, a fatura dela não se pagava por fora)
+ * vira a assinatura pré-paga NO PREÇO DE AGORA do plano — o operador aceitou o dinheiro —, com a primeira fatura paga por fora,
+ * e a marca de conferência sai. Com a trava do Pix (a mesma do aviso, sem esperar): a pré-paga que JÁ VALE é só sincronizada;
+ * a incompleta, paga por fora — ou encerrada, se não der —; e a nova nasce com uma chave de repetição PRÓPRIA (a do aviso
+ * devolveria, na janela, a que morreu). A sincronia de sempre grava o espelho (e faz a conta do visitante nascer). O Pix
+ * devolvido não se aceita, e o que já virou assinatura não vira outra. A conta que já tem acesso, ou outra assinatura viva,
+ * não ganha uma segunda (`temOutraAssinatura`); e as linhas do espelho das pré-pagas MORTAS deste Pix soltam a coluna antes de
+ * a nova nascer (a regra de `sincronizar`, para as gravadas antes dela).
+ */
+export async function aceitarPixEmConferencia(pagamentoId: string): Promise<PixAceito> {
+  const lido = await lerPagamentoPix(pagamentoId);
+  if (lido.status !== "succeeded" || !lido.pagamento) return { resultado: "nao-pago" };
+  const pagamento = lido.pagamento;
+  return transacaoDaCobranca(async (tx): Promise<PixAceito> => {
+    if (!(await travarChave(tx, `pix:${pagamento.id}`, false))) return { resultado: "ocupada" };
+    const noEspelho = await tx.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { status: true } });
+    if (noEspelho && pixConsumido(noEspelho.status)) return { resultado: "ja-virou-assinatura" };
+    if (await pixDevolvido(pagamento.id)) return { resultado: "devolvido" };
+    const escolhida = escolherPrePaga(await assinaturasDoPix(pagamento.clienteId, pagamento.id));
+    let assinaturaId: string | null = null;
+    if (escolhida && "valendo" in escolhida) {
+      assinaturaId = escolhida.valendo;
+    } else {
+      if (await temOutraAssinatura(tx, pagamento)) return { resultado: "ja-tem-outra-assinatura" };
+      if (escolhida && "aPagar" in escolhida) {
+        if ((await garantirFaturaPaga(escolhida.aPagar)).status === "paid") assinaturaId = escolhida.aPagar;
+        else await cancelarIncompleta(escolhida.aPagar);
+      }
+    }
+    if (!assinaturaId) {
+      const preco = (await buscarPrecos()).find((p) => p.plano === pagamento.plano);
+      if (!preco) return { resultado: "sem-preco" };
+      // Nenhuma linha deste Pix valeu (conferido acima): a da morta solta a coluna, e a nova grava nela.
+      await tx.subscription.updateMany({ where: { pixPaymentIntentId: pagamento.id }, data: { pixPaymentIntentId: null } });
+      const criada = await criarAssinaturaPrePaga({ ...pagamento, precoId: preco.precoId }, "operador");
+      if (!criada.faturaPaga) return { resultado: "fatura-nao-paga" };
+      assinaturaId = criada.id;
+    }
+    await tirarDeConferencia(pagamento.id);
+    if (!(await travarChave(tx, assinaturaId, false))) return { resultado: "ocupada" };
+    return { resultado: "aceito", sincronia: await sincronizar(tx, assinaturaId) };
+  }, TEMPO_DO_PIX);
+}
+
+/** O que "Devolver o Pix" fez (o painel da cobrança, passo 4c). */
+export type PixDevolvidoPeloOperador = { resultado: "devolvido"; centavos: number } | { resultado: "ja-devolvido" | "ja-virou-assinatura" | "ocupada" | "nao-pago" };
+
+/**
+ * DEVOLVER O PIX EM CONFERÊNCIA (o painel da cobrança, passo 4c — P117), com a trava do Pix — a do aviso e a do aceite —, sem
+ * esperar (achado P1 da revisão do bloco 4, 31/10/2026). O Pix que JÁ VIROU uma assinatura que vale não se devolve solto: a
+ * pré-paga ficaria ativa sem o dinheiro (a regra das aulas libera a ativa sem olhar o pagamento); para ele é o "Cancelar e
+ * devolver o dinheiro" da ficha, que encerra e devolve. A pré-paga ainda incompleta dele morre ANTES — paga por fora depois,
+ * ela abriria as aulas sem o dinheiro; e se ela foi paga no meio, o Pix virou assinatura. Devolve o que falta, inteiro.
+ */
+export async function devolverPixEmConferencia(pagamentoId: string, dono: { userId: string | null }): Promise<PixDevolvidoPeloOperador> {
+  const lido = await lerPagamentoPix(pagamentoId);
+  if (lido.status !== "succeeded" || !lido.pagamento) return { resultado: "nao-pago" };
+  const pagamento = lido.pagamento;
+  return transacaoDaCobranca(async (tx): Promise<PixDevolvidoPeloOperador> => {
+    if (!(await travarChave(tx, `pix:${pagamento.id}`, false))) return { resultado: "ocupada" };
+    const noEspelho = await tx.subscription.findUnique({ where: { pixPaymentIntentId: pagamento.id }, select: { status: true } });
+    if (noEspelho && pixConsumido(noEspelho.status)) return { resultado: "ja-virou-assinatura" };
+    const escolhida = escolherPrePaga(await assinaturasDoPix(pagamento.clienteId, pagamento.id));
+    if (escolhida && "valendo" in escolhida) return { resultado: "ja-virou-assinatura" };
+    if (escolhida && "aPagar" in escolhida && (await cancelarIncompleta(escolhida.aPagar)) !== "incomplete_expired") return { resultado: "ja-virou-assinatura" };
+    const { centavos, devolvido } = await cobrancaDoPagamento(pagamento.id);
+    if (centavos - devolvido <= 0) return { resultado: "ja-devolvido" };
+    await devolver({ pagamentoId: pagamento.id, centavos, devolvido }, { userId: dono.userId ?? "sem-conta", assinaturaId: "sem-assinatura" });
+    return { resultado: "devolvido", centavos: centavos - devolvido };
+  }, TEMPO_DO_PIX);
 }
 
 /**

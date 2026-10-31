@@ -1,14 +1,16 @@
 import { Router } from "express";
-import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, corrigirEmailSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
+import { acaoNaAssinaturaSchema, acharQuerySchema, casosQuerySchema, corrigirDocumentoSchema, corrigirEmailSchema, devolverPagamentoSchema, devolverTudoSchema, enviarLinkSchema, fecharCasoSchema, fichaQuerySchema, liberarPagoPorForaSchema, oQueAconteceuQuerySchema, pedirCodigoDoEmailSchema, resolverCasoSchema } from "@jilson/core";
 import type { Response } from "express";
 import { requireAdmin } from "../middleware/auth.js";
 import { parseId, validate } from "../lib/http.js";
 import { fecharPeloOperador, listarCasos } from "../lib/casos.js";
-import { cancelarPeloOperador, conferirPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
+import { aceitarContestacaoPeloOperador, aceitarPixPeloOperador, cancelarPeloOperador, cobrarDeNovoPeloOperador, conferirPeloOperador, liberarDeNovoPeloOperador, liberarPagoPorForaPeloOperador, corrigirDocumentoPeloOperador, desfazerCancelamentoPeloOperador, enviarLinkPeloOperador, reenviarPeloOperador, resolverCasoPeloOperador, type NaoFeita, type Resultado } from "../lib/acoes-da-cobranca.js";
 import { cobrancaConfigurada } from "../lib/stripe.js";
+import { limiteDoCodigoDoEmailNovo } from "../lib/limite-de-tentativas.js";
 import { QuemFez } from "../lib/prisma.js";
 import { acharPeloCodigo, listarTentativas, montarFicha } from "../lib/ficha-da-cobranca.js";
 import { corrigirEmailComCodigo, pedirCodigoDoEmailNovo, type NaoCorrigido } from "../lib/correcao-de-email.js";
+import { devolverDeNovoPeloOperador, devolverEstePagamentoPeloOperador, devolverPagamentoPeloOperador, devolverPixPeloOperador, devolverTudoPeloOperador, previaDeDevolverTudo } from "../lib/devolucoes-do-painel.js";
 import { oQueAconteceu } from "../lib/registro-da-cobranca.js";
 
 // O PAINEL DA COBRANÇA — A FICHA DO ALUNO E O "ACHAR PELO CÓDIGO" (Fase 4, etapa 4.7b, passo 1c). Só admin, só
@@ -78,6 +80,19 @@ const STATUS_DO_QUE_NAO_FOI: Record<NaoFeita, [number, string]> = {
   "nada-a-fazer": [409, "NadaAFazer"],
   "stripe-nao-conhece": [409, "StripeNaoConhece"],
   "assinatura-viva": [409, "AssinaturaViva"],
+  "valor-mudou": [409, "ValorMudou"],
+  "valor-acima": [409, "ValorAcimaDoQueFalta"],
+  "devolucao-falhou": [502, "DevolucaoFalhou"],
+  "pix-nao-aceito": [409, "PixNaoAceito"],
+  "ja-tem-acesso": [409, "JaTemAcesso"],
+  "contestacao-nao-ganha": [409, "ContestacaoNaoGanha"],
+  "contestacao-nao-aberta": [409, "ContestacaoNaoAberta"],
+  "ja-tem-outra-assinatura": [409, "JaTemOutraAssinatura"],
+  "outra-assinatura-viva": [409, "OutraAssinaturaViva"],
+  "pix-pago-esperando": [409, "PixPagoEsperando"],
+  "pix-ja-virou-assinatura": [409, "PixJaVirouAssinatura"],
+  "sem-valor-da-devolucao": [409, "SemValorDaDevolucao"],
+  "outra-contestacao-nao-ganha": [409, "OutraContestacaoNaoGanha"],
 };
 function responder<T>(res: Response, resultado: Resultado<T>): void {
   if (resultado.resultado === "ok") {
@@ -87,14 +102,21 @@ function responder<T>(res: Response, resultado: Resultado<T>): void {
   const [status, error] = STATUS_DO_QUE_NAO_FOI[resultado.resultado];
   res.status(status).json({ error });
 }
-/** Quem faz: o operador da sessão. Sem a Stripe configurada, nenhuma ação vai a ela. */
-function operador(req: { user?: { id: string } }, res: Response): { quem: typeof QuemFez.OPERADOR; conta: string } | null {
+/**
+ * Quem faz: o operador da sessão. Sem a Stripe configurada, nenhuma ação vai a ela. Sem a conta na sessão (o
+ * `requireAdmin` sempre a põe), responde 401 — nunca deixa o pedido pendurado (revisão de segurança do bloco 3).
+ */
+export function operador(req: { user?: { id: string } }, res: Response): { quem: typeof QuemFez.OPERADOR; conta: string } | null {
   res.set("Cache-Control", "private, no-store");
   if (!cobrancaConfigurada()) {
     res.status(503).json({ error: "NaoConfigurado" });
     return null;
   }
-  return req.user ? { quem: QuemFez.OPERADOR, conta: req.user.id } : null;
+  if (!req.user) {
+    res.status(401).json({ error: "SemSessao" });
+    return null;
+  }
+  return { quem: QuemFez.OPERADOR, conta: req.user.id };
 }
 
 // POST /api/admin/cobranca/acoes/conferir — { conta } | { assinatura } | { visitante }: a sincronia de sempre (passo 3a).
@@ -113,6 +135,24 @@ router.post("/admin/cobranca/acoes/cancelar", requireAdmin, async (req, res) => 
   const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
   if (corpo === null) return;
   responder(res, await cancelarPeloOperador(corpo.assinatura, por));
+});
+
+// POST /api/admin/cobranca/acoes/cobrar-de-novo — { assinatura }: a cobrança em aberto da atrasada, agora (passo 4b).
+router.post("/admin/cobranca/acoes/cobrar-de-novo", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await cobrarDeNovoPeloOperador(corpo.assinatura, por));
+});
+
+// POST /api/admin/cobranca/acoes/liberar-pago-por-fora — { conta, plano }: a pré-paga paga por fora (passo 4d — P120).
+router.post("/admin/cobranca/acoes/liberar-pago-por-fora", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(liberarPagoPorForaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await liberarPagoPorForaPeloOperador(corpo.conta, corpo.plano, por));
 });
 
 // POST /api/admin/cobranca/acoes/desfazer-cancelamento — { assinatura }: a mesma operação de voltar atrás (passo 3a).
@@ -141,7 +181,53 @@ router.post("/admin/cobranca/casos/:id/resolver", requireAdmin, async (req, res)
   if (id === null) return;
   const corpo = validate(resolverCasoSchema, req.body, res);
   if (corpo === null) return;
-  responder(res, await resolverCasoPeloOperador(id, corpo.acao, por));
+  // Os consertos que mexem com dinheiro moram com as devoluções (passos 4a e 4c); o "Aceitar este Pix", com as ações.
+  const acao = corpo.acao;
+  responder(
+    res,
+    acao === "devolver-de-novo"
+      ? await devolverDeNovoPeloOperador(id, por)
+      : acao === "devolver-pix"
+        ? await devolverPixPeloOperador(id, por)
+        : acao === "devolver-este-pagamento"
+          ? await devolverEstePagamentoPeloOperador(id, por)
+          : acao === "aceitar-pix"
+            ? await aceitarPixPeloOperador(id, por)
+            : acao === "liberar-de-novo"
+              ? await liberarDeNovoPeloOperador(id, por)
+              : acao === "aceitar-contestacao"
+                ? await aceitarContestacaoPeloOperador(id, por)
+                : await resolverCasoPeloOperador(id, acao, por),
+  );
+});
+
+// AS DEVOLUÇÕES (bloco 4, passo 4a — P114 e P139).
+// POST /api/admin/cobranca/acoes/devolver-tudo/previa — { assinatura }: quanto "Cancelar e devolver o dinheiro" devolve.
+router.post("/admin/cobranca/acoes/devolver-tudo/previa", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(acaoNaAssinaturaSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await previaDeDevolverTudo(corpo.assinatura));
+});
+
+// POST /api/admin/cobranca/acoes/devolver-tudo — { assinatura, centavos }: encerra e devolve, se o valor ainda for o mostrado.
+router.post("/admin/cobranca/acoes/devolver-tudo", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(devolverTudoSchema, req.body, res);
+  if (corpo === null) return;
+  responder(res, await devolverTudoPeloOperador(corpo.assinatura, corpo.centavos, por));
+});
+
+// POST /api/admin/cobranca/acoes/devolver-pagamento — { conta | visitante, cobranca, centavos, encerrar? }: uma cobrança, inteira ou em parte.
+router.post("/admin/cobranca/acoes/devolver-pagamento", requireAdmin, async (req, res) => {
+  const por = operador(req, res);
+  if (!por) return;
+  const corpo = validate(devolverPagamentoSchema, req.body, res);
+  if (corpo === null) return;
+  const quem = "conta" in corpo ? { conta: corpo.conta } : { visitante: corpo.visitante };
+  responder(res, await devolverPagamentoPeloOperador(quem, corpo.cobranca, corpo.centavos, corpo.devolvido, corpo.encerrar ?? false, por));
 });
 
 // POST /api/admin/cobranca/acoes/corrigir-documento — { conta | visitante, documento }: o CPF ou CNPJ (passo 3b).
@@ -171,6 +257,7 @@ router.post("/admin/cobranca/acoes/enviar-link", requireAdmin, async (req, res) 
 // CORRIGIR O E-MAIL (passo 3c — P121): o que não deu, com nome.
 const STATUS_DA_CORRECAO: Record<NaoCorrigido, [number, string]> = {
   "nao-encontrada": [404, "NaoEncontrada"],
+  "conta-de-admin": [409, "ContaDeAdmin"],
   "mesmo-email": [409, "MesmoEmail"],
   "email-de-outra-conta": [409, "EmailDeOutraConta"],
   "email-nao-saiu": [502, "EmailNaoSaiu"],
@@ -189,7 +276,7 @@ function responderACorrecao<T>(res: Response, resultado: { resultado: "ok"; feit
 }
 
 // POST /api/admin/cobranca/acoes/corrigir-email/codigo — { conta, email }: o código vai ao e-mail certo (passo 3c).
-router.post("/admin/cobranca/acoes/corrigir-email/codigo", requireAdmin, async (req, res) => {
+router.post("/admin/cobranca/acoes/corrigir-email/codigo", requireAdmin, ...limiteDoCodigoDoEmailNovo, async (req, res) => {
   const por = operador(req, res);
   if (!por) return;
   const corpo = validate(pedirCodigoDoEmailSchema, req.body, res);
